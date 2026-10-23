@@ -22,6 +22,27 @@ export interface ToolMeta {
   readonly nextToolCta: string;
 }
 
+export interface RevenueRiskBridgeSnapshot {
+  readonly toolId: 'revenue-risk';
+  readonly inputs: {
+    readonly leadsPerMonth: number;
+    readonly lateSharePercent: number;
+    readonly conversionPercent: number;
+    readonly avgCheck: number;
+    readonly lossFactor: number;
+    readonly mode: 'custom' | 'preset';
+    readonly presetId?: string;
+  };
+  readonly results: {
+    readonly lateLeads: number;
+    readonly revenueAtRiskMax: number;
+    readonly recoverableRevenue: number;
+    readonly revenueAtRiskPerYear: number;
+    readonly costPerMissedDialog: number;
+  };
+  readonly updatedAt: number;
+}
+
 export interface ToolHandoffPayload {
   readonly fromTool: ToolId;
   readonly toTool: ToolId;
@@ -29,6 +50,7 @@ export interface ToolHandoffPayload {
   readonly suggestedValue: number;
   readonly note: string;
   readonly timestamp: number;
+  readonly revenueRiskSnapshot?: RevenueRiskBridgeSnapshot;
 }
 
 export interface ScenarioSnapshot {

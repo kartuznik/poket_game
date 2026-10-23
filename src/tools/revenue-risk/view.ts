@@ -575,7 +575,27 @@ export function renderRevenueRiskTool(
       diffBox.hidden = true;
     }
 
-    return calcResult;
+    // Save full inputs and calculation results into ToolBridge for other tools
+    const bridgeSnapshot = bridge.saveRevenueRiskResult({
+      inputs: {
+        leadsPerMonth: normalizedInput.leadsPerMonth,
+        lateSharePercent: normalizedInput.lateSharePercent,
+        conversionPercent: normalizedInput.conversionPercent,
+        avgCheck: normalizedInput.avgCheck,
+        lossFactor: normalizedInput.lossFactor,
+        mode,
+        ...(mode === 'preset' ? { presetId: selectedPresetId } : {}),
+      },
+      results: {
+        lateLeads: calcResult.lateLeads,
+        revenueAtRiskMax: calcResult.revenueAtRiskMax,
+        recoverableRevenue: calcResult.recoverableRevenue,
+        revenueAtRiskPerYear: calcResult.revenueAtRiskPerYear,
+        costPerMissedDialog: calcResult.costPerMissedDialog,
+      },
+    });
+
+    return { calcResult, bridgeSnapshot };
   }
 
   // Event listeners
@@ -624,7 +644,7 @@ export function renderRevenueRiskTool(
   });
 
   copyBtn.addEventListener('click', async () => {
-    const calcResult = recalculateAndRender();
+    const { calcResult } = recalculateAndRender();
     const { normalizedInput } = calcResult;
     const preset =
       mode === 'preset' ? getNichePresetById(selectedPresetId) : undefined;
@@ -648,7 +668,7 @@ export function renderRevenueRiskTool(
   });
 
   saveBtn.addEventListener('click', () => {
-    const calcResult = recalculateAndRender();
+    const { calcResult } = recalculateAndRender();
     const formatted = formatRubles(calcResult.revenueAtRiskMax);
     const saved = store.save('revenue-risk', {
       label: 'Сценарий «До»',
@@ -664,7 +684,7 @@ export function renderRevenueRiskTool(
   });
 
   handoffBtn.addEventListener('click', () => {
-    const calcResult = recalculateAndRender();
+    const { calcResult, bridgeSnapshot } = recalculateAndRender();
     bridge.send({
       fromTool: 'revenue-risk',
       toTool: meta.nextToolId,
@@ -673,7 +693,8 @@ export function renderRevenueRiskTool(
         15,
         Math.round(calcResult.normalizedInput.leadsPerMonth * 2),
       ),
-      note: `поток ${formatIntegerGrouping(calcResult.normalizedInput.leadsPerMonth)} обращений/мес`,
+      note: `поток ${formatIntegerGrouping(calcResult.normalizedInput.leadsPerMonth)} обращений/мес, поздних ${Math.round(calcResult.lateLeads)}`,
+      revenueRiskSnapshot: bridgeSnapshot,
     });
     onNavigateTool(meta.nextToolId);
   });

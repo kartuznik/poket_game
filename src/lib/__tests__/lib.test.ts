@@ -238,18 +238,44 @@ describe('URL routing and cross-tool handoff bridge', () => {
 
   it('passes handoff payload between tools in memory and consumes once', () => {
     const bridge = new ToolBridge();
-    bridge.send({
-      fromTool: 'priority-diag',
-      toTool: 'revenue-risk',
-      label: 'Ответы на обращения в Директ',
-      suggestedValue: 85,
-      note: 'Приоритет №1 по результатам диагностики',
+    const snapshot = bridge.saveRevenueRiskResult({
+      inputs: {
+        leadsPerMonth: 100,
+        lateSharePercent: 35,
+        conversionPercent: 20,
+        avgCheck: 4500,
+        lossFactor: 0.3,
+        mode: 'custom',
+      },
+      results: {
+        lateLeads: 35,
+        revenueAtRiskMax: 31500,
+        recoverableRevenue: 22050,
+        revenueAtRiskPerYear: 378000,
+        costPerMissedDialog: 900,
+      },
     });
 
-    expect(bridge.peek('revenue-risk')?.suggestedValue).toBe(85);
-    const consumed = bridge.consume('revenue-risk');
-    expect(consumed?.fromTool).toBe('priority-diag');
-    expect(bridge.peek('revenue-risk')).toBeNull();
+    expect(bridge.getRevenueRiskResult()?.results.revenueAtRiskMax).toBe(31500);
+    expect(bridge.getRevenueRiskResult()?.inputs.leadsPerMonth).toBe(100);
+
+    bridge.send({
+      fromTool: 'revenue-risk',
+      toTool: 'routine-calc',
+      label: '31 500 ₽/мес под риском',
+      suggestedValue: 200,
+      note: 'поток 100 обращений/мес',
+      revenueRiskSnapshot: snapshot,
+    });
+
+    expect(bridge.peek('routine-calc')?.suggestedValue).toBe(200);
+    expect(
+      bridge.peek('routine-calc')?.revenueRiskSnapshot?.results
+        .costPerMissedDialog,
+    ).toBe(900);
+    const consumed = bridge.consume('routine-calc');
+    expect(consumed?.fromTool).toBe('revenue-risk');
+    expect(bridge.peek('routine-calc')).toBeNull();
   });
 
   it('formats Stage 1 stub previews across all four tools safely', () => {

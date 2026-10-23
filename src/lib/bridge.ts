@@ -1,4 +1,9 @@
-import type { DesignThemeId, ToolHandoffPayload, ToolId } from './types';
+import type {
+  DesignThemeId,
+  RevenueRiskBridgeSnapshot,
+  ToolHandoffPayload,
+  ToolId,
+} from './types';
 
 export const TOOL_IDS: readonly ToolId[] = [
   'revenue-risk',
@@ -79,14 +84,17 @@ export function buildRouteHash(
 }
 
 /**
- * In-memory bridge for passing calculation context between tools
- * (e.g., from Priority Diagnostics into Revenue Risk or Routine Calculator).
+ * In-memory bridge for passing calculation context and full tool snapshots between tools
+ * (e.g., from Revenue Risk into Routine Calculator or Priority Diagnostics).
  * Intentionally kept in memory only so user inputs never outlive tab close.
  */
 export class ToolBridge {
   private handoffByTarget = new Map<ToolId, ToolHandoffPayload>();
+  private latestRevenueRiskSnapshot: RevenueRiskBridgeSnapshot | null = null;
 
-  public send(payload: Omit<ToolHandoffPayload, 'timestamp'> & { timestamp?: number }): ToolHandoffPayload {
+  public send(
+    payload: Omit<ToolHandoffPayload, 'timestamp'> & { timestamp?: number },
+  ): ToolHandoffPayload {
     const entry: ToolHandoffPayload = {
       fromTool: payload.fromTool,
       toTool: payload.toTool,
@@ -94,9 +102,31 @@ export class ToolBridge {
       suggestedValue: payload.suggestedValue,
       note: payload.note,
       timestamp: payload.timestamp ?? Date.now(),
+      ...(payload.revenueRiskSnapshot
+        ? { revenueRiskSnapshot: payload.revenueRiskSnapshot }
+        : {}),
     };
     this.handoffByTarget.set(entry.toTool, entry);
     return entry;
+  }
+
+  public saveRevenueRiskResult(
+    snapshot: Omit<RevenueRiskBridgeSnapshot, 'toolId' | 'updatedAt'> & {
+      updatedAt?: number;
+    },
+  ): RevenueRiskBridgeSnapshot {
+    const record: RevenueRiskBridgeSnapshot = {
+      toolId: 'revenue-risk',
+      inputs: snapshot.inputs,
+      results: snapshot.results,
+      updatedAt: snapshot.updatedAt ?? Date.now(),
+    };
+    this.latestRevenueRiskSnapshot = record;
+    return record;
+  }
+
+  public getRevenueRiskResult(): RevenueRiskBridgeSnapshot | null {
+    return this.latestRevenueRiskSnapshot;
   }
 
   public peek(targetTool: ToolId): ToolHandoffPayload | null {
@@ -111,6 +141,7 @@ export class ToolBridge {
 
   public clear(): void {
     this.handoffByTarget.clear();
+    this.latestRevenueRiskSnapshot = null;
   }
 }
 
