@@ -26,7 +26,6 @@ export function createWizard(options: {
 }): WizardController {
   const count = options.panels.length;
   let step = Math.min(count, Math.max(1, options.initialStep));
-  let movedByUser = false;
   const toolIndex = journeyIndex(options.toolId);
 
   const progress = document.createElement('div');
@@ -87,7 +86,23 @@ export function createWizard(options: {
 
   nav.append(back, next);
 
-  function paint(): void {
+  /**
+   * Prefer the text or number field. A range slider often sits before the
+   * number in the same step, and focusing it pulls the cursor off the field
+   * the visitor is typing in.
+   */
+  function stepFocusTarget(panel: HTMLElement): HTMLElement | null {
+    return (
+      panel.querySelector<HTMLElement>(
+        'input[type="number"], input[type="text"], input[type="tel"], textarea',
+      ) ??
+      panel.querySelector<HTMLElement>(
+        'select, .choice-scale__btn[aria-pressed="true"], .preset-card[aria-pressed="true"]',
+      )
+    );
+  }
+
+  function paint(moveFocus: boolean): void {
     options.panels.forEach((panel, index) => {
       panel.hidden = index !== step - 1;
     });
@@ -103,42 +118,41 @@ export function createWizard(options: {
     next.disabled = !valid;
     next.textContent = step === count ? options.finishLabel : 'Дальше →';
     options.onStep(step);
-    if (!movedByUser) return;
+    if (!moveFocus) return;
     const panel = options.panels[step - 1];
-    const target = panel?.querySelector<HTMLElement>(
-      'input:not([type="hidden"]), textarea, select, .choice-scale__btn[aria-pressed="true"], .preset-card[aria-pressed="true"]',
-    );
-    target?.focus();
+    if (!panel || panel.contains(document.activeElement)) return;
+    const target = stepFocusTarget(panel);
+    if (!target) return;
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   back.addEventListener('click', () => {
     if (step === 1) return;
-    movedByUser = true;
     step -= 1;
-    paint();
+    paint(true);
   });
 
   next.addEventListener('click', () => {
     const move = nextMove(step, count, options.isStepValid(step));
     if (move === 'stay') {
-      paint();
+      paint(false);
       return;
     }
     if (move === 'finish') {
       options.onFinish();
       return;
     }
-    movedByUser = true;
     step += 1;
-    paint();
+    paint(true);
   });
 
-  paint();
+  paint(false);
 
   return {
     progress,
     nav,
-    refresh: paint,
+    refresh: () => paint(false),
     currentStep: () => step,
   };
 }

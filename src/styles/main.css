@@ -416,7 +416,23 @@ body {
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+}
+
+.field-input,
+.field-slider,
+.field-textarea {
+  scroll-margin-block: 28px;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.contact-form .field-group {
+  padding-block: 4px;
 }
 
 .field-label {
@@ -487,6 +503,26 @@ body {
 
 a.action-btn {
   text-decoration: none;
+}
+
+.audit-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.audit-actions .action-btn {
+  grid-column: auto;
+  width: 100%;
+}
+
+.action-btn--quiet {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+  box-shadow: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .field-input--invalid {
@@ -709,6 +745,7 @@ a.action-btn {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 summary:focus-visible,
 a:focus-visible {
   outline: 3px solid var(--focus-ring);
