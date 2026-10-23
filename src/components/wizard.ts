@@ -105,7 +105,9 @@ export function createWizard(options: {
     options.onStep(step);
     if (!movedByUser) return;
     const panel = options.panels[step - 1];
-    const target = panel?.querySelector<HTMLElement>('input, button, textarea, select');
+    const target = panel?.querySelector<HTMLElement>(
+      'input:not([type="hidden"]), textarea, select, .choice-scale__btn[aria-pressed="true"], .preset-card[aria-pressed="true"]',
+    );
     target?.focus();
   }
 
