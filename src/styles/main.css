@@ -516,15 +516,6 @@ a.action-btn {
   width: 100%;
 }
 
-.action-btn--quiet {
-  background: transparent;
-  color: var(--text-secondary);
-  border-color: transparent;
-  box-shadow: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 .field-input--invalid {
   border-color: var(--text-danger);
   background: var(--bg-danger);
@@ -638,6 +629,15 @@ a.action-btn {
   background: transparent;
   color: var(--text-muted);
   box-shadow: none;
+}
+
+a.action-btn.action-btn--quiet {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+  box-shadow: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .early-report-link {
