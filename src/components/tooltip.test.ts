@@ -162,6 +162,35 @@ describe('tooltip placement', () => {
     expect(placed.top).toBe(nextField.bottom + 8);
   });
 
+  it('steps to the side of the field on a wide screen instead of covering the next control', () => {
+    const ownField: TooltipBox = {
+      top: 360,
+      left: 80,
+      right: 460,
+      bottom: 410,
+      width: 380,
+      height: 50,
+    };
+    const fieldAbove: TooltipBox = {
+      top: 280,
+      left: 80,
+      right: 460,
+      bottom: 340,
+      width: 380,
+      height: 60,
+    };
+    const placed = placeTooltip({
+      anchor: { top: 340, left: 400, right: 420, bottom: 360, width: 20, height: 20 },
+      popup: { width: 280, height: 120 },
+      viewport: { width: 960, height: 900 },
+      avoid: ownField,
+      obstacles: [fieldAbove],
+    });
+    expect(placed.placement).toBe('side');
+    expect(placed.left).toBe(ownField.right + 8);
+    expect(placed.top).toBe(340);
+  });
+
   it('keeps a wide popup inside a 320px viewport', () => {
     const placed = placeTooltip({
       anchor: { ...ANCHOR, left: 260, right: 280 },

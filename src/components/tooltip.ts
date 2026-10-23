@@ -67,13 +67,14 @@ export interface TooltipBox {
 export interface TooltipPlacement {
   readonly top: number;
   readonly left: number;
-  readonly placement: 'above' | 'below';
+  readonly placement: 'above' | 'below' | 'side';
 }
 
 /**
  * Prefers a spot above the trigger so the explanation does not cover
- * the input under the label. If the top edge is too tight, drops below
- * the field (the avoid box) and clamps to the viewport.
+ * the input under the label. On a wide screen it steps to the side of
+ * the field instead of covering the next control. Otherwise it drops
+ * below the field and keeps moving past any input it would land on.
  */
 function boxesOverlap(
   top: number,
@@ -109,6 +110,21 @@ export function placeTooltip(args: {
   );
   if (aboveTop >= margin && !aboveHitsField) {
     return { top: aboveTop, left, placement: 'above' };
+  }
+
+  const sideAnchor = args.avoid ?? args.anchor;
+  const sideLeft = sideAnchor.right + margin;
+  if (sideLeft + width <= args.viewport.width - margin) {
+    let sideTop = args.anchor.top;
+    const maxSideTop = args.viewport.height - margin - height;
+    if (sideTop > maxSideTop) sideTop = Math.max(margin, maxSideTop);
+    if (sideTop < margin) sideTop = margin;
+    const sideHitsField = obstacles.some((obstacle) =>
+      boxesOverlap(sideTop, sideLeft, width, height, obstacle),
+    );
+    if (!sideHitsField) {
+      return { top: sideTop, left: sideLeft, placement: 'side' };
+    }
   }
 
   const belowEdge =
