@@ -43,6 +43,27 @@ export interface RevenueRiskBridgeSnapshot {
   readonly updatedAt: number;
 }
 
+export type RoutinePresetId = 'answers' | 'orders' | 'booking' | 'sheets';
+
+export interface RoutineBridgeSnapshot {
+  readonly toolId: 'routine-calc';
+  readonly inputs: {
+    readonly presetId: RoutinePresetId | null;
+    readonly operationsPerWeek: number;
+    readonly minutesPerOperation: number;
+    readonly hourlyRate: number | null;
+    readonly automationSharePercent: number;
+  };
+  readonly results: {
+    readonly hoursPerMonth: number;
+    readonly workDaysPerYear: number;
+    readonly savedHoursPerMonth: number;
+    readonly savedWorkDaysPerYear: number;
+    readonly savedMoneyPerMonth: number | null;
+  };
+  readonly updatedAt: number;
+}
+
 export interface ToolHandoffPayload {
   readonly fromTool: ToolId;
   readonly toTool: ToolId;

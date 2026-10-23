@@ -1,6 +1,7 @@
 import type {
   DesignThemeId,
   RevenueRiskBridgeSnapshot,
+  RoutineBridgeSnapshot,
   ToolHandoffPayload,
   ToolId,
 } from './types';
@@ -91,6 +92,7 @@ export function buildRouteHash(
 export class ToolBridge {
   private handoffByTarget = new Map<ToolId, ToolHandoffPayload>();
   private latestRevenueRiskSnapshot: RevenueRiskBridgeSnapshot | null = null;
+  private latestRoutineSnapshot: RoutineBridgeSnapshot | null = null;
 
   public send(
     payload: Omit<ToolHandoffPayload, 'timestamp'> & { timestamp?: number },
@@ -129,6 +131,25 @@ export class ToolBridge {
     return this.latestRevenueRiskSnapshot;
   }
 
+  public saveRoutineResult(
+    snapshot: Omit<RoutineBridgeSnapshot, 'toolId' | 'updatedAt'> & {
+      updatedAt?: number;
+    },
+  ): RoutineBridgeSnapshot {
+    const record: RoutineBridgeSnapshot = {
+      toolId: 'routine-calc',
+      inputs: snapshot.inputs,
+      results: snapshot.results,
+      updatedAt: snapshot.updatedAt ?? Date.now(),
+    };
+    this.latestRoutineSnapshot = record;
+    return record;
+  }
+
+  public getRoutineResult(): RoutineBridgeSnapshot | null {
+    return this.latestRoutineSnapshot;
+  }
+
   public peek(targetTool: ToolId): ToolHandoffPayload | null {
     return this.handoffByTarget.get(targetTool) ?? null;
   }
@@ -142,6 +163,7 @@ export class ToolBridge {
   public clear(): void {
     this.handoffByTarget.clear();
     this.latestRevenueRiskSnapshot = null;
+    this.latestRoutineSnapshot = null;
   }
 }
 

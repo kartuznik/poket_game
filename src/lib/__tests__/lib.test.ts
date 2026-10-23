@@ -276,6 +276,26 @@ describe('URL routing and cross-tool handoff bridge', () => {
     const consumed = bridge.consume('routine-calc');
     expect(consumed?.fromTool).toBe('revenue-risk');
     expect(bridge.peek('routine-calc')).toBeNull();
+
+    bridge.saveRoutineResult({
+      inputs: {
+        presetId: 'answers',
+        operationsPerWeek: 40,
+        minutesPerOperation: 6,
+        automationSharePercent: 70,
+        hourlyRate: null,
+      },
+      results: {
+        hoursPerMonth: 17.32,
+        workDaysPerYear: 25.98,
+        savedHoursPerMonth: 12.12,
+        savedWorkDaysPerYear: 18.18,
+        savedMoneyPerMonth: null,
+      },
+    });
+    expect(bridge.getRoutineResult()?.results.hoursPerMonth).toBe(17.32);
+    bridge.clear();
+    expect(bridge.getRoutineResult()).toBeNull();
   });
 
   it('formats Stage 1 stub previews across all four tools safely', () => {

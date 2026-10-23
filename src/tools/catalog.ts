@@ -23,7 +23,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     title: 'Калькулятор времени на рутине',
     subtitle:
       'Подсчёт часов, которые уходят на однотипные ответы, приём заказов, записи и перенос в таблицы.',
-    badge: 'Инструмент 02 · Каркас',
+    badge: 'Инструмент 02 · Калькулятор рутины',
     inputLabel: 'Минут ручной рутины в неделю',
     inputUnit: 'мин/нед',
     defaultInput: 240,
