@@ -594,6 +594,15 @@ a:focus-visible {
   color: var(--text-muted);
 }
 
+.check-group {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .process-card {
   display: flex;
   flex-direction: column;
@@ -618,6 +627,11 @@ a:focus-visible {
 
 .choice-scale--3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.choice-scale--3 .choice-scale__btn {
+  font-size: 0.75rem;
+  padding: 6px 4px;
 }
 
 .choice-scale__btn {

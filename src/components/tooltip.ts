@@ -156,6 +156,7 @@ interface BoundTip {
 }
 
 const boundTips = new Map<string, BoundTip>();
+const extraHoverRoots = new WeakMap<HTMLButtonElement, HTMLElement>();
 let tooltipState: TooltipState = CLOSED_TOOLTIP;
 let listenersReady = false;
 let tipSequence = 0;
@@ -344,7 +345,8 @@ export function createHelpTip(
   });
   button.addEventListener('mouseleave', (event: MouseEvent) => {
     const next = event.relatedTarget;
-    if (next instanceof Node && popup.contains(next)) return;
+    const extra = extraHoverRoots.get(button);
+    if (next instanceof Node && (popup.contains(next) || extra?.contains(next))) return;
     applySignal({ type: 'pointer-leave', ownerId });
   });
   button.addEventListener('click', (event: MouseEvent) => {
@@ -354,4 +356,23 @@ export function createHelpTip(
   });
 
   return button;
+}
+
+/** Also opens the tip while the pointer is on a related label, not only the "?" button. */
+export function bindHelpTipHover(button: HTMLButtonElement, root: HTMLElement): void {
+  const ownerId = button.dataset.helpId;
+  if (!ownerId) return;
+  extraHoverRoots.set(button, root);
+
+  root.addEventListener('mouseenter', () => {
+    applySignal({ type: 'pointer-enter', ownerId });
+  });
+  root.addEventListener('mouseleave', (event: MouseEvent) => {
+    const next = event.relatedTarget;
+    const popup = document.getElementById(HELP_POPUP_ID);
+    if (next instanceof Node && (root.contains(next) || button.contains(next) || popup?.contains(next))) {
+      return;
+    }
+    applySignal({ type: 'pointer-leave', ownerId });
+  });
 }

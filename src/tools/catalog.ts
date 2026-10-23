@@ -55,7 +55,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     title: 'Чек-лист готовности к автоматизации',
     subtitle:
       'Проверка девяти базовых условий перед внедрением бота: от «рано» до «можно начинать».',
-    badge: 'Инструмент 04 · Каркас',
+    badge: 'Инструмент 04 · Чек-лист',
     inputLabel: 'Готовых пунктов из чек-листа',
     inputUnit: 'из 9 пунктов',
     defaultInput: 6,

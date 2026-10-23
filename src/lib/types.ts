@@ -95,6 +95,33 @@ export interface PriorityBridgeSnapshot {
   readonly updatedAt: number;
 }
 
+export type ReadinessItemId =
+  | 'repeated'
+  | 'rules'
+  | 'one-path'
+  | 'one-place'
+  | 'faq'
+  | 'numbers'
+  | 'owner'
+  | 'channel'
+  | 'time';
+
+export type ReadinessStatus = 'yes' | 'partial' | 'no';
+
+export type ReadinessBand = 'early' | 'gaps' | 'ready';
+
+export interface ReadinessBridgeSnapshot {
+  readonly toolId: 'readiness-check';
+  readonly inputs: Readonly<Record<ReadinessItemId, ReadinessStatus>>;
+  readonly results: {
+    readonly score: number;
+    readonly band: ReadinessBand;
+    readonly bandLabel: string;
+    readonly unclosedTitles: readonly string[];
+  };
+  readonly updatedAt: number;
+}
+
 export interface ToolHandoffPayload {
   readonly fromTool: ToolId;
   readonly toTool: ToolId;

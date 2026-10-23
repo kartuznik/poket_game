@@ -1,6 +1,7 @@
 import type {
   DesignThemeId,
   PriorityBridgeSnapshot,
+  ReadinessBridgeSnapshot,
   RevenueRiskBridgeSnapshot,
   RoutineBridgeSnapshot,
   ToolHandoffPayload,
@@ -95,6 +96,7 @@ export class ToolBridge {
   private latestRevenueRiskSnapshot: RevenueRiskBridgeSnapshot | null = null;
   private latestRoutineSnapshot: RoutineBridgeSnapshot | null = null;
   private latestPrioritySnapshot: PriorityBridgeSnapshot | null = null;
+  private latestReadinessSnapshot: ReadinessBridgeSnapshot | null = null;
 
   public send(
     payload: Omit<ToolHandoffPayload, 'timestamp'> & { timestamp?: number },
@@ -171,6 +173,25 @@ export class ToolBridge {
     return this.latestPrioritySnapshot;
   }
 
+  public saveReadinessResult(
+    snapshot: Omit<ReadinessBridgeSnapshot, 'toolId' | 'updatedAt'> & {
+      updatedAt?: number;
+    },
+  ): ReadinessBridgeSnapshot {
+    const record: ReadinessBridgeSnapshot = {
+      toolId: 'readiness-check',
+      inputs: snapshot.inputs,
+      results: snapshot.results,
+      updatedAt: snapshot.updatedAt ?? Date.now(),
+    };
+    this.latestReadinessSnapshot = record;
+    return record;
+  }
+
+  public getReadinessResult(): ReadinessBridgeSnapshot | null {
+    return this.latestReadinessSnapshot;
+  }
+
   public peek(targetTool: ToolId): ToolHandoffPayload | null {
     return this.handoffByTarget.get(targetTool) ?? null;
   }
@@ -186,6 +207,7 @@ export class ToolBridge {
     this.latestRevenueRiskSnapshot = null;
     this.latestRoutineSnapshot = null;
     this.latestPrioritySnapshot = null;
+    this.latestReadinessSnapshot = null;
   }
 }
 
