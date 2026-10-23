@@ -181,7 +181,11 @@ export function renderPriorityDiagTool(
   handoffBtn.type = 'button';
   handoffBtn.className = 'action-btn action-btn--primary';
   handoffBtn.textContent = meta.nextToolCta;
-  actions.append(copyBtn, saveBtn, handoffBtn);
+  const earlyReportBtn = document.createElement('button');
+  earlyReportBtn.type = 'button';
+  earlyReportBtn.className = 'early-report-link';
+  earlyReportBtn.textContent = 'или посмотреть итоги сейчас';
+  actions.append(copyBtn, saveBtn, handoffBtn, earlyReportBtn);
 
   const toast = document.createElement('p');
   toast.className = 'status-toast';
@@ -276,6 +280,11 @@ export function renderPriorityDiagTool(
   });
 
   handoffBtn.addEventListener('click', () => {
+    recalculate();
+    window.location.hash = meta.nextToolId;
+    onNavigateTool(meta.nextToolId);
+  });
+  earlyReportBtn.addEventListener('click', () => {
     recalculate();
     window.location.hash = 'final-report';
     onNavigateTool('final-report');

@@ -380,6 +380,23 @@ body {
   box-shadow: none;
 }
 
+.early-report-link {
+  grid-column: 1 / -1;
+  justify-self: center;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .action-btn--handoff {
   grid-column: 1 / -1;
   background: var(--bg-subtle);

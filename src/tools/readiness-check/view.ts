@@ -252,8 +252,8 @@ export function renderReadinessCheckTool(
 
   handoffBtn.addEventListener('click', () => {
     recalculate();
-    window.location.hash = 'final-report';
-    onNavigateTool('final-report');
+    window.location.hash = meta.nextToolId;
+    onNavigateTool(meta.nextToolId);
   });
 
   recalculate();

@@ -900,6 +900,7 @@ export function renderRevenueRiskTool(
       note: `${formatIntegerGrouping(calcResult.normalizedInput.leadsPerMonth)} обращений в месяц, из них поздних ${Math.round(calcResult.lateLeads)}`,
       revenueRiskSnapshot: bridgeSnapshot,
     });
+    window.location.hash = meta.nextToolId;
     onNavigateTool(meta.nextToolId);
   });
 
