@@ -2,14 +2,17 @@ import './styles/main.css';
 import { createToolNav } from './components/nav-tabs';
 import { createThemeSwitch } from './components/theme-switch';
 import {
+  DEFAULT_THEME_ID,
   buildRouteHash,
   defaultToolBridge,
   parseRouteState,
   shouldRedrawOnRoute,
 } from './lib/bridge';
 import { createColorSchemeController } from './lib/color-scheme';
+import { defaultDossierStore, draftStepFor, hydrateBridge } from './lib/dossier';
 import { defaultColorSchemeStore, defaultScenarioStore } from './lib/storage';
 import type { ToolId } from './lib/types';
+import { resolveInitialStep, stepCountFor } from './lib/wizard';
 import { renderFinalReportTool } from './tools/final-report/view';
 import { renderPriorityDiagTool } from './tools/priority-diag/view';
 import { renderReadinessCheckTool } from './tools/readiness-check/view';
@@ -23,11 +26,21 @@ function mountApp(root: HTMLElement): void {
     media: window.matchMedia('(prefers-color-scheme: dark)'),
   });
 
+  const dossier = defaultDossierStore;
+  hydrateBridge(dossier.read(), defaultToolBridge);
+
   const initialRoute = parseRouteState(
     window.location.search,
     window.location.hash,
   );
   let activeToolId: ToolId = initialRoute.toolId;
+  let activeStep: number | null = stepFor(initialRoute.toolId, initialRoute.step);
+
+  function stepFor(toolId: ToolId, routeStep: number | null | undefined): number | null {
+    const count = stepCountFor(toolId);
+    if (!count) return null;
+    return resolveInitialStep(count, routeStep ?? null, draftStepFor(dossier.read(), toolId));
+  }
 
   const shell = document.createElement('div');
   shell.className = 'app-shell';
@@ -81,7 +94,7 @@ function mountApp(root: HTMLElement): void {
   root.appendChild(shell);
 
   function syncUrlHash(): void {
-    const targetHash = buildRouteHash(activeToolId);
+    const targetHash = buildRouteHash(activeToolId, DEFAULT_THEME_ID, activeStep);
     if (window.location.hash !== targetHash) {
       window.history.replaceState(null, '', targetHash);
     }
@@ -92,7 +105,13 @@ function mountApp(root: HTMLElement): void {
     const sharedCtx = {
       bridge: defaultToolBridge,
       store: defaultScenarioStore,
-      onNavigateTool: (target: ToolId) => navigateToTool(target, true),
+      dossier,
+      initialStep: activeStep,
+      onWizardStep: (step: number) => {
+        activeStep = step;
+        syncUrlHash();
+      },
+      onNavigateTool: (target: ToolId, step?: number) => navigateToTool(target, true, step),
     };
 
     switch (activeToolId) {
@@ -114,8 +133,13 @@ function mountApp(root: HTMLElement): void {
     }
   }
 
-  function navigateToTool(toolId: ToolId, updateUrl: boolean): void {
+  function navigateToTool(
+    toolId: ToolId,
+    updateUrl: boolean,
+    routeStep?: number | null,
+  ): void {
     activeToolId = toolId;
+    activeStep = stepFor(toolId, routeStep);
     nav.setActive(toolId);
     if (updateUrl) {
       syncUrlHash();
@@ -125,9 +149,13 @@ function mountApp(root: HTMLElement): void {
 
   window.addEventListener('hashchange', () => {
     const next = parseRouteState(window.location.search, window.location.hash);
-    if (shouldRedrawOnRoute(activeToolId, next.toolId)) {
-      navigateToTool(next.toolId, false);
+    if (shouldRedrawOnRoute(activeToolId, next.toolId, activeStep, next.step)) {
+      navigateToTool(next.toolId, false, next.step);
     }
+  });
+
+  window.addEventListener('pagehide', () => {
+    dossier.flush();
   });
 
   // Initial render

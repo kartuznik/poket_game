@@ -9,6 +9,7 @@ import {
   formatRubles,
   normalizeFiniteNumber,
 } from '../lib/format';
+import type { DossierStore } from '../lib/dossier';
 import type { ScenarioStore } from '../lib/storage';
 import type { ToolId, ToolMeta } from '../lib/types';
 
@@ -16,7 +17,10 @@ export interface ToolStubRenderContext {
   readonly meta: ToolMeta;
   readonly bridge: ToolBridge;
   readonly store: ScenarioStore;
-  readonly onNavigateTool: (targetTool: ToolId) => void;
+  readonly dossier: DossierStore;
+  readonly initialStep: number | null;
+  readonly onWizardStep: (step: number) => void;
+  readonly onNavigateTool: (targetTool: ToolId, step?: number) => void;
   readonly helpText?: string;
 }
 

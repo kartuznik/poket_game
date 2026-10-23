@@ -1,5 +1,8 @@
 import { createHelpTip, releaseHelpTipsWithin, setHelpTipText } from '../../components/tooltip';
+import { createWizard } from '../../components/wizard';
 import { copyTextToClipboard } from '../../lib/clipboard';
+import type { RevenueRiskFieldErrors } from './calc';
+import { isRevenueStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
   formatCountWithNoun,
   formatIntegerGrouping,
@@ -130,10 +133,11 @@ export function renderRevenueRiskTool(
   ctx: Omit<ToolStubRenderContext, 'meta'>,
 ): void {
   const meta = TOOLS_CATALOG['revenue-risk'];
-  const { bridge, store, onNavigateTool } = ctx;
+  const { bridge, store, dossier, onNavigateTool, onWizardStep, initialStep } = ctx;
   const incomingHandoff = bridge.consume('revenue-risk');
   const saved = bridge.getRevenueRiskResult();
-  const savedPreset = saved?.inputs.presetId;
+  const draft = dossier.read().revenueDraft;
+  const savedPreset = draft?.presetId ?? saved?.inputs.presetId;
   const restoredPreset: NichePresetId =
     savedPreset === 'beauty-local' ||
     savedPreset === 'ecommerce' ||
@@ -142,26 +146,34 @@ export function renderRevenueRiskTool(
       ? savedPreset
       : REVENUE_RISK_DEFAULTS.presetId;
 
-  let mode: ConversionInputMode = saved?.inputs.mode ?? 'custom';
+  let mode: ConversionInputMode = draft?.mode ?? saved?.inputs.mode ?? 'custom';
   let selectedPresetId: NichePresetId = restoredPreset;
 
-  let leadsRaw = String(
-    saved?.inputs.leadsPerMonth ??
-      (incomingHandoff
-        ? Math.max(1, Math.round(incomingHandoff.suggestedValue))
-        : REVENUE_RISK_DEFAULTS.leadsPerMonth),
-  );
-  let lateShareRaw = String(saved?.inputs.lateSharePercent ?? REVENUE_RISK_DEFAULTS.lateSharePercent);
-  let customConversionRaw = String(
-    saved && saved.inputs.mode === 'custom'
-      ? saved.inputs.conversionPercent
-      : REVENUE_RISK_DEFAULTS.conversionPercent,
-  );
-  let customLossFactorRaw = String(
-    saved ? Math.round(saved.inputs.lossFactor * 100) : DEFAULT_LOSS_FACTOR_PERCENT,
-  );
+  let leadsRaw =
+    draft?.leadsPerMonth ??
+    String(
+      saved?.inputs.leadsPerMonth ??
+        (incomingHandoff
+          ? Math.max(1, Math.round(incomingHandoff.suggestedValue))
+          : REVENUE_RISK_DEFAULTS.leadsPerMonth),
+    );
+  let lateShareRaw =
+    draft?.lateSharePercent ??
+    String(saved?.inputs.lateSharePercent ?? REVENUE_RISK_DEFAULTS.lateSharePercent);
+  let customConversionRaw =
+    draft?.conversionPercent ??
+    String(
+      saved && saved.inputs.mode === 'custom'
+        ? saved.inputs.conversionPercent
+        : REVENUE_RISK_DEFAULTS.conversionPercent,
+    );
+  let customLossFactorRaw =
+    draft?.lossFactorPercent ??
+    String(saved ? Math.round(saved.inputs.lossFactor * 100) : DEFAULT_LOSS_FACTOR_PERCENT);
   let lossFactorRaw = customLossFactorRaw;
-  let avgCheckRaw = String(saved?.inputs.avgCheck ?? REVENUE_RISK_DEFAULTS.avgCheck);
+  let avgCheckRaw = draft?.avgCheck ?? String(saved?.inputs.avgCheck ?? REVENUE_RISK_DEFAULTS.avgCheck);
+  let lastErrors: RevenueRiskFieldErrors = {};
+  const openedStep = resolveInitialStep(4, initialStep, draft?.step ?? null);
 
   releaseHelpTipsWithin(container);
   container.innerHTML = '';
@@ -179,7 +191,7 @@ export function renderRevenueRiskTool(
 
   const badge = document.createElement('span');
   badge.className = 'tool-card__badge';
-  badge.textContent = meta.badge;
+  badge.hidden = true;
 
   const title = document.createElement('h2');
   title.className = 'tool-card__title';
@@ -463,7 +475,18 @@ export function renderRevenueRiskTool(
 
   checkGroup.append(checkHeading.row, checkInput, checkError);
 
-  inputCard.append(leadsGroup, lateGroup, convGroup, lossGroup, checkGroup);
+  const leadStep = document.createElement('div');
+  leadStep.className = 'step-panel';
+  leadStep.append(leadsGroup);
+  const lateStep = document.createElement('div');
+  lateStep.className = 'step-panel';
+  lateStep.append(lateGroup);
+  const conversionStep = document.createElement('div');
+  conversionStep.className = 'step-panel';
+  conversionStep.append(convGroup);
+  const moneyStep = document.createElement('div');
+  moneyStep.className = 'step-panel';
+  moneyStep.append(checkGroup, lossGroup);
 
   // --- 2. RESULT CARD (Screenshot & Repost Ready) ---
   const resultCard = document.createElement('div');
@@ -532,13 +555,7 @@ export function renderRevenueRiskTool(
   saveBtn.id = 'rr-save-btn';
   saveBtn.textContent = 'Сохранить «До» для сравнения';
 
-  const handoffBtn = document.createElement('button');
-  handoffBtn.type = 'button';
-  handoffBtn.className = 'action-btn action-btn--primary';
-  handoffBtn.id = 'rr-handoff-btn';
-  handoffBtn.textContent = meta.nextToolCta;
-
-  actions.append(copyBtn, saveBtn, handoffBtn);
+  actions.append(copyBtn, saveBtn);
 
   const toastEl = document.createElement('p');
   toastEl.className = 'status-toast';
@@ -594,7 +611,7 @@ export function renderRevenueRiskTool(
 
   trackingCard.append(trackingTitle, trackingList);
 
-  panel.append(inputCard, resultCard, howDetails, trackingCard);
+  panel.append(inputCard);
   container.appendChild(panel);
 
   function getActiveConversionRaw(): string {
@@ -688,6 +705,7 @@ export function renderRevenueRiskTool(
     setFieldError(convInput, convError, validation.errors.conversionPercent);
     setFieldError(lossInput, lossError, validation.errors.lossFactorPercent);
     setFieldError(checkInput, checkError, validation.errors.avgCheck);
+    lastErrors = validation.errors;
 
     const calcResult = calculateRevenueRisk({
       leadsPerMonth: validation.errors.leadsPerMonth ? 0 : Number(leadsRaw),
@@ -745,27 +763,8 @@ export function renderRevenueRiskTool(
       diffBox.hidden = true;
     }
 
-    // Save full inputs and calculation results into ToolBridge for other tools
-    const bridgeSnapshot = bridge.saveRevenueRiskResult({
-      inputs: {
-        leadsPerMonth: normalizedInput.leadsPerMonth,
-        lateSharePercent: normalizedInput.lateSharePercent,
-        conversionPercent: normalizedInput.conversionPercent,
-        avgCheck: normalizedInput.avgCheck,
-        lossFactor: normalizedInput.lossFactor,
-        mode,
-        ...(mode === 'preset' ? { presetId: selectedPresetId } : {}),
-      },
-      results: {
-        lateLeads: calcResult.lateLeads,
-        revenueAtRiskMax: calcResult.revenueAtRiskMax,
-        recoverableRevenue: calcResult.recoverableRevenue,
-        revenueAtRiskPerYear: calcResult.revenueAtRiskPerYear,
-        costPerMissedDialog: calcResult.costPerMissedDialog,
-      },
-    });
-
-    return { calcResult, bridgeSnapshot };
+    refreshSteps();
+    return { calcResult, validation };
   }
 
   // Event listeners
@@ -887,8 +886,47 @@ export function renderRevenueRiskTool(
     );
   });
 
-  handoffBtn.addEventListener('click', () => {
-    const { calcResult, bridgeSnapshot } = recalculateAndRender();
+  function persistRevenueDraft(step: number): void {
+    dossier.update((current) => ({
+      ...current,
+      revenueDraft: {
+        step,
+        leadsPerMonth: leadsRaw,
+        lateSharePercent: lateShareRaw,
+        conversionPercent: customConversionRaw,
+        avgCheck: avgCheckRaw,
+        lossFactorPercent: lossFactorRaw,
+        mode,
+        presetId: mode === 'preset' ? selectedPresetId : null,
+      },
+    }));
+  }
+
+  function finishRevenue(): void {
+    const { calcResult, validation } = recalculateAndRender();
+    if (!validation.isValid) return;
+    const bridgeSnapshot = bridge.saveRevenueRiskResult({
+      inputs: {
+        leadsPerMonth: calcResult.normalizedInput.leadsPerMonth,
+        lateSharePercent: calcResult.normalizedInput.lateSharePercent,
+        conversionPercent: calcResult.normalizedInput.conversionPercent,
+        avgCheck: calcResult.normalizedInput.avgCheck,
+        lossFactor: calcResult.normalizedInput.lossFactor,
+        mode,
+        ...(mode === 'preset' ? { presetId: selectedPresetId } : {}),
+      },
+      results: {
+        lateLeads: calcResult.lateLeads,
+        revenueAtRiskMax: calcResult.revenueAtRiskMax,
+        recoverableRevenue: calcResult.recoverableRevenue,
+        revenueAtRiskPerYear: calcResult.revenueAtRiskPerYear,
+        costPerMissedDialog: calcResult.costPerMissedDialog,
+      },
+    });
+    dossier.update((current) => ({
+      ...current,
+      revenue: bridgeSnapshot,
+    }));
     bridge.send({
       fromTool: 'revenue-risk',
       toTool: meta.nextToolId,
@@ -902,7 +940,24 @@ export function renderRevenueRiskTool(
     });
     window.location.hash = meta.nextToolId;
     onNavigateTool(meta.nextToolId);
+  }
+
+  let refreshSteps = (): void => {};
+  const wizard = createWizard({
+    toolId: 'revenue-risk',
+    initialStep: openedStep,
+    panels: [leadStep, lateStep, conversionStep, moneyStep],
+    extras: [resultCard, howDetails, trackingCard],
+    isStepValid: (step) => isRevenueStepValid(step, lastErrors),
+    finishLabel: meta.nextToolCta,
+    onStep: (step) => {
+      onWizardStep(step);
+      persistRevenueDraft(step);
+    },
+    onFinish: finishRevenue,
   });
+  refreshSteps = () => wizard.refresh();
+  inputCard.append(wizard.progress, leadStep, lateStep, conversionStep, moneyStep, resultCard, howDetails, trackingCard, wizard.nav);
 
   // Initial render
   syncConversionFieldWithMode();
