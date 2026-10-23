@@ -214,6 +214,7 @@ body {
 .field-label {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 2px;
   font-size: 0.9375rem;
   font-weight: 700;
@@ -222,7 +223,9 @@ body {
 
 .field-label__text {
   min-width: 0;
+  max-width: calc(100% - 52px);
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .field-unit {
@@ -354,6 +357,12 @@ body {
   justify-content: center;
   gap: 6px;
   text-align: center;
+}
+
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .action-btn--primary {
