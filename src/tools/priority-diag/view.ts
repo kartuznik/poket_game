@@ -1,7 +1,9 @@
 import { createFieldHeading } from '../../components/field-heading';
 import { appendPriorContext } from '../../components/prior-context';
 import { releaseHelpTipsWithin } from '../../components/tooltip';
+import { createWizard } from '../../components/wizard';
 import { copyTextToClipboard } from '../../lib/clipboard';
+import { resolveInitialStep } from '../../lib/wizard';
 import type { PriorityProcessId, PriorityScoreInput } from '../../lib/types';
 import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
@@ -50,19 +52,20 @@ export function renderPriorityDiagTool(
   ctx: Omit<ToolStubRenderContext, 'meta'>,
 ): void {
   const meta = TOOLS_CATALOG['priority-diag'];
-  const { bridge, store, onNavigateTool } = ctx;
+  const { bridge, store, dossier, onNavigateTool, onWizardStep, initialStep } = ctx;
   bridge.consume('priority-diag');
   const saved = bridge.getPriorityResult();
-  const scores: Record<PriorityProcessId, PriorityScoreInput> = saved
-    ? {
-        inquiries: saved.inputs.inquiries,
-        answers: saved.inputs.answers,
-        booking: saved.inputs.booking,
-        payment: saved.inputs.payment,
-        reminders: saved.inputs.reminders,
-        reports: saved.inputs.reports,
-      }
-    : defaultPriorityInputs();
+  const draft = dossier.read().priorityDraft;
+  const sourceScores = draft?.scores ?? saved?.inputs ?? defaultPriorityInputs();
+  const scores: Record<PriorityProcessId, PriorityScoreInput> = {
+    inquiries: { ...sourceScores.inquiries },
+    answers: { ...sourceScores.answers },
+    booking: { ...sourceScores.booking },
+    payment: { ...sourceScores.payment },
+    reminders: { ...sourceScores.reminders },
+    reports: { ...sourceScores.reports },
+  };
+  const openedStep = resolveInitialStep(6, initialStep, draft?.step ?? null);
 
   releaseHelpTipsWithin(container);
   container.innerHTML = '';
@@ -77,7 +80,7 @@ export function renderPriorityDiagTool(
   header.className = 'tool-card__header';
   const badge = document.createElement('span');
   badge.className = 'tool-card__badge';
-  badge.textContent = meta.badge;
+  badge.hidden = true;
   const title = document.createElement('h2');
   title.className = 'tool-card__title';
   title.id = 'tool-heading-priority-diag';
@@ -97,6 +100,7 @@ export function renderPriorityDiagTool(
     'priority-diag',
   );
 
+  const processPanels: HTMLElement[] = [];
   const hint = document.createElement('p');
   hint.className = 'field-hint';
   hint.textContent = 'Оцените каждый процесс от 1 до 5. Единица — почти не болит, пятёрка — болит сильно.';
@@ -150,7 +154,10 @@ export function renderPriorityDiagTool(
       );
       card.append(group);
     }
-    inputCard.append(card);
+    const stepPanel = document.createElement('div');
+    stepPanel.className = 'step-panel';
+    stepPanel.append(card);
+    processPanels.push(stepPanel);
   }
 
   const resultCard = document.createElement('div');
@@ -179,15 +186,11 @@ export function renderPriorityDiagTool(
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
   saveBtn.textContent = 'Сохранить «До» для сравнения';
-  const handoffBtn = document.createElement('button');
-  handoffBtn.type = 'button';
-  handoffBtn.className = 'action-btn action-btn--primary';
-  handoffBtn.textContent = meta.nextToolCta;
   const earlyReportBtn = document.createElement('button');
   earlyReportBtn.type = 'button';
   earlyReportBtn.className = 'early-report-link';
   earlyReportBtn.textContent = 'или посмотреть итоги сейчас';
-  actions.append(copyBtn, saveBtn, handoffBtn, earlyReportBtn);
+  actions.append(copyBtn, saveBtn);
 
   const toast = document.createElement('p');
   toast.className = 'status-toast';
@@ -206,7 +209,7 @@ export function renderPriorityDiagTool(
   how.append(howSummary, howBody);
 
   resultCard.append(eyebrow, valueEl, noteEl, list, diffBox, actions, toast, how);
-  panel.append(inputCard, resultCard);
+  panel.append(inputCard);
   container.append(panel);
 
   let latest: PriorityResult | null = null;
@@ -228,28 +231,6 @@ export function renderPriorityDiagTool(
       list.append(row);
     }
 
-    bridge.savePriorityResult({
-      inputs: {
-        inquiries: scores.inquiries,
-        answers: scores.answers,
-        booking: scores.booking,
-        payment: scores.payment,
-        reminders: scores.reminders,
-        reports: scores.reports,
-      },
-      results: {
-        topProcessId: result.top.id,
-        topTitle: result.top.title,
-        topScore: result.top.score,
-        tied: result.tied,
-        ranking: result.ranked.map((item) => ({
-          id: item.id,
-          title: item.title,
-          score: item.score,
-        })),
-      },
-    });
-
     const stored = store.load('priority-diag');
     if (stored) {
       diffBox.hidden = false;
@@ -257,6 +238,7 @@ export function renderPriorityDiagTool(
     } else {
       diffBox.hidden = true;
     }
+    refreshSteps();
   }
 
   copyBtn.addEventListener('click', async () => {
@@ -281,11 +263,69 @@ export function renderPriorityDiagTool(
     toast.textContent = `Сохранено «До»: ${latest.top.title}.`;
   });
 
-  handoffBtn.addEventListener('click', () => {
+  function persistPriorityDraft(step: number): void {
+    dossier.update((current) => ({
+      ...current,
+      priorityDraft: {
+        step,
+        scores: {
+          inquiries: { ...scores.inquiries },
+          answers: { ...scores.answers },
+          booking: { ...scores.booking },
+          payment: { ...scores.payment },
+          reminders: { ...scores.reminders },
+          reports: { ...scores.reports },
+        },
+      },
+    }));
+  }
+
+  function finishPriority(): void {
     recalculate();
+    if (!latest) return;
+    const snapshot = bridge.savePriorityResult({
+      inputs: {
+        inquiries: scores.inquiries,
+        answers: scores.answers,
+        booking: scores.booking,
+        payment: scores.payment,
+        reminders: scores.reminders,
+        reports: scores.reports,
+      },
+      results: {
+        topProcessId: latest.top.id,
+        topTitle: latest.top.title,
+        topScore: latest.top.score,
+        tied: latest.tied,
+        ranking: latest.ranked.map((item) => ({
+          id: item.id,
+          title: item.title,
+          score: item.score,
+        })),
+      },
+    });
+    dossier.update((current) => ({ ...current, priority: snapshot }));
     window.location.hash = meta.nextToolId;
     onNavigateTool(meta.nextToolId);
+  }
+
+  let refreshSteps = (): void => {};
+  const wizard = createWizard({
+    toolId: 'priority-diag',
+    initialStep: openedStep,
+    panels: processPanels,
+    extras: [resultCard],
+    isStepValid: () => true,
+    finishLabel: meta.nextToolCta,
+    onStep: (step) => {
+      onWizardStep(step);
+      persistPriorityDraft(step);
+    },
+    onFinish: finishPriority,
   });
+  refreshSteps = () => wizard.refresh();
+  inputCard.append(wizard.progress, ...processPanels, resultCard, wizard.nav, earlyReportBtn);
+
   earlyReportBtn.addEventListener('click', () => {
     recalculate();
     window.location.hash = 'final-report';

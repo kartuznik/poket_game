@@ -1,7 +1,9 @@
 import { createFieldHeading } from '../../components/field-heading';
 import { appendPriorContext } from '../../components/prior-context';
 import { bindHelpTipHover, releaseHelpTipsWithin } from '../../components/tooltip';
+import { createWizard } from '../../components/wizard';
 import { copyTextToClipboard } from '../../lib/clipboard';
+import { resolveInitialStep } from '../../lib/wizard';
 import type { ReadinessItemId, ReadinessStatus } from '../../lib/types';
 import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
@@ -42,12 +44,14 @@ export function renderReadinessCheckTool(
   ctx: Omit<ToolStubRenderContext, 'meta'>,
 ): void {
   const meta = TOOLS_CATALOG['readiness-check'];
-  const { bridge, store, onNavigateTool } = ctx;
+  const { bridge, store, dossier, onNavigateTool, onWizardStep, initialStep } = ctx;
   bridge.consume('readiness-check');
   const saved = bridge.getReadinessResult();
-  const answers: Record<ReadinessItemId, ReadinessStatus> = saved
-    ? { ...saved.inputs }
-    : defaultReadinessAnswers();
+  const draft = dossier.read().readinessDraft;
+  const answers: Record<ReadinessItemId, ReadinessStatus> = {
+    ...(draft?.answers ?? saved?.inputs ?? defaultReadinessAnswers()),
+  };
+  const openedStep = resolveInitialStep(3, initialStep, draft?.step ?? null);
 
   releaseHelpTipsWithin(container);
   container.innerHTML = '';
@@ -62,7 +66,7 @@ export function renderReadinessCheckTool(
   header.className = 'tool-card__header';
   const badge = document.createElement('span');
   badge.className = 'tool-card__badge';
-  badge.textContent = meta.badge;
+  badge.hidden = true;
   const title = document.createElement('h2');
   title.className = 'tool-card__title';
   title.id = 'tool-heading-readiness-check';
@@ -82,14 +86,19 @@ export function renderReadinessCheckTool(
     'readiness-check',
   );
 
-  let lastGroup = '';
+  const groupPanels = new Map<string, HTMLElement>();
+  const readinessPanels: HTMLElement[] = [];
   for (const item of READINESS_ITEMS) {
-    if (item.group !== lastGroup) {
-      lastGroup = item.group;
+    let groupPanel = groupPanels.get(item.group);
+    if (!groupPanel) {
+      groupPanel = document.createElement('div');
+      groupPanel.className = 'step-panel';
       const groupLabel = document.createElement('h3');
       groupLabel.className = 'check-group';
       groupLabel.textContent = item.group;
-      inputCard.append(groupLabel);
+      groupPanel.append(groupLabel);
+      groupPanels.set(item.group, groupPanel);
+      readinessPanels.push(groupPanel);
     }
 
     const block = document.createElement('div');
@@ -119,7 +128,7 @@ export function renderReadinessCheckTool(
     const heading = createFieldHeading(scale.id, item.title, '', item.help, () => scale);
     bindHelpTipHover(heading.tip, heading.row);
     block.append(heading.row, scale);
-    inputCard.append(block);
+    groupPanel.append(block);
   }
 
   const resultCard = document.createElement('div');
@@ -151,11 +160,7 @@ export function renderReadinessCheckTool(
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
   saveBtn.textContent = 'Сохранить «До» для сравнения';
-  const handoffBtn = document.createElement('button');
-  handoffBtn.type = 'button';
-  handoffBtn.className = 'action-btn action-btn--primary';
-  handoffBtn.textContent = meta.nextToolCta;
-  actions.append(copyBtn, saveBtn, handoffBtn);
+  actions.append(copyBtn, saveBtn);
   const toast = document.createElement('p');
   toast.className = 'status-toast';
   toast.setAttribute('role', 'status');
@@ -185,7 +190,7 @@ export function renderReadinessCheckTool(
   how.append(howSummary, howBody);
 
   resultCard.append(eyebrow, valueEl, noteEl, gapsTitle, gaps, diffBox, actions, toast, how);
-  panel.append(inputCard, resultCard);
+  panel.append(inputCard);
   container.append(panel);
 
   let latest: ReadinessResult | null = null;
@@ -211,16 +216,6 @@ export function renderReadinessCheckTool(
       }
     }
 
-    bridge.saveReadinessResult({
-      inputs: { ...answers },
-      results: {
-        score: result.score,
-        band: result.band,
-        bandLabel: result.bandLabel,
-        unclosedTitles: result.unclosed.map((item) => item.title),
-      },
-    });
-
     const stored = store.load('readiness-check');
     if (stored) {
       diffBox.hidden = false;
@@ -228,6 +223,7 @@ export function renderReadinessCheckTool(
     } else {
       diffBox.hidden = true;
     }
+    refreshSteps();
   }
 
   copyBtn.addEventListener('click', async () => {
@@ -252,11 +248,46 @@ export function renderReadinessCheckTool(
     toast.textContent = `Сохранено «До»: ${latest.bandLabel}.`;
   });
 
-  handoffBtn.addEventListener('click', () => {
+  function persistReadinessDraft(step: number): void {
+    dossier.update((current) => ({
+      ...current,
+      readinessDraft: { step, answers: { ...answers } },
+    }));
+  }
+
+  function finishReadiness(): void {
     recalculate();
+    if (!latest) return;
+    const snapshot = bridge.saveReadinessResult({
+      inputs: { ...answers },
+      results: {
+        score: latest.score,
+        band: latest.band,
+        bandLabel: latest.bandLabel,
+        unclosedTitles: latest.unclosed.map((item) => item.title),
+      },
+    });
+    dossier.update((current) => ({ ...current, readiness: snapshot }));
     window.location.hash = meta.nextToolId;
     onNavigateTool(meta.nextToolId);
+  }
+
+  let refreshSteps = (): void => {};
+  const wizard = createWizard({
+    toolId: 'readiness-check',
+    initialStep: openedStep,
+    panels: readinessPanels,
+    extras: [resultCard],
+    isStepValid: () => true,
+    finishLabel: meta.nextToolCta,
+    onStep: (step) => {
+      onWizardStep(step);
+      persistReadinessDraft(step);
+    },
+    onFinish: finishReadiness,
   });
+  refreshSteps = () => wizard.refresh();
+  inputCard.append(wizard.progress, ...readinessPanels, resultCard, wizard.nav);
 
   recalculate();
 }
