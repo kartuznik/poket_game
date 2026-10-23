@@ -116,6 +116,12 @@ export function placeTooltip(args: {
       ? args.avoid.bottom
       : args.anchor.bottom;
   let top = belowEdge + margin;
+  const sorted = [...obstacles].sort((a, b) => a.top - b.top);
+  for (const obstacle of sorted) {
+    if (boxesOverlap(top, left, width, height, obstacle)) {
+      top = obstacle.bottom + margin;
+    }
+  }
   const maxTop = args.viewport.height - margin - height;
   if (top > maxTop) top = Math.max(margin, maxTop);
   return { top, left, placement: 'below' };
