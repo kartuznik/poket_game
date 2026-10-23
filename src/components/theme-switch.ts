@@ -157,9 +157,10 @@ function createIcon(preference: ColorSchemePreference): SVGSVGElement {
   }
 
   if (preference === 'dark') {
+    // Crescent ink centroid sits on the viewBox center, same as the sun.
     svg.append(
       svgEl('path', {
-        d: 'M15.2 3.6a7.4 7.4 0 1 0 5.6 12.4A6.2 6.2 0 0 1 15.2 3.6z',
+        d: 'M20.08 4.6A8.6 8.6 0 1 0 20.08 19.4A7.4 7.4 0 0 1 20.08 4.6Z',
         fill: 'currentColor',
         stroke: 'none',
       }),
@@ -167,9 +168,11 @@ function createIcon(preference: ColorSchemePreference): SVGSVGElement {
     return svg;
   }
 
+  // Half-disk is heavier on the left, so the whole mark is shifted right
+  // until its ink centroid lands on the viewBox center.
   svg.append(
     svgEl('circle', {
-      cx: '12',
+      cx: '13.29',
       cy: '12',
       r: '8',
       fill: 'none',
@@ -177,7 +180,7 @@ function createIcon(preference: ColorSchemePreference): SVGSVGElement {
       'stroke-width': '2',
     }),
     svgEl('path', {
-      d: 'M12 4a8 8 0 0 0 0 16z',
+      d: 'M13.29 4a8 8 0 0 0 0 16z',
       fill: 'currentColor',
       stroke: 'none',
     }),
