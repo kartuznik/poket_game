@@ -75,8 +75,13 @@ export function parseRouteState(
 }
 
 /**
- * Builds a clean URL hash for sharing a direct link to a specific tool.
+ * The summary must rebuild on every arrival, including a repeat visit,
+ * because the other tools may have written new snapshots since the last paint.
  */
+export function shouldRedrawOnRoute(activeToolId: ToolId, nextToolId: ToolId): boolean {
+  return nextToolId === 'final-report' || nextToolId !== activeToolId;
+}
+
 export function buildRouteHash(
   toolId: ToolId,
   themeId: DesignThemeId = DEFAULT_THEME_ID,

@@ -1,22 +1,28 @@
 import { releaseHelpTipsWithin } from '../../components/tooltip';
+import type { ToolBridge } from '../../lib/bridge';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { downloadTextFile } from '../../lib/csv';
 import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
 import { REPORT_CSV_FILENAME, buildEfimReport, buildReportCsv } from './export';
-import { EMPTY_REPORT_TEXT, buildFinalSummary } from './summary';
+import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from './summary';
+
+/** Reads the bridge at call time so a repeat visit cannot reuse an older paint. */
+export function collectReportSources(bridge: ToolBridge): ReportSources {
+  return {
+    revenue: bridge.getRevenueRiskResult(),
+    routine: bridge.getRoutineResult(),
+    priority: bridge.getPriorityResult(),
+    readiness: bridge.getReadinessResult(),
+  };
+}
 
 export function renderFinalReportTool(
   container: HTMLElement,
   ctx: Omit<ToolStubRenderContext, 'meta'>,
 ): void {
   const meta = TOOLS_CATALOG['final-report'];
-  const sources = {
-    revenue: ctx.bridge.getRevenueRiskResult(),
-    routine: ctx.bridge.getRoutineResult(),
-    priority: ctx.bridge.getPriorityResult(),
-    readiness: ctx.bridge.getReadinessResult(),
-  };
+  const sources = collectReportSources(ctx.bridge);
   const summary = buildFinalSummary(sources);
 
   releaseHelpTipsWithin(container);
@@ -99,14 +105,15 @@ export function renderFinalReportTool(
   toast.hidden = true;
 
   copyBtn.addEventListener('click', async () => {
-    const copied = await copyTextToClipboard(buildEfimReport(sources), 'отчёт для Ефима');
+    const fresh = collectReportSources(ctx.bridge);
+    const copied = await copyTextToClipboard(buildEfimReport(fresh), 'отчёт для Ефима');
     toast.hidden = false;
     toast.textContent = copied.ok ? 'Скопирован отчёт для Ефима' : copied.message;
   });
   csvBtn.addEventListener('click', () => {
     downloadTextFile(
       REPORT_CSV_FILENAME,
-      buildReportCsv(sources),
+      buildReportCsv(collectReportSources(ctx.bridge)),
       'text/csv;charset=utf-8',
     );
     toast.hidden = false;

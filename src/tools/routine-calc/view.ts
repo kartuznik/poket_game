@@ -407,6 +407,13 @@ export function renderRoutineCalcTool(
     shareInput.value = shareSlider.value;
     onManualEdit();
   });
+  for (const field of [operationsInput, minutesInput, rateInput, shareInput, shareSlider]) {
+    field.addEventListener('change', () => {
+      if (field === shareSlider) shareInput.value = shareSlider.value;
+      if (field === shareInput) shareSlider.value = shareInput.value;
+      recalculate();
+    });
+  }
 
   copyBtn.addEventListener('click', async () => {
     if (!latest) {

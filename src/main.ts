@@ -1,6 +1,11 @@
 import './styles/main.css';
 import { createToolNav } from './components/nav-tabs';
-import { buildRouteHash, defaultToolBridge, parseRouteState } from './lib/bridge';
+import {
+  buildRouteHash,
+  defaultToolBridge,
+  parseRouteState,
+  shouldRedrawOnRoute,
+} from './lib/bridge';
 import { defaultScenarioStore } from './lib/storage';
 import type { ToolId } from './lib/types';
 import { renderFinalReportTool } from './tools/final-report/view';
@@ -104,7 +109,7 @@ function mountApp(root: HTMLElement): void {
 
   window.addEventListener('hashchange', () => {
     const next = parseRouteState(window.location.search, window.location.hash);
-    if (next.toolId !== activeToolId) {
+    if (shouldRedrawOnRoute(activeToolId, next.toolId)) {
       navigateToTool(next.toolId, false);
     }
   });

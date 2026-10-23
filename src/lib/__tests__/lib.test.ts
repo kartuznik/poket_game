@@ -5,6 +5,7 @@ import {
   ToolBridge,
   buildRouteHash,
   parseRouteState,
+  shouldRedrawOnRoute,
 } from '../bridge';
 import { copyTextToClipboard } from '../clipboard';
 import {
@@ -234,6 +235,10 @@ describe('URL routing and cross-tool handoff bridge', () => {
     expect(buildRouteHash('priority-diag', 'playful')).toBe(
       '#priority-diag?theme=playful',
     );
+    expect(parseRouteState('', '#final-report').toolId).toBe('final-report');
+    expect(shouldRedrawOnRoute('revenue-risk', 'final-report')).toBe(true);
+    expect(shouldRedrawOnRoute('final-report', 'final-report')).toBe(true);
+    expect(shouldRedrawOnRoute('revenue-risk', 'revenue-risk')).toBe(false);
   });
 
   it('passes handoff payload between tools in memory and consumes once', () => {

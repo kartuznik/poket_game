@@ -832,6 +832,20 @@ export function renderRevenueRiskTool(
     recalculateAndRender();
   });
 
+  for (const field of [leadsInput, lateInput, lateSlider, lossInput, lossSlider, convInput, checkInput]) {
+    field.addEventListener('change', () => {
+      leadsRaw = leadsInput.value;
+      lateShareRaw = lateInput.value;
+      lossFactorRaw = lossInput.value;
+      if (mode === 'custom') {
+        customConversionRaw = convInput.value;
+        customLossFactorRaw = lossInput.value;
+      }
+      avgCheckRaw = checkInput.value;
+      recalculateAndRender();
+    });
+  }
+
   copyBtn.addEventListener('click', async () => {
     const { calcResult } = recalculateAndRender();
     const { normalizedInput } = calcResult;
