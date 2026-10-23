@@ -1,7 +1,9 @@
 import { createFieldHeading } from '../../components/field-heading';
 import { appendPriorContext } from '../../components/prior-context';
 import { createHelpTip, releaseHelpTipsWithin } from '../../components/tooltip';
+import { createWizard } from '../../components/wizard';
 import { copyTextToClipboard } from '../../lib/clipboard';
+import { isRoutineStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
   formatCountWithNoun,
   formatRubles,
@@ -16,6 +18,7 @@ import {
   calculateRoutine,
   getRoutinePresetById,
   validateRoutineDraft,
+  type RoutineFieldErrors,
   type RoutineResult,
 } from './calc';
 
@@ -62,20 +65,26 @@ export function renderRoutineCalcTool(
   ctx: Omit<ToolStubRenderContext, 'meta'>,
 ): void {
   const meta = TOOLS_CATALOG['routine-calc'];
-  const { bridge, store, onNavigateTool } = ctx;
+  const { bridge, store, dossier, onNavigateTool, onWizardStep, initialStep } = ctx;
   bridge.consume('routine-calc');
   const saved = bridge.getRoutineResult();
+  const draft = dossier.read().routineDraft;
 
-  let presetId: RoutinePresetId | null = saved?.inputs.presetId ?? ROUTINE_DEFAULTS.presetId;
-  let operationsRaw = String(saved?.inputs.operationsPerWeek ?? ROUTINE_DEFAULTS.operationsPerWeek);
-  let minutesRaw = String(saved?.inputs.minutesPerOperation ?? ROUTINE_DEFAULTS.minutesPerOperation);
-  let shareRaw = String(
+  let presetId: RoutinePresetId | null = draft
+    ? draft.presetId
+    : (saved?.inputs.presetId ?? ROUTINE_DEFAULTS.presetId);
+  let operationsRaw = draft?.operationsPerWeek ?? String(saved?.inputs.operationsPerWeek ?? ROUTINE_DEFAULTS.operationsPerWeek);
+  let minutesRaw = draft?.minutesPerOperation ?? String(saved?.inputs.minutesPerOperation ?? ROUTINE_DEFAULTS.minutesPerOperation);
+  let shareRaw = draft?.automationSharePercent ?? String(
     saved?.inputs.automationSharePercent ?? ROUTINE_DEFAULTS.automationSharePercent,
   );
-  let rateRaw =
-    saved?.inputs.hourlyRate === null || saved?.inputs.hourlyRate === undefined
+  let rateRaw = draft
+    ? draft.hourlyRate
+    : saved?.inputs.hourlyRate === null || saved?.inputs.hourlyRate === undefined
       ? ''
       : String(saved.inputs.hourlyRate);
+  let lastErrors: RoutineFieldErrors = {};
+  const openedStep = resolveInitialStep(4, initialStep, draft?.step ?? null);
 
   releaseHelpTipsWithin(container);
   container.innerHTML = '';
@@ -91,7 +100,7 @@ export function renderRoutineCalcTool(
   header.className = 'tool-card__header';
   const badge = document.createElement('span');
   badge.className = 'tool-card__badge';
-  badge.textContent = meta.badge;
+  badge.hidden = true;
   const title = document.createElement('h2');
   title.className = 'tool-card__title';
   title.id = 'tool-heading-routine-calc';
@@ -250,7 +259,18 @@ export function renderRoutineCalcTool(
     shareError,
   );
 
-  inputCard.append(presetsGrid, operationsGroup, minutesGroup, rateGroup, shareGroup);
+  const presetStep = document.createElement('div');
+  presetStep.className = 'step-panel';
+  presetStep.append(presetsGrid);
+  const operationsStep = document.createElement('div');
+  operationsStep.className = 'step-panel';
+  operationsStep.append(operationsGroup);
+  const minutesStep = document.createElement('div');
+  minutesStep.className = 'step-panel';
+  minutesStep.append(minutesGroup);
+  const shareStep = document.createElement('div');
+  shareStep.className = 'step-panel';
+  shareStep.append(shareGroup, rateGroup);
 
   const resultCard = document.createElement('div');
   resultCard.className = 'result-card';
@@ -278,15 +298,11 @@ export function renderRoutineCalcTool(
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
   saveBtn.textContent = 'Сохранить «До» для сравнения';
-  const handoffBtn = document.createElement('button');
-  handoffBtn.type = 'button';
-  handoffBtn.className = 'action-btn action-btn--primary';
-  handoffBtn.textContent = meta.nextToolCta;
   const earlyReportBtn = document.createElement('button');
   earlyReportBtn.type = 'button';
   earlyReportBtn.className = 'early-report-link';
   earlyReportBtn.textContent = 'или посмотреть итоги сейчас';
-  actions.append(copyBtn, saveBtn, handoffBtn, earlyReportBtn);
+  actions.append(copyBtn, saveBtn);
 
   const toast = document.createElement('p');
   toast.className = 'status-toast';
@@ -303,7 +319,7 @@ export function renderRoutineCalcTool(
   how.append(howSummary, howBody);
 
   resultCard.append(eyebrow, valueEl, noteEl, metrics, diffBox, actions, toast, how);
-  panel.append(inputCard, resultCard);
+  panel.append(inputCard);
   container.append(panel);
 
   let latest: RoutineResult | null = null;
@@ -342,6 +358,7 @@ export function renderRoutineCalcTool(
     showError(minutesError, minutesInput, validated.errors.minutesPerOperation);
     showError(rateError, rateInput, validated.errors.hourlyRate);
     showError(shareError, shareInput, validated.errors.automationSharePercent);
+    lastErrors = validated.errors;
 
     if (!validated.isValid || !validated.input) {
       latest = null;
@@ -349,6 +366,7 @@ export function renderRoutineCalcTool(
       noteEl.textContent = 'Расчёт появится, когда числа будут в допустимых границах.';
       metrics.replaceChildren();
       howBody.replaceChildren();
+      refreshSteps();
       return;
     }
 
@@ -387,17 +405,6 @@ export function renderRoutineCalcTool(
     }
     howBody.replaceChildren(formula);
 
-    bridge.saveRoutineResult({
-      inputs: {
-        presetId,
-        operationsPerWeek: validated.input.operationsPerWeek,
-        minutesPerOperation: validated.input.minutesPerOperation,
-        hourlyRate: validated.input.hourlyRate,
-        automationSharePercent: validated.input.automationSharePercent,
-      },
-      results: result,
-    });
-
     const stored = store.load('routine-calc');
     if (stored) {
       const comparison = store.compare('routine-calc', result.hoursPerMonth, true);
@@ -408,6 +415,7 @@ export function renderRoutineCalcTool(
     } else {
       diffBox.hidden = true;
     }
+    refreshSteps();
   }
 
   function onManualEdit(): void {
@@ -467,11 +475,70 @@ export function renderRoutineCalcTool(
       : `Сохранено на время сессии («До»: ${formatted}).`;
   });
 
-  handoffBtn.addEventListener('click', () => {
+  function persistRoutineDraft(step: number): void {
+    dossier.update((current) => ({
+      ...current,
+      routineDraft: {
+        step,
+        presetId,
+        operationsPerWeek: operationsRaw,
+        minutesPerOperation: minutesRaw,
+        automationSharePercent: shareRaw,
+        hourlyRate: rateRaw,
+      },
+    }));
+  }
+
+  function finishRoutine(): void {
     recalculate();
+    const validated = validateRoutineDraft({
+      operationsPerWeekRaw: operationsRaw,
+      minutesPerOperationRaw: minutesRaw,
+      automationSharePercentRaw: shareRaw,
+      hourlyRateRaw: rateRaw,
+    });
+    if (!validated.isValid || !validated.input || !latest) return;
+    const snapshot = bridge.saveRoutineResult({
+      inputs: {
+        presetId,
+        operationsPerWeek: validated.input.operationsPerWeek,
+        minutesPerOperation: validated.input.minutesPerOperation,
+        hourlyRate: validated.input.hourlyRate,
+        automationSharePercent: validated.input.automationSharePercent,
+      },
+      results: latest,
+    });
+    dossier.update((current) => ({ ...current, routine: snapshot }));
     window.location.hash = meta.nextToolId;
     onNavigateTool(meta.nextToolId);
+  }
+
+  let refreshSteps = (): void => {};
+  const wizard = createWizard({
+    toolId: 'routine-calc',
+    initialStep: openedStep,
+    panels: [presetStep, operationsStep, minutesStep, shareStep],
+    extras: [resultCard],
+    isStepValid: (step) => isRoutineStepValid(step, lastErrors),
+    finishLabel: meta.nextToolCta,
+    onStep: (step) => {
+      onWizardStep(step);
+      persistRoutineDraft(step);
+    },
+    onFinish: finishRoutine,
   });
+  refreshSteps = () => wizard.refresh();
+  inputCard.append(
+    wizard.progress,
+    presetStep,
+    operationsStep,
+    minutesStep,
+    shareStep,
+    resultCard,
+    wizard.nav,
+    earlyReportBtn,
+  );
+
   earlyReportBtn.addEventListener('click', () => {
     recalculate();
     window.location.hash = 'final-report';
