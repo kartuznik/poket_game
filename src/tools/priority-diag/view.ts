@@ -171,7 +171,7 @@ export function renderPriorityDiagTool(
   actions.className = 'result-card__actions';
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
-  copyBtn.className = 'action-btn action-btn--primary';
+  copyBtn.className = 'action-btn action-btn--secondary';
   copyBtn.textContent = 'Скопировать резюме для Threads';
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
@@ -179,7 +179,7 @@ export function renderPriorityDiagTool(
   saveBtn.textContent = 'Сохранить «До» для сравнения';
   const handoffBtn = document.createElement('button');
   handoffBtn.type = 'button';
-  handoffBtn.className = 'action-btn action-btn--handoff';
+  handoffBtn.className = 'action-btn action-btn--primary';
   handoffBtn.textContent = meta.nextToolCta;
   actions.append(copyBtn, saveBtn, handoffBtn);
 

@@ -179,7 +179,7 @@ export function renderToolStub(
 
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
-  copyBtn.className = 'action-btn action-btn--primary';
+  copyBtn.className = 'action-btn action-btn--secondary';
   copyBtn.textContent = 'Скопировать результат';
 
   const saveBtn = document.createElement('button');
@@ -189,7 +189,7 @@ export function renderToolStub(
 
   const handoffBtn = document.createElement('button');
   handoffBtn.type = 'button';
-  handoffBtn.className = 'action-btn action-btn--handoff';
+  handoffBtn.className = 'action-btn action-btn--primary';
   handoffBtn.textContent = meta.nextToolCta;
 
   actions.append(copyBtn, saveBtn, handoffBtn);

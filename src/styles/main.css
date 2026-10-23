@@ -366,13 +366,18 @@ body {
 }
 
 .action-btn--primary {
+  grid-column: 1 / -1;
+  min-height: 52px;
+  padding: 14px 16px;
+  font-size: 1rem;
   background: var(--accent-primary);
   color: var(--text-on-accent);
 }
 
 .action-btn--secondary {
-  background: var(--bg-surface);
-  color: var(--text-primary);
+  background: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
 }
 
 .action-btn--handoff {

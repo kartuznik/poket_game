@@ -522,7 +522,7 @@ export function renderRevenueRiskTool(
 
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
-  copyBtn.className = 'action-btn action-btn--primary';
+  copyBtn.className = 'action-btn action-btn--secondary';
   copyBtn.id = 'rr-copy-btn';
   copyBtn.textContent = 'Скопировать резюме для Threads';
 
@@ -534,7 +534,7 @@ export function renderRevenueRiskTool(
 
   const handoffBtn = document.createElement('button');
   handoffBtn.type = 'button';
-  handoffBtn.className = 'action-btn action-btn--handoff';
+  handoffBtn.className = 'action-btn action-btn--primary';
   handoffBtn.id = 'rr-handoff-btn';
   handoffBtn.textContent = meta.nextToolCta;
 
