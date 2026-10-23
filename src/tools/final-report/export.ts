@@ -1,4 +1,5 @@
 import { formatCsvNumber, toCsv } from '../../lib/csv';
+import type { ContactDraft } from '../../lib/dossier';
 import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import { READINESS_ITEMS } from '../readiness-check/calc';
 import { getRoutinePresetById } from '../routine-calc/calc';
@@ -30,7 +31,10 @@ function row(section: string, label: string, value: string): readonly [string, s
 }
 
 /** Every entered value and result, ready for Excel and Google Sheets. */
-export function buildReportCsv(sources: ReportSources): string {
+export function buildReportCsv(
+  sources: ReportSources,
+  contacts?: ContactDraft | null,
+): string {
   const rows: (readonly string[])[] = [['Раздел', 'Показатель', 'Значение']];
   const { revenue, routine, priority, readiness } = sources;
 
@@ -107,6 +111,17 @@ export function buildReportCsv(sources: ReportSources): string {
       const label = status === 'yes' ? 'Да' : status === 'partial' ? 'Частично' : 'Нет';
       rows.push(row('Готовность', item.title, label));
     }
+  }
+
+  if (contacts) {
+    const name = contacts.name.trim();
+    const telegram = contacts.telegram.trim();
+    const phone = contacts.phone.trim();
+    const business = contacts.business.trim();
+    if (name) rows.push(row('Контакты', 'Имя', name));
+    if (telegram) rows.push(row('Контакты', 'Telegram', telegram));
+    if (phone) rows.push(row('Контакты', 'Телефон', phone));
+    if (business) rows.push(row('Контакты', 'Бизнес', business));
   }
 
   return toCsv(rows);

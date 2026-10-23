@@ -1,7 +1,9 @@
 import { copyTextToClipboard } from '../../lib/clipboard';
+import { downloadTextFile } from '../../lib/csv';
 import { validateContacts } from '../../lib/dossier';
 import { JOURNEY_LENGTH, globalProgressPercent } from '../../lib/wizard';
 import { TOOLS_CATALOG } from '../catalog';
+import { REPORT_CSV_FILENAME, buildReportCsv } from '../final-report/export';
 import { collectReportSources } from '../final-report/view';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from '../final-report/summary';
 import type { ToolStubRenderContext } from '../stub-factory';
@@ -185,6 +187,7 @@ export function renderAuditFinish(
     contacts.phone = phoneInput.value;
     contacts.business = businessInput.value;
     dossier.update((current) => ({ ...current, contacts: { ...contacts } }));
+    refreshCsvState();
     if (attempted) showErrors();
   }
 
@@ -213,6 +216,7 @@ export function renderAuditFinish(
   }
 
   const form = document.createElement('form');
+  form.className = 'contact-form';
   form.noValidate = true;
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -228,23 +232,49 @@ export function renderAuditFinish(
   );
 
   const actions = document.createElement('div');
-  actions.className = 'result-card__actions';
+  actions.className = 'audit-actions';
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
   copyBtn.className = 'action-btn action-btn--primary';
   copyBtn.textContent = 'Скопировать отчёт для Ефима';
+  const csvBtn = document.createElement('button');
+  csvBtn.type = 'button';
+  csvBtn.className = 'action-btn action-btn--secondary';
+  csvBtn.textContent = 'Скачать таблицу (.csv)';
   const threads = document.createElement('a');
-  threads.className = 'action-btn action-btn--secondary';
+  threads.className = 'action-btn action-btn--quiet';
   threads.href = THREADS_PROFILE_URL;
   threads.target = '_blank';
   threads.rel = 'noopener noreferrer';
   threads.textContent = 'Открыть Threads';
-  actions.append(copyBtn, threads);
+  actions.append(copyBtn, csvBtn, threads);
+
+  function refreshCsvState(): void {
+    const sources = collectReportSources(bridge);
+    const hasTools = buildFinalSummary(sources).hasData;
+    const hasContacts = [contacts.name, contacts.telegram, contacts.phone, contacts.business].some(
+      (value) => value.trim().length > 0,
+    );
+    csvBtn.disabled = !hasTools && !hasContacts;
+  }
+  refreshCsvState();
 
   const toast = document.createElement('p');
   toast.className = 'status-toast';
   toast.setAttribute('role', 'status');
   toast.hidden = true;
+
+  csvBtn.addEventListener('click', () => {
+    remember();
+    if (csvBtn.disabled) return;
+    downloadTextFile(
+      REPORT_CSV_FILENAME,
+      buildReportCsv(collectReportSources(bridge), contacts),
+      'text/csv;charset=utf-8',
+    );
+    toast.hidden = false;
+    toast.textContent = 'Таблица скачана: business-game-report.csv.';
+  });
 
   copyBtn.addEventListener('click', async () => {
     remember();
