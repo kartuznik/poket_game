@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-sans);
@@ -37,4 +38,37 @@
   --shadow-card: 3px 3px 0 #16181d;
   --shadow-result: 4px 4px 0 #16181d;
   --shadow-button: 2px 2px 0 #16181d;
+  --shadow-inset: inset 0 1px 2px rgba(22, 24, 29, 0.06);
+}
+
+/* Dark gray surfaces, muted cobalt, light contour. Offset stays, but softer. */
+:root[data-color-scheme="dark"] {
+  color-scheme: dark;
+
+  --bg-page: #1b1d22;
+  --bg-surface: #262932;
+  --bg-subtle: #20232a;
+  --bg-result: #222838;
+  --bg-badge: #2c3348;
+  --bg-warning: #3a3324;
+  --bg-danger: #3a2628;
+
+  --text-primary: #f3f4f6;
+  --text-secondary: #c8cdd6;
+  --text-muted: #aeb4c0;
+  --text-accent: #b7c9f7;
+  --text-on-accent: #f7f8fb;
+  --text-danger: #f3b4b4;
+
+  --accent-primary: #3f62c4;
+  --accent-hover: #3556b0;
+  --focus-ring: #b7c9f7;
+
+  --border-color: #8f96a4;
+  --border-strong: #aeb4c0;
+
+  --shadow-card: 3px 3px 0 rgba(8, 9, 12, 0.35);
+  --shadow-result: 4px 4px 0 rgba(8, 9, 12, 0.35);
+  --shadow-button: 2px 2px 0 rgba(8, 9, 12, 0.3);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }

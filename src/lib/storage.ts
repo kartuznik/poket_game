@@ -14,6 +14,95 @@ export interface KeyValueStorage {
 
 const STORAGE_PREFIX = 'poket_game:scenario:v1:';
 
+export const COLOR_SCHEME_STORAGE_KEY = 'poket_game:color-scheme:v1';
+
+export type ColorSchemePreference = 'system' | 'light' | 'dark';
+
+export interface ColorSchemeSaveResult {
+  readonly preference: ColorSchemePreference;
+  readonly persisted: boolean;
+}
+
+export interface ColorSchemeStore {
+  read(): ColorSchemePreference;
+  write(preference: ColorSchemePreference): ColorSchemeSaveResult;
+}
+
+export function isColorSchemePreference(
+  value: string | null | undefined,
+): value is ColorSchemePreference {
+  return value === 'system' || value === 'light' || value === 'dark';
+}
+
+/**
+ * Resolves localStorage, or null when it is missing or throws
+ * (private mode, disabled storage, restricted WebView).
+ */
+export function resolveKeyValueStorage(
+  storageProvider?: () => KeyValueStorage | null,
+): KeyValueStorage | null {
+  if (storageProvider) {
+    try {
+      return storageProvider();
+    } catch {
+      return null;
+    }
+  }
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+/**
+ * Remembers a manual color-scheme choice. Falls back to an in-memory value
+ * for the current session when localStorage rejects the write.
+ * Absence of a stored value means "follow the system".
+ */
+export function createColorSchemeStore(
+  storageProvider?: () => KeyValueStorage | null,
+): ColorSchemeStore {
+  let memory: ColorSchemePreference | null = null;
+
+  return {
+    read(): ColorSchemePreference {
+      const storage = resolveKeyValueStorage(storageProvider);
+      if (storage) {
+        try {
+          const raw = storage.getItem(COLOR_SCHEME_STORAGE_KEY);
+          if (isColorSchemePreference(raw)) {
+            memory = raw;
+            return raw;
+          }
+        } catch {
+          // SecurityError — use the session memory below
+        }
+      }
+      return memory ?? 'system';
+    },
+
+    write(preference): ColorSchemeSaveResult {
+      memory = preference;
+      const storage = resolveKeyValueStorage(storageProvider);
+      if (!storage) {
+        return { preference, persisted: false };
+      }
+      try {
+        storage.setItem(COLOR_SCHEME_STORAGE_KEY, preference);
+        return { preference, persisted: true };
+      } catch {
+        return { preference, persisted: false };
+      }
+    },
+  };
+}
+
+export const defaultColorSchemeStore = createColorSchemeStore();
+
 function isValidSnapshot(data: unknown): data is ScenarioSnapshot {
   if (typeof data !== 'object' || data === null) {
     return false;
@@ -59,23 +148,8 @@ export function createScenarioStore(
 ): ScenarioStore {
   const memoryFallback = new Map<string, ScenarioSnapshot>();
 
-  const resolveStorage = (): KeyValueStorage | null => {
-    if (storageProvider) {
-      try {
-        return storageProvider();
-      } catch {
-        return null;
-      }
-    }
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage;
-      }
-    } catch {
-      return null;
-    }
-    return null;
-  };
+  const resolveStorage = (): KeyValueStorage | null =>
+    resolveKeyValueStorage(storageProvider);
 
   const keyFor = (toolId: ToolId): string => `${STORAGE_PREFIX}${toolId}`;
 

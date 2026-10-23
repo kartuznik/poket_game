@@ -3,6 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        var key = "poket_game:color-scheme:v1";
+        var preference = "system";
+        try {
+          var stored = localStorage.getItem(key);
+          if (stored === "light" || stored === "dark" || stored === "system") {
+            preference = stored;
+          }
+        } catch (error) {}
+        var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var dark = preference === "dark" || (preference !== "light" && systemDark);
+        document.documentElement.setAttribute(
+          "data-color-scheme",
+          dark ? "dark" : "light",
+        );
+      })();
+    </script>
+    <!-- Mirrors --bg-page so the canvas matches the scheme before the stylesheet arrives. -->
+    <style>
+      html {
+        background-color: #f6f6f3;
+        color-scheme: light;
+      }
+      html[data-color-scheme="dark"] {
+        background-color: #1b1d22;
+        color-scheme: dark;
+      }
+    </style>
     <title>Игра в бизнес — расчёт потерь и автоматизации (@_kartuzzz)</title>
     <meta
       name="description"

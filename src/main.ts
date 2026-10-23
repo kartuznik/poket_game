@@ -6,7 +6,12 @@ import {
   parseRouteState,
   shouldRedrawOnRoute,
 } from './lib/bridge';
-import { defaultScenarioStore } from './lib/storage';
+import { createColorSchemeController } from './lib/color-scheme';
+import {
+  defaultColorSchemeStore,
+  defaultScenarioStore,
+  isColorSchemePreference,
+} from './lib/storage';
 import type { ToolId } from './lib/types';
 import { renderFinalReportTool } from './tools/final-report/view';
 import { renderPriorityDiagTool } from './tools/priority-diag/view';
@@ -14,7 +19,19 @@ import { renderReadinessCheckTool } from './tools/readiness-check/view';
 import { renderRevenueRiskTool } from './tools/revenue-risk/view';
 import { renderRoutineCalcTool } from './tools/routine-calc/view';
 
+const THEME_OPTIONS = [
+  { value: 'system', label: 'Системная' },
+  { value: 'light', label: 'Светлая' },
+  { value: 'dark', label: 'Тёмная' },
+] as const;
+
 function mountApp(root: HTMLElement): void {
+  const colorScheme = createColorSchemeController({
+    store: defaultColorSchemeStore,
+    target: document.documentElement,
+    media: window.matchMedia('(prefers-color-scheme: dark)'),
+  });
+
   const initialRoute = parseRouteState(
     window.location.search,
     window.location.hash,
@@ -42,7 +59,27 @@ function mountApp(root: HTMLElement): void {
   authorBadge.rel = 'noopener noreferrer';
   authorBadge.textContent = '@_kartuzzz · Threads';
 
-  headerTop.append(title, authorBadge);
+  const themeSelect = document.createElement('select');
+  themeSelect.className = 'theme-switch';
+  themeSelect.setAttribute('aria-label', 'Тема оформления');
+  for (const option of THEME_OPTIONS) {
+    const item = document.createElement('option');
+    item.value = option.value;
+    item.textContent = option.label;
+    themeSelect.append(item);
+  }
+  themeSelect.value = colorScheme.getPreference();
+  themeSelect.addEventListener('change', () => {
+    if (isColorSchemePreference(themeSelect.value)) {
+      colorScheme.setPreference(themeSelect.value);
+    }
+  });
+
+  const headerTools = document.createElement('div');
+  headerTools.className = 'brand-header__tools';
+  headerTools.append(themeSelect, authorBadge);
+
+  headerTop.append(title, headerTools);
 
   const pitch = document.createElement('p');
   pitch.className = 'brand-header__pitch';
