@@ -6,8 +6,8 @@ import {
   parseRouteState,
 } from './lib/bridge';
 import { defaultScenarioStore } from './lib/storage';
-import type { DesignThemeId, ToolId } from './lib/types';
-import { THEME_DIRECTIONS, TOOLS_CATALOG } from './tools/catalog';
+import type { ToolId } from './lib/types';
+import { TOOLS_CATALOG } from './tools/catalog';
 import { renderPriorityDiagTool } from './tools/priority-diag/view';
 import { renderReadinessCheckTool } from './tools/readiness-check/view';
 import { renderRevenueRiskTool } from './tools/revenue-risk/view';
@@ -19,43 +19,11 @@ function mountApp(root: HTMLElement): void {
     window.location.hash,
   );
   let activeToolId: ToolId = initialRoute.toolId;
-  let activeThemeId: DesignThemeId = initialRoute.themeId;
 
   const shell = document.createElement('div');
   shell.className = 'app-shell';
 
-  // 1. Design direction switcher (Stage 1 owner preview bar)
-  const themeBar = document.createElement('aside');
-  themeBar.className = 'theme-switcher';
-  themeBar.setAttribute('aria-label', 'Выбор визуального направления (Этап 1)');
-
-  const themeLabel = document.createElement('div');
-  themeLabel.className = 'theme-switcher__label';
-  themeLabel.textContent = 'Дизайн-направление каркаса (выбор владельца):';
-
-  const themeBtnsWrap = document.createElement('div');
-  themeBtnsWrap.className = 'theme-switcher__buttons';
-
-  const themeButtons = new Map<DesignThemeId, HTMLButtonElement>();
-
-  for (const dir of THEME_DIRECTIONS) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'theme-btn';
-    btn.textContent = dir.shortName;
-    btn.title = dir.description;
-    btn.dataset.themeChoice = dir.id;
-    btn.setAttribute('aria-pressed', String(dir.id === activeThemeId));
-    btn.addEventListener('click', () => {
-      setTheme(dir.id, true);
-    });
-    themeButtons.set(dir.id, btn);
-    themeBtnsWrap.appendChild(btn);
-  }
-
-  themeBar.append(themeLabel, themeBtnsWrap);
-
-  // 2. Main Brand Header
+  // 1. Main Brand Header
   const header = document.createElement('header');
   header.className = 'brand-header';
 
@@ -82,7 +50,7 @@ function mountApp(root: HTMLElement): void {
 
   header.append(headerTop, pitch);
 
-  // 3. 4-Tool Navigation
+  // 2. 4-Tool Navigation
   const nav = document.createElement('nav');
   nav.className = 'tool-nav';
   nav.setAttribute('role', 'tablist');
@@ -131,30 +99,19 @@ function mountApp(root: HTMLElement): void {
     nav.appendChild(tab);
   });
 
-  // 4. Active Tool Stage
+  // 3. Active Tool Stage
   const mainStage = document.createElement('main');
   mainStage.id = 'tool-stage';
   mainStage.setAttribute('role', 'tabpanel');
 
-  shell.append(themeBar, header, nav, mainStage);
+  shell.append(header, nav, mainStage);
   root.innerHTML = '';
   root.appendChild(shell);
 
   function syncUrlHash(): void {
-    const targetHash = buildRouteHash(activeToolId, activeThemeId);
+    const targetHash = buildRouteHash(activeToolId);
     if (window.location.hash !== targetHash) {
       window.history.replaceState(null, '', targetHash);
-    }
-  }
-
-  function setTheme(themeId: DesignThemeId, updateUrl: boolean): void {
-    activeThemeId = themeId;
-    document.documentElement.setAttribute('data-theme', themeId);
-    for (const [id, btn] of themeButtons.entries()) {
-      btn.setAttribute('aria-pressed', String(id === themeId));
-    }
-    if (updateUrl) {
-      syncUrlHash();
     }
   }
 
@@ -195,16 +152,12 @@ function mountApp(root: HTMLElement): void {
 
   window.addEventListener('hashchange', () => {
     const next = parseRouteState(window.location.search, window.location.hash);
-    if (next.themeId !== activeThemeId) {
-      setTheme(next.themeId, false);
-    }
     if (next.toolId !== activeToolId) {
       navigateToTool(next.toolId, false);
     }
   });
 
   // Initial render
-  setTheme(activeThemeId, false);
   navigateToTool(activeToolId, true);
 }
 

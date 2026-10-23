@@ -1,28 +1,4 @@
-import type { DesignThemeId, ToolId, ToolMeta } from '../lib/types';
-
-export interface ThemeDirectionMeta {
-  readonly id: DesignThemeId;
-  readonly shortName: string;
-  readonly description: string;
-}
-
-export const THEME_DIRECTIONS: readonly ThemeDirectionMeta[] = [
-  {
-    id: 'minimal',
-    shortName: '1. Минимализм',
-    description: 'Светлый инженерный каркас с одним индиго-акцентом и табличными цифрами.',
-  },
-  {
-    id: 'playful',
-    shortName: '2. Карточный',
-    description: 'Тактильные карточки с контрастным контуром и дружелюбными акцентами.',
-  },
-  {
-    id: 'editorial',
-    shortName: '3. Типографика',
-    description: 'Газетная антиква в заголовках, бумажный фон и строгие линейки.',
-  },
-] as const;
+import type { ToolId, ToolMeta } from '../lib/types';
 
 export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
   'revenue-risk': {
@@ -31,10 +7,10 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     title: 'Калькулятор выручки под риском',
     subtitle:
       'Оценка потенциальных потерь от поздних или пропущенных ответов на обращения клиентов.',
-    badge: 'Инструмент 01 · Каркас Этапа 1',
+    badge: 'Инструмент 01 · Калькулятор потерь',
     inputLabel: 'Обращений клиентов в месяц',
     inputUnit: 'заявок/мес',
-    defaultInput: 120,
+    defaultInput: 100,
     minInput: 0,
     maxInput: 50000,
     stepInput: 10,
@@ -47,7 +23,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     title: 'Калькулятор времени на рутине',
     subtitle:
       'Подсчёт часов, которые уходят на однотипные ответы, приём заказов, записи и перенос в таблицы.',
-    badge: 'Инструмент 02 · Каркас Этапа 1',
+    badge: 'Инструмент 02 · Каркас',
     inputLabel: 'Минут ручной рутины в неделю',
     inputUnit: 'мин/нед',
     defaultInput: 240,
@@ -63,7 +39,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     title: 'Диагностика «Что автоматизировать первым»',
     subtitle:
       'Ранжирование шести процессов (обращения, ответы, запись, оплата, напоминания, отчёты) по частоте и цене ошибки.',
-    badge: 'Инструмент 03 · Каркас Этапа 1',
+    badge: 'Инструмент 03 · Каркас',
     inputLabel: 'Оценка критичности узкого места',
     inputUnit: 'из 100%',
     defaultInput: 75,
@@ -79,7 +55,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     title: 'Чек-лист готовности к автоматизации',
     subtitle:
       'Проверка девяти базовых условий перед внедрением бота: от «рано» до «можно начинать».',
-    badge: 'Инструмент 04 · Каркас Этапа 1',
+    badge: 'Инструмент 04 · Каркас',
     inputLabel: 'Готовых пунктов из чек-листа',
     inputUnit: 'из 9 пунктов',
     defaultInput: 6,
