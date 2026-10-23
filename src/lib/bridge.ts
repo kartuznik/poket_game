@@ -1,5 +1,6 @@
 import type {
   DesignThemeId,
+  PriorityBridgeSnapshot,
   RevenueRiskBridgeSnapshot,
   RoutineBridgeSnapshot,
   ToolHandoffPayload,
@@ -93,6 +94,7 @@ export class ToolBridge {
   private handoffByTarget = new Map<ToolId, ToolHandoffPayload>();
   private latestRevenueRiskSnapshot: RevenueRiskBridgeSnapshot | null = null;
   private latestRoutineSnapshot: RoutineBridgeSnapshot | null = null;
+  private latestPrioritySnapshot: PriorityBridgeSnapshot | null = null;
 
   public send(
     payload: Omit<ToolHandoffPayload, 'timestamp'> & { timestamp?: number },
@@ -150,6 +152,25 @@ export class ToolBridge {
     return this.latestRoutineSnapshot;
   }
 
+  public savePriorityResult(
+    snapshot: Omit<PriorityBridgeSnapshot, 'toolId' | 'updatedAt'> & {
+      updatedAt?: number;
+    },
+  ): PriorityBridgeSnapshot {
+    const record: PriorityBridgeSnapshot = {
+      toolId: 'priority-diag',
+      inputs: snapshot.inputs,
+      results: snapshot.results,
+      updatedAt: snapshot.updatedAt ?? Date.now(),
+    };
+    this.latestPrioritySnapshot = record;
+    return record;
+  }
+
+  public getPriorityResult(): PriorityBridgeSnapshot | null {
+    return this.latestPrioritySnapshot;
+  }
+
   public peek(targetTool: ToolId): ToolHandoffPayload | null {
     return this.handoffByTarget.get(targetTool) ?? null;
   }
@@ -164,6 +185,7 @@ export class ToolBridge {
     this.handoffByTarget.clear();
     this.latestRevenueRiskSnapshot = null;
     this.latestRoutineSnapshot = null;
+    this.latestPrioritySnapshot = null;
   }
 }
 

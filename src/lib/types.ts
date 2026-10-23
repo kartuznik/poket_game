@@ -64,6 +64,37 @@ export interface RoutineBridgeSnapshot {
   readonly updatedAt: number;
 }
 
+export type PriorityProcessId =
+  | 'inquiries'
+  | 'answers'
+  | 'booking'
+  | 'payment'
+  | 'reminders'
+  | 'reports';
+
+export interface PriorityScoreInput {
+  readonly frequency: number;
+  readonly time: number;
+  readonly errorCost: number;
+}
+
+export interface PriorityBridgeSnapshot {
+  readonly toolId: 'priority-diag';
+  readonly inputs: Readonly<Record<PriorityProcessId, PriorityScoreInput>>;
+  readonly results: {
+    readonly topProcessId: PriorityProcessId;
+    readonly topTitle: string;
+    readonly topScore: number;
+    readonly tied: boolean;
+    readonly ranking: readonly {
+      readonly id: PriorityProcessId;
+      readonly title: string;
+      readonly score: number;
+    }[];
+  };
+  readonly updatedAt: number;
+}
+
 export interface ToolHandoffPayload {
   readonly fromTool: ToolId;
   readonly toTool: ToolId;
