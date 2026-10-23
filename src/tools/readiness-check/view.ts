@@ -234,14 +234,9 @@ export function renderReadinessCheckTool(
   });
 
   handoffBtn.addEventListener('click', () => {
-    bridge.send({
-      fromTool: 'readiness-check',
-      toTool: meta.nextToolId,
-      label: latest ? latest.bandLabel : 'чек-лист',
-      suggestedValue: latest ? latest.score : 0,
-      note: latest ? `${formatScore(latest.score)} из 9` : 'пункты ещё не отмечены',
-    });
-    onNavigateTool(meta.nextToolId);
+    recalculate();
+    window.location.hash = 'final-report';
+    onNavigateTool('final-report');
   });
 
   recalculate();

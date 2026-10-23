@@ -446,14 +446,9 @@ export function renderRoutineCalcTool(
   });
 
   handoffBtn.addEventListener('click', () => {
-    bridge.send({
-      fromTool: 'routine-calc',
-      toTool: meta.nextToolId,
-      label: latest ? formatWorkHours(latest.hoursPerMonth) : 'рутина',
-      suggestedValue: latest ? Math.max(1, Math.round(latest.hoursPerMonth)) : 10,
-      note: 'часы рутины в месяц',
-    });
-    onNavigateTool(meta.nextToolId);
+    recalculate();
+    window.location.hash = 'final-report';
+    onNavigateTool('final-report');
   });
 
   recalculate();

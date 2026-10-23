@@ -15,7 +15,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     maxInput: 50000,
     stepInput: 10,
     nextToolId: 'routine-calc',
-    nextToolCta: 'Передать объём потока в Калькулятор рутины →',
+    nextToolCta: 'Перейти к Калькулятору рутины →',
   },
   'routine-calc': {
     id: 'routine-calc',
@@ -30,8 +30,8 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     minInput: 0,
     maxInput: 10000,
     stepInput: 15,
-    nextToolId: 'priority-diag',
-    nextToolCta: 'Перейти к диагностике приоритетов →',
+    nextToolId: 'final-report',
+    nextToolCta: 'Посмотреть итоговый отчёт',
   },
   'priority-diag': {
     id: 'priority-diag',
@@ -46,8 +46,8 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     minInput: 0,
     maxInput: 100,
     stepInput: 5,
-    nextToolId: 'revenue-risk',
-    nextToolCta: 'Посчитать выручку под риском для процесса №1 →',
+    nextToolId: 'final-report',
+    nextToolCta: 'Посмотреть итоговый отчёт',
   },
   'readiness-check': {
     id: 'readiness-check',
@@ -62,8 +62,8 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     minInput: 0,
     maxInput: 9,
     stepInput: 1,
-    nextToolId: 'priority-diag',
-    nextToolCta: 'Выбрать первый процесс в Диагностике →',
+    nextToolId: 'final-report',
+    nextToolCta: 'Посмотреть итоговый отчёт',
   },
   'final-report': {
     id: 'final-report',

@@ -180,7 +180,7 @@ export function renderPriorityDiagTool(
   const handoffBtn = document.createElement('button');
   handoffBtn.type = 'button';
   handoffBtn.className = 'action-btn action-btn--handoff';
-  handoffBtn.textContent = 'Посчитать рутину для процесса №1 →';
+  handoffBtn.textContent = meta.nextToolCta;
   actions.append(copyBtn, saveBtn, handoffBtn);
 
   const toast = document.createElement('p');
@@ -276,15 +276,9 @@ export function renderPriorityDiagTool(
   });
 
   handoffBtn.addEventListener('click', () => {
-    if (!latest) return;
-    bridge.send({
-      fromTool: 'priority-diag',
-      toTool: 'routine-calc',
-      label: latest.top.title,
-      suggestedValue: Math.max(1, Math.round(latest.top.score * 10)),
-      note: 'это процесс, который стоит автоматизировать первым',
-    });
-    onNavigateTool('routine-calc');
+    recalculate();
+    window.location.hash = 'final-report';
+    onNavigateTool('final-report');
   });
 
   recalculate();
