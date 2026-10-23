@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_LOSS_FACTOR,
+  DEFAULT_LOSS_FACTOR_PERCENT,
   MARKET_AVERAGE_BADGE_DISCLAIMER,
   NICHE_PRESETS,
   REVENUE_RISK_DEFAULTS,
   calculateRevenueRisk,
   getNichePresetById,
+  lossFactorFromPercent,
   validateRevenueRiskDraft,
 } from './calc';
 
@@ -90,6 +92,39 @@ describe('calculateRevenueRisk — core formulas & normal scenarios', () => {
     expect(resB2B.revenueAtRiskMax).toBeCloseTo(80000, 5);
     expect(resB2B.recoverableRevenue).toBeCloseTo(50400, 5);
     expect(resB2B.costPerMissedDialog).toBeCloseTo(4000, 5);
+  });
+
+  it('uses the visible 30% default as a 70% recovery and lets a preset value be overridden', () => {
+    expect(DEFAULT_LOSS_FACTOR_PERCENT).toBe(30);
+    expect(lossFactorFromPercent(30)).toBeCloseTo(0.3, 5);
+    expect(lossFactorFromPercent(Number.NaN)).toBeCloseTo(DEFAULT_LOSS_FACTOR, 5);
+
+    const baseline = calculateRevenueRisk({
+      leadsPerMonth: 100,
+      lateSharePercent: 35,
+      conversionPercent: 20,
+      avgCheck: 4500,
+      lossFactor: lossFactorFromPercent(DEFAULT_LOSS_FACTOR_PERCENT),
+    });
+    expect(baseline.revenueAtRiskMax).toBeCloseTo(31500, 5);
+    expect(baseline.recoverableRevenue).toBeCloseTo(31500 * 0.7, 5);
+
+    expect(lossFactorFromPercent(50)).toBeCloseTo(0.5, 5);
+    expect(lossFactorFromPercent(42)).toBeCloseTo(0.42, 5);
+    expect(lossFactorFromPercent(37)).toBeCloseTo(0.37, 5);
+
+    const overridden = calculateRevenueRisk({
+      leadsPerMonth: 100,
+      lateSharePercent: 35,
+      conversionPercent: 30,
+      avgCheck: 4500,
+      lossFactor: lossFactorFromPercent(10),
+    });
+    expect(overridden.normalizedInput.lossFactor).toBeCloseTo(0.1, 5);
+    expect(overridden.recoverableRevenue).toBeCloseTo(
+      overridden.revenueAtRiskMax * 0.9,
+      5,
+    );
   });
 
   it('uses DEFAULT_LOSS_FACTOR when lossFactor is omitted', () => {
@@ -187,6 +222,7 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
         lateSharePercentRaw: '35',
         conversionPercentRaw: '20',
         avgCheckRaw: '4500',
+        lossFactorPercentRaw: '30',
         mode: 'custom',
       }).isValid,
     ).toBe(true);
@@ -197,6 +233,7 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
         lateSharePercentRaw: '0',
         conversionPercentRaw: '30',
         avgCheckRaw: '0',
+        lossFactorPercentRaw: '50',
         mode: 'preset',
       }).isValid,
     ).toBe(true);
@@ -208,6 +245,7 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
       lateSharePercentRaw: '',
       conversionPercentRaw: '',
       avgCheckRaw: '',
+      lossFactorPercentRaw: '',
       mode: 'custom',
     });
     expect(emptyRes.isValid).toBe(false);
@@ -215,12 +253,14 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
     expect(emptyRes.errors.lateSharePercent).toBeDefined();
     expect(emptyRes.errors.conversionPercent).toBeDefined();
     expect(emptyRes.errors.avgCheck).toBeDefined();
+    expect(emptyRes.errors.lossFactorPercent).toBeDefined();
 
     const outOfBounds = validateRevenueRiskDraft({
       leadsPerMonthRaw: '-5',
       lateSharePercentRaw: '120',
       conversionPercentRaw: '98',
       avgCheckRaw: '-100',
+      lossFactorPercentRaw: '140',
       mode: 'custom',
     });
     expect(outOfBounds.isValid).toBe(false);
@@ -228,5 +268,6 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
     expect(outOfBounds.errors.lateSharePercent).toContain('от 0 до 100%');
     expect(outOfBounds.errors.conversionPercent).toContain('от 1% до 95%');
     expect(outOfBounds.errors.avgCheck).toContain('отрицательным');
+    expect(outOfBounds.errors.lossFactorPercent).toContain('от 0 до 100%');
   });
 });

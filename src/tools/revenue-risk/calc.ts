@@ -25,6 +25,7 @@ export const MARKET_AVERAGE_RESULT_DISCLAIMER =
   'Расчёт опирается на усреднённую оценку по рынку РФ (не ваши фактические данные). Даже при погрешности ±30% порядок потерь показывает зону риска';
 
 export const DEFAULT_LOSS_FACTOR = 0.3;
+export const DEFAULT_LOSS_FACTOR_PERCENT = 30;
 
 export const REVENUE_RISK_DEFAULTS = {
   leadsPerMonth: 100,
@@ -101,6 +102,7 @@ export interface RevenueRiskRawDraft {
   readonly lateSharePercentRaw: string;
   readonly conversionPercentRaw: string;
   readonly avgCheckRaw: string;
+  readonly lossFactorPercentRaw: string;
   readonly mode: ConversionInputMode;
 }
 
@@ -109,6 +111,7 @@ export interface RevenueRiskFieldErrors {
   readonly lateSharePercent?: string;
   readonly conversionPercent?: string;
   readonly avgCheck?: string;
+  readonly lossFactorPercent?: string;
 }
 
 export interface RevenueRiskValidationResult {
@@ -118,6 +121,15 @@ export interface RevenueRiskValidationResult {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * Converts the visible 0–100% loss slider into the 0–1 factor used by the formula.
+ * Out-of-range and non-finite values collapse to the 30% default.
+ */
+export function lossFactorFromPercent(percent: number): number {
+  const safe = normalizeFiniteNumber(percent, DEFAULT_LOSS_FACTOR_PERCENT);
+  return clamp(safe, 0, 100) / 100;
 }
 
 function parseStrictFinite(raw: string): number | null {
@@ -141,6 +153,7 @@ export function validateRevenueRiskDraft(
     lateSharePercent?: string;
     conversionPercent?: string;
     avgCheck?: string;
+    lossFactorPercent?: string;
   } = {};
 
   const leads = parseStrictFinite(draft.leadsPerMonthRaw);
@@ -174,11 +187,19 @@ export function validateRevenueRiskDraft(
     errors.avgCheck = 'Средний чек не может быть отрицательным.';
   }
 
+  const lossPercent = parseStrictFinite(draft.lossFactorPercentRaw);
+  if (lossPercent === null) {
+    errors.lossFactorPercent = 'Укажите долю потерь при позднем ответе (0–100%).';
+  } else if (lossPercent < 0 || lossPercent > 100) {
+    errors.lossFactorPercent = 'Доля потерь должна быть в диапазоне от 0 до 100%.';
+  }
+
   const isValid =
     !errors.leadsPerMonth &&
     !errors.lateSharePercent &&
     !errors.conversionPercent &&
-    !errors.avgCheck;
+    !errors.avgCheck &&
+    !errors.lossFactorPercent;
 
   return { isValid, errors };
 }

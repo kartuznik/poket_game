@@ -224,6 +224,13 @@ body {
   color: var(--text-muted);
 }
 
+.field-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
 .field-input-row {
   display: flex;
   align-items: center;
