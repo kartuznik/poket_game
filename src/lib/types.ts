@@ -2,7 +2,8 @@ export type ToolId =
   | 'revenue-risk'
   | 'routine-calc'
   | 'priority-diag'
-  | 'readiness-check';
+  | 'readiness-check'
+  | 'final-report';
 
 export type DesignThemeId = 'minimal' | 'playful' | 'editorial';
 

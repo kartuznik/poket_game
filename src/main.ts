@@ -1,13 +1,9 @@
 import './styles/main.css';
-import {
-  TOOL_IDS,
-  buildRouteHash,
-  defaultToolBridge,
-  parseRouteState,
-} from './lib/bridge';
+import { createToolNav } from './components/nav-tabs';
+import { buildRouteHash, defaultToolBridge, parseRouteState } from './lib/bridge';
 import { defaultScenarioStore } from './lib/storage';
 import type { ToolId } from './lib/types';
-import { TOOLS_CATALOG } from './tools/catalog';
+import { renderFinalReportTool } from './tools/final-report/view';
 import { renderPriorityDiagTool } from './tools/priority-diag/view';
 import { renderReadinessCheckTool } from './tools/readiness-check/view';
 import { renderRevenueRiskTool } from './tools/revenue-risk/view';
@@ -50,53 +46,8 @@ function mountApp(root: HTMLElement): void {
 
   header.append(headerTop, pitch);
 
-  // 2. 4-Tool Navigation
-  const nav = document.createElement('nav');
-  nav.className = 'tool-nav';
-  nav.setAttribute('role', 'tablist');
-  nav.setAttribute('aria-label', 'Инструменты расчёта');
-
-  const tabButtons = new Map<ToolId, HTMLButtonElement>();
-
-  TOOL_IDS.forEach((id, idx) => {
-    const meta = TOOLS_CATALOG[id];
-    const tab = document.createElement('button');
-    tab.type = 'button';
-    tab.className = 'tool-nav__tab';
-    tab.id = `tab-${id}`;
-    tab.setAttribute('role', 'tab');
-    tab.setAttribute('aria-selected', String(id === activeToolId));
-    tab.setAttribute('aria-controls', 'tool-stage');
-    tab.dataset.toolId = id;
-
-    const indexSpan = document.createElement('span');
-    indexSpan.className = 'tool-nav__tab-index';
-    indexSpan.textContent = `0${idx + 1}`;
-
-    const titleSpan = document.createElement('span');
-    titleSpan.className = 'tool-nav__tab-title';
-    titleSpan.textContent = meta.shortTitle;
-
-    tab.append(indexSpan, titleSpan);
-
-    tab.addEventListener('click', () => {
-      navigateToTool(id, true);
-    });
-
-    tab.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      e.preventDefault();
-      const delta = e.key === 'ArrowRight' ? 1 : -1;
-      const nextIndex = (idx + delta + TOOL_IDS.length) % TOOL_IDS.length;
-      const nextId = TOOL_IDS[nextIndex];
-      if (nextId) {
-        navigateToTool(nextId, true);
-        tabButtons.get(nextId)?.focus();
-      }
-    });
-
-    tabButtons.set(id, tab);
-    nav.appendChild(tab);
+  const nav = createToolNav(activeToolId, (id) => {
+    navigateToTool(id, true);
   });
 
   // 3. Active Tool Stage
@@ -104,7 +55,7 @@ function mountApp(root: HTMLElement): void {
   mainStage.id = 'tool-stage';
   mainStage.setAttribute('role', 'tabpanel');
 
-  shell.append(header, nav, mainStage);
+  shell.append(header, nav.element, mainStage);
   root.innerHTML = '';
   root.appendChild(shell);
 
@@ -136,14 +87,15 @@ function mountApp(root: HTMLElement): void {
       case 'readiness-check':
         renderReadinessCheckTool(mainStage, sharedCtx);
         break;
+      case 'final-report':
+        renderFinalReportTool(mainStage, sharedCtx);
+        break;
     }
   }
 
   function navigateToTool(toolId: ToolId, updateUrl: boolean): void {
     activeToolId = toolId;
-    for (const [id, btn] of tabButtons.entries()) {
-      btn.setAttribute('aria-selected', String(id === toolId));
-    }
+    nav.setActive(toolId);
     if (updateUrl) {
       syncUrlHash();
     }

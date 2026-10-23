@@ -91,11 +91,15 @@ body {
   color: var(--text-secondary);
 }
 
-/* 4-Tool Navigation */
+/* Tool navigation: two columns, the summary tab spans the last row */
 .tool-nav {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.tool-nav__tab:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .tool-nav__tab {
@@ -592,6 +596,26 @@ a:focus-visible {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--text-muted);
+}
+
+.report-lead {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.report-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-block__text {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .check-group {

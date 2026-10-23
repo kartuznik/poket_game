@@ -13,6 +13,7 @@ export const TOOL_IDS: readonly ToolId[] = [
   'routine-calc',
   'priority-diag',
   'readiness-check',
+  'final-report',
 ] as const;
 
 export const DESIGN_THEME_IDS: readonly DesignThemeId[] = [

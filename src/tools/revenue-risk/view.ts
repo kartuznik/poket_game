@@ -132,20 +132,36 @@ export function renderRevenueRiskTool(
   const meta = TOOLS_CATALOG['revenue-risk'];
   const { bridge, store, onNavigateTool } = ctx;
   const incomingHandoff = bridge.consume('revenue-risk');
+  const saved = bridge.getRevenueRiskResult();
+  const savedPreset = saved?.inputs.presetId;
+  const restoredPreset: NichePresetId =
+    savedPreset === 'beauty-local' ||
+    savedPreset === 'ecommerce' ||
+    savedPreset === 'experts-edu' ||
+    savedPreset === 'b2b-services'
+      ? savedPreset
+      : REVENUE_RISK_DEFAULTS.presetId;
 
-  let mode: ConversionInputMode = 'custom';
-  let selectedPresetId: NichePresetId = REVENUE_RISK_DEFAULTS.presetId;
+  let mode: ConversionInputMode = saved?.inputs.mode ?? 'custom';
+  let selectedPresetId: NichePresetId = restoredPreset;
 
   let leadsRaw = String(
-    incomingHandoff
-      ? Math.max(1, Math.round(incomingHandoff.suggestedValue))
-      : REVENUE_RISK_DEFAULTS.leadsPerMonth,
+    saved?.inputs.leadsPerMonth ??
+      (incomingHandoff
+        ? Math.max(1, Math.round(incomingHandoff.suggestedValue))
+        : REVENUE_RISK_DEFAULTS.leadsPerMonth),
   );
-  let lateShareRaw = String(REVENUE_RISK_DEFAULTS.lateSharePercent);
-  let customConversionRaw = String(REVENUE_RISK_DEFAULTS.conversionPercent);
-  let customLossFactorRaw = String(DEFAULT_LOSS_FACTOR_PERCENT);
+  let lateShareRaw = String(saved?.inputs.lateSharePercent ?? REVENUE_RISK_DEFAULTS.lateSharePercent);
+  let customConversionRaw = String(
+    saved && saved.inputs.mode === 'custom'
+      ? saved.inputs.conversionPercent
+      : REVENUE_RISK_DEFAULTS.conversionPercent,
+  );
+  let customLossFactorRaw = String(
+    saved ? Math.round(saved.inputs.lossFactor * 100) : DEFAULT_LOSS_FACTOR_PERCENT,
+  );
   let lossFactorRaw = customLossFactorRaw;
-  let avgCheckRaw = String(REVENUE_RISK_DEFAULTS.avgCheck);
+  let avgCheckRaw = String(saved?.inputs.avgCheck ?? REVENUE_RISK_DEFAULTS.avgCheck);
 
   releaseHelpTipsWithin(container);
   container.innerHTML = '';

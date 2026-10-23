@@ -67,6 +67,12 @@ export function formatStubPreview(toolId: ToolId, rawInput: number): {
           'Ориентир готовности к внедрению бота (9 критериев и вердикт — на Этапе 2).',
       };
     }
+    case 'final-report':
+      return {
+        primaryNumber: safe,
+        formattedDisplay: 'Сводка',
+        unitExplanation: 'Итог собирается из результатов инструментов.',
+      };
   }
 }
 
