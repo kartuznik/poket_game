@@ -13,6 +13,7 @@ import { defaultDossierStore, draftStepFor, hydrateBridge } from './lib/dossier'
 import { defaultColorSchemeStore, defaultScenarioStore } from './lib/storage';
 import type { ToolId } from './lib/types';
 import { resolveInitialStep, stepCountFor } from './lib/wizard';
+import { renderAuditFinish } from './tools/audit-finish/view';
 import { renderFinalReportTool } from './tools/final-report/view';
 import { renderPriorityDiagTool } from './tools/priority-diag/view';
 import { renderReadinessCheckTool } from './tools/readiness-check/view';
@@ -101,7 +102,10 @@ function mountApp(root: HTMLElement): void {
   }
 
   function renderActiveTool(): void {
-    mainStage.setAttribute('aria-labelledby', `tab-${activeToolId}`);
+    mainStage.setAttribute(
+      'aria-labelledby',
+      activeToolId === 'audit-finish' ? 'tool-heading-audit-finish' : `tab-${activeToolId}`,
+    );
     const sharedCtx = {
       bridge: defaultToolBridge,
       store: defaultScenarioStore,
@@ -129,6 +133,9 @@ function mountApp(root: HTMLElement): void {
         break;
       case 'final-report':
         renderFinalReportTool(mainStage, sharedCtx);
+        break;
+      case 'audit-finish':
+        renderAuditFinish(mainStage, sharedCtx);
         break;
     }
   }

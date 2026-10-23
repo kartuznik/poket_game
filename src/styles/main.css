@@ -473,6 +473,22 @@ body {
   box-shadow: var(--shadow-inset);
 }
 
+.field-textarea {
+  min-height: 96px;
+  resize: vertical;
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+
+.summary-block__edit {
+  margin-top: 8px;
+  width: 100%;
+}
+
+a.action-btn {
+  text-decoration: none;
+}
+
 .field-input--invalid {
   border-color: var(--text-danger);
   background: var(--bg-danger);

@@ -77,6 +77,12 @@ export function formatStubPreview(toolId: ToolId, rawInput: number): {
         formattedDisplay: 'Сводка',
         unitExplanation: 'Итог собирается из результатов инструментов.',
       };
+    case 'audit-finish':
+      return {
+        primaryNumber: safe,
+        formattedDisplay: 'Сводка',
+        unitExplanation: 'Финальный экран собирает подтверждённые результаты и контакты.',
+      };
   }
 }
 

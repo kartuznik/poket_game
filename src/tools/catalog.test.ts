@@ -6,7 +6,7 @@ describe('tool sequence', () => {
     expect(TOOLS_CATALOG['revenue-risk'].nextToolId).toBe('routine-calc');
     expect(TOOLS_CATALOG['routine-calc'].nextToolId).toBe('priority-diag');
     expect(TOOLS_CATALOG['priority-diag'].nextToolId).toBe('readiness-check');
-    expect(TOOLS_CATALOG['readiness-check'].nextToolId).toBe('final-report');
-    expect(TOOLS_CATALOG['readiness-check'].nextToolCta).toContain('итоговый отчёт');
+    expect(TOOLS_CATALOG['readiness-check'].nextToolId).toBe('audit-finish');
+    expect(TOOLS_CATALOG['readiness-check'].nextToolCta).toBe('Посмотреть сводку');
   });
 });

@@ -5,6 +5,7 @@ import type {
   RevenueRiskBridgeSnapshot,
   RoutineBridgeSnapshot,
 } from '../../lib/types';
+import { editStepFor, type JourneyToolId } from '../../lib/wizard';
 
 export const EMPTY_REPORT_TEXT =
   'Заполните хотя бы один инструмент, чтобы увидеть итоги.';
@@ -20,6 +21,8 @@ export interface SummaryBlock {
   readonly title: string;
   readonly text: string;
   readonly lines?: readonly string[];
+  readonly sourceToolId?: JourneyToolId;
+  readonly editStep?: number;
 }
 
 export interface FinalSummary {
@@ -62,6 +65,8 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
     blocks.push({
       title: 'Что первым',
       text: `${priority.results.topTitle}, балл ${String(priority.results.topScore).replace('.', ',')}.${tie}`,
+      sourceToolId: 'priority-diag',
+      editStep: editStepFor('priority-diag'),
     });
   }
   if (routine) {
@@ -73,12 +78,16 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
     blocks.push({
       title: 'Рутина',
       text: `На эту работу уходит ${formatWorkHours(routine.results.hoursPerMonth)} в месяц, ${formatCountWithNoun(workDays, ['рабочий день', 'рабочих дня', 'рабочих дней'])} в год. ${money}`,
+      sourceToolId: 'routine-calc',
+      editStep: editStepFor('routine-calc'),
     });
   }
   if (revenue) {
     blocks.push({
       title: 'Выручка под риском',
       text: `${formatRubles(revenue.results.revenueAtRiskMax)} в месяц. Если отвечать вовремя, можно удержать около ${formatRubles(revenue.results.recoverableRevenue)}.`,
+      sourceToolId: 'revenue-risk',
+      editStep: editStepFor('revenue-risk'),
     });
   }
   if (readiness) {
@@ -89,11 +98,15 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
         ? {
             title: 'Готовность',
             text: `${scoreText} Незакрытых пунктов нет.`,
+            sourceToolId: 'readiness-check',
+            editStep: editStepFor('readiness-check'),
           }
         : {
             title: 'Готовность',
             text: `${scoreText} Не закрыто:`,
             lines: open,
+            sourceToolId: 'readiness-check',
+            editStep: editStepFor('readiness-check'),
           },
     );
   }

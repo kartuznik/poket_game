@@ -3,7 +3,8 @@ export type ToolId =
   | 'routine-calc'
   | 'priority-diag'
   | 'readiness-check'
-  | 'final-report';
+  | 'final-report'
+  | 'audit-finish';
 
 export type DesignThemeId = 'minimal' | 'playful' | 'editorial';
 

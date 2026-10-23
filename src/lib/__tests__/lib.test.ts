@@ -254,6 +254,8 @@ describe('URL routing and cross-tool handoff bridge', () => {
     expect(parseRouteState('', '#final-report').toolId).toBe('final-report');
     expect(shouldRedrawOnRoute('revenue-risk', 'final-report')).toBe(true);
     expect(shouldRedrawOnRoute('final-report', 'final-report')).toBe(true);
+    expect(parseRouteState('', '#audit-finish').toolId).toBe('audit-finish');
+    expect(shouldRedrawOnRoute('audit-finish', 'audit-finish')).toBe(true);
     expect(shouldRedrawOnRoute('revenue-risk', 'revenue-risk')).toBe(false);
     expect(shouldRedrawOnRoute('revenue-risk', 'revenue-risk', 1, 2)).toBe(true);
   });

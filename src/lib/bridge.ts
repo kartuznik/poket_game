@@ -27,7 +27,7 @@ export const DEFAULT_THEME_ID: DesignThemeId = 'minimal';
 
 export function isValidToolId(value: string | null | undefined): value is ToolId {
   if (!value) return false;
-  return (TOOL_IDS as readonly string[]).includes(value);
+  return (TOOL_IDS as readonly string[]).includes(value) || value === 'audit-finish';
 }
 
 export function isValidThemeId(
@@ -94,7 +94,13 @@ export function shouldRedrawOnRoute(
   activeStep: number | null = null,
   nextStep: number | null = null,
 ): boolean {
-  if (nextToolId === 'final-report' || nextToolId !== activeToolId) return true;
+  if (
+    nextToolId === 'final-report' ||
+    nextToolId === 'audit-finish' ||
+    nextToolId !== activeToolId
+  ) {
+    return true;
+  }
   return nextStep !== activeStep;
 }
 
