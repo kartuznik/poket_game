@@ -1,3 +1,4 @@
+import { createHelpTip, releaseHelpTipsWithin, setHelpTipText } from '../../components/tooltip';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import {
   formatCountWithNoun,
@@ -21,6 +22,62 @@ import {
   lossFactorFromPercent,
   validateRevenueRiskDraft,
 } from './calc';
+
+const HELP = {
+  leads:
+    'Сколько клиентов пишут вам в месяц (звонки, сообщения, заявки). Чем больше обращений, тем выше потенциальные потери при поздних ответах.',
+  late:
+    'Процент обращений, на которые ответили позже 5-15 минут или не ответили вообще. Исследования показывают, что после 30 минут вероятность покупки падает в 2-3 раза.',
+  customMode:
+    'Какая доля обращений превращается в покупку при своевременном ответе. Если не знаете точной цифры, используйте режим «Средняя по нише» для ориентира.',
+  presetMode:
+    'Усреднённая оценка по рынку РФ для вашей сферы. Это не ваши фактические данные, но помогает оценить порядок потерь. Точную конверсию можно узнать из CRM или ручной выборки.',
+  preset:
+    'Выберите свою сферу бизнеса, чтобы калькулятор подставил типичную конверсию и долю потерь. После выбора значения можно скорректировать вручную.',
+  loss:
+    'Какая часть опоздавших обращений уходит к конкурентам. Если отвечаете за 1-5 минут — потери около 20-30%. Если за час и больше — потери могут достигать 70-80%.',
+  check:
+    'Средняя сумма одной покупки в рублях. Если чек варьируется, используйте наиболее частый или медианный.',
+} as const;
+
+function fieldHeading(
+  inputId: string,
+  title: string,
+  unit: string,
+  helpText: string,
+  avoid: () => HTMLElement | null,
+  unitId?: string,
+): { readonly row: HTMLDivElement; readonly tip: HTMLButtonElement } {
+  const row = document.createElement('div');
+  row.className = 'field-label';
+
+  const label = document.createElement('label');
+  label.className = 'field-label__text';
+  label.htmlFor = inputId;
+  label.textContent = title;
+
+  const tip = createHelpTip(helpText, { avoid });
+
+  const unitEl = document.createElement('span');
+  unitEl.className = 'field-unit';
+  unitEl.textContent = unit;
+  if (unitId) unitEl.id = unitId;
+
+  row.append(label, tip, unitEl);
+  return { row, tip };
+}
+
+function withHelp(
+  control: HTMLElement,
+  text: string,
+  wrapClass: string,
+  avoid: () => HTMLElement | null,
+): HTMLDivElement {
+  const wrap = document.createElement('div');
+  wrap.className = wrapClass;
+  wrap.append(control, createHelpTip(text, { avoid }));
+  return wrap;
+}
 
 const TRACKING_ITEMS: readonly string[] = [
   'Время первого ответа по каждому обращению',
@@ -90,6 +147,7 @@ export function renderRevenueRiskTool(
   let lossFactorRaw = customLossFactorRaw;
   let avgCheckRaw = String(REVENUE_RISK_DEFAULTS.avgCheck);
 
+  releaseHelpTipsWithin(container);
   container.innerHTML = '';
 
   const panel = document.createElement('section');
@@ -130,10 +188,6 @@ export function renderRevenueRiskTool(
   // Field 1: Leads per month
   const leadsGroup = document.createElement('div');
   leadsGroup.className = 'field-group';
-  const leadsLabel = document.createElement('label');
-  leadsLabel.className = 'field-label';
-  leadsLabel.htmlFor = 'rr-leads-input';
-  leadsLabel.innerHTML = `<span>Количество обращений в месяц</span><span class="field-unit">обращений/мес</span>`;
 
   const leadsInput = document.createElement('input');
   leadsInput.className = 'field-input';
@@ -145,20 +199,24 @@ export function renderRevenueRiskTool(
   leadsInput.step = '10';
   leadsInput.value = leadsRaw;
 
+  const leadsHeading = fieldHeading(
+    'rr-leads-input',
+    'Количество обращений в месяц',
+    'обращений/мес',
+    HELP.leads,
+    () => leadsInput,
+  );
+
   const leadsError = document.createElement('p');
   leadsError.className = 'field-error';
   leadsError.id = 'rr-leads-error';
   leadsError.hidden = true;
 
-  leadsGroup.append(leadsLabel, leadsInput, leadsError);
+  leadsGroup.append(leadsHeading.row, leadsInput, leadsError);
 
   // Field 2: Late / missed share (slider 0-100% + numeric input)
   const lateGroup = document.createElement('div');
   lateGroup.className = 'field-group';
-  const lateLabel = document.createElement('label');
-  lateLabel.className = 'field-label';
-  lateLabel.htmlFor = 'rr-late-input';
-  lateLabel.innerHTML = `<span>Доля поздних или неотвеченных ответов</span><span class="field-unit">0–100%</span>`;
 
   const lateSliderRow = document.createElement('div');
   lateSliderRow.className = 'slider-row';
@@ -188,21 +246,34 @@ export function renderRevenueRiskTool(
 
   lateSliderRow.append(lateSlider, lateInput);
 
+  const lateHeading = fieldHeading(
+    'rr-late-input',
+    'Доля поздних или неотвеченных ответов',
+    '0–100%',
+    HELP.late,
+    () => lateSliderRow,
+  );
+
   const lateError = document.createElement('p');
   lateError.className = 'field-error';
   lateError.id = 'rr-late-error';
   lateError.hidden = true;
 
-  lateGroup.append(lateLabel, lateSliderRow, lateError);
+  lateGroup.append(lateHeading.row, lateSliderRow, lateError);
 
   // Field 3: Conversion Mode Segmented Control + Input / Presets
   const convGroup = document.createElement('div');
   convGroup.className = 'field-group';
 
-  const convLabel = document.createElement('label');
-  convLabel.className = 'field-label';
-  convLabel.htmlFor = 'rr-conv-input';
-  convLabel.innerHTML = `<span>Конверсия из обращения в покупку</span><span class="field-unit" id="rr-conv-unit">1–95%</span>`;
+  const convHeading = fieldHeading(
+    'rr-conv-input',
+    'Конверсия из обращения в покупку',
+    '1–95%',
+    HELP.customMode,
+    () => convInput,
+    'rr-conv-unit',
+  );
+  const convLabel = convHeading.row;
 
   const segmented = document.createElement('div');
   segmented.className = 'segmented-control';
@@ -223,7 +294,10 @@ export function renderRevenueRiskTool(
   modePresetBtn.textContent = 'Средняя по нише (РФ)';
   modePresetBtn.setAttribute('aria-pressed', 'false');
 
-  segmented.append(modeCustomBtn, modePresetBtn);
+  segmented.append(
+    withHelp(modeCustomBtn, HELP.customMode, 'segmented-control__item', () => modeCustomBtn),
+    withHelp(modePresetBtn, HELP.presetMode, 'segmented-control__item', () => modePresetBtn),
+  );
 
   // Presets container (shown when mode === 'preset')
   const presetsWrap = document.createElement('div');
@@ -262,7 +336,9 @@ export function renderRevenueRiskTool(
     });
 
     presetButtons.set(preset.id, btn);
-    presetsGrid.appendChild(btn);
+    presetsGrid.append(
+      withHelp(btn, HELP.preset, 'preset-card-wrap', () => btn),
+    );
   }
 
   const presetBadgeDisclaimer = document.createElement('div');
@@ -291,11 +367,6 @@ export function renderRevenueRiskTool(
   // Field: loss share — visible and editable in both conversion modes
   const lossGroup = document.createElement('div');
   lossGroup.className = 'field-group';
-
-  const lossLabel = document.createElement('label');
-  lossLabel.className = 'field-label';
-  lossLabel.htmlFor = 'rr-loss-input';
-  lossLabel.innerHTML = `<span>Доля потерь при позднем ответе</span><span class="field-unit">0–100%</span>`;
 
   const lossHint = document.createElement('p');
   lossHint.className = 'field-hint';
@@ -332,20 +403,24 @@ export function renderRevenueRiskTool(
 
   lossSliderRow.append(lossSlider, lossInput);
 
+  const lossHeading = fieldHeading(
+    'rr-loss-input',
+    'Доля потерь при позднем ответе',
+    '0–100%',
+    HELP.loss,
+    () => lossSliderRow,
+  );
+
   const lossError = document.createElement('p');
   lossError.className = 'field-error';
   lossError.id = 'rr-loss-error';
   lossError.hidden = true;
 
-  lossGroup.append(lossLabel, lossHint, lossSliderRow, lossError);
+  lossGroup.append(lossHeading.row, lossHint, lossSliderRow, lossError);
 
   // Field 4: Average check
   const checkGroup = document.createElement('div');
   checkGroup.className = 'field-group';
-  const checkLabel = document.createElement('label');
-  checkLabel.className = 'field-label';
-  checkLabel.htmlFor = 'rr-check-input';
-  checkLabel.innerHTML = `<span>Средний чек</span><span class="field-unit">₽</span>`;
 
   const checkInput = document.createElement('input');
   checkInput.className = 'field-input';
@@ -357,12 +432,20 @@ export function renderRevenueRiskTool(
   checkInput.step = '500';
   checkInput.value = avgCheckRaw;
 
+  const checkHeading = fieldHeading(
+    'rr-check-input',
+    'Средний чек',
+    '₽',
+    HELP.check,
+    () => checkInput,
+  );
+
   const checkError = document.createElement('p');
   checkError.className = 'field-error';
   checkError.id = 'rr-check-error';
   checkError.hidden = true;
 
-  checkGroup.append(checkLabel, checkInput, checkError);
+  checkGroup.append(checkHeading.row, checkInput, checkError);
 
   inputCard.append(leadsGroup, lateGroup, convGroup, lossGroup, checkGroup);
 
@@ -522,6 +605,7 @@ export function renderRevenueRiskTool(
 
   function syncConversionFieldWithMode(): void {
     const isPreset = mode === 'preset';
+    setHelpTipText(convHeading.tip, isPreset ? HELP.presetMode : HELP.customMode);
     modeCustomBtn.setAttribute('aria-pressed', String(!isPreset));
     modePresetBtn.setAttribute('aria-pressed', String(isPreset));
     presetsWrap.hidden = !isPreset;

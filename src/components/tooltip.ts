@@ -249,6 +249,32 @@ function applySignal(signal: TooltipSignal): void {
  * Creates a reusable "?" trigger. One shared popup is positioned when shown.
  * Pass `avoid` so the popup drops below that field when there is no room above.
  */
+/** Drops triggers that are about to leave the document, and closes the popup if one of them is open. */
+export function releaseHelpTipsWithin(root: ParentNode): void {
+  const buttons = root.querySelectorAll<HTMLButtonElement>('.help-tip');
+  buttons.forEach((button) => {
+    const ownerId = button.dataset.helpId;
+    if (!ownerId) return;
+    if (tooltipState.ownerId === ownerId) {
+      applySignal({ type: 'dismiss' });
+    }
+    boundTips.delete(ownerId);
+  });
+}
+
+/** Updates the explanation, including the popup when this trigger is the one on screen. */
+export function setHelpTipText(button: HTMLButtonElement, text: string): void {
+  const ownerId = button.dataset.helpId;
+  if (!ownerId) return;
+  const tip = boundTips.get(ownerId);
+  if (!tip) return;
+  boundTips.set(ownerId, { button: tip.button, text, avoid: tip.avoid });
+  if (tooltipState.open && tooltipState.ownerId === ownerId) {
+    const popup = document.getElementById(HELP_POPUP_ID);
+    if (popup) popup.textContent = text;
+  }
+}
+
 export function createHelpTip(
   text: string,
   options: HelpTipOptions = {},
