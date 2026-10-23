@@ -106,6 +106,34 @@ describe('tooltip placement', () => {
     expect(placed.top).toBe(avoid.bottom + 8);
   });
 
+  it('moves below the field when the space above would cover another input', () => {
+    const fieldAbove: TooltipBox = {
+      top: 80,
+      left: 16,
+      right: 300,
+      bottom: 126,
+      width: 284,
+      height: 46,
+    };
+    const ownField: TooltipBox = {
+      top: 160,
+      left: 16,
+      right: 300,
+      bottom: 210,
+      width: 284,
+      height: 50,
+    };
+    const placed = placeTooltip({
+      anchor: { top: 140, left: 24, right: 44, bottom: 160, width: 20, height: 20 },
+      popup: { width: 240, height: 80 },
+      viewport: { width: 375, height: 800 },
+      avoid: ownField,
+      obstacles: [fieldAbove],
+    });
+    expect(placed.placement).toBe('below');
+    expect(placed.top).toBe(ownField.bottom + 8);
+  });
+
   it('keeps a wide popup inside a 320px viewport', () => {
     const placed = placeTooltip({
       anchor: { ...ANCHOR, left: 260, right: 280 },

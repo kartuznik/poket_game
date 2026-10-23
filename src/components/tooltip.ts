@@ -75,16 +75,28 @@ export interface TooltipPlacement {
  * the input under the label. If the top edge is too tight, drops below
  * the field (the avoid box) and clamps to the viewport.
  */
+function boxesOverlap(
+  top: number,
+  left: number,
+  width: number,
+  height: number,
+  other: TooltipBox,
+): boolean {
+  return left < other.right && left + width > other.left && top < other.bottom && top + height > other.top;
+}
+
 export function placeTooltip(args: {
   readonly anchor: TooltipBox;
   readonly popup: { readonly width: number; readonly height: number };
   readonly viewport: { readonly width: number; readonly height: number };
   readonly avoid?: TooltipBox | null;
+  readonly obstacles?: readonly TooltipBox[];
   readonly margin?: number;
 }): TooltipPlacement {
   const margin = args.margin ?? 8;
   const width = Math.min(args.popup.width, Math.max(0, args.viewport.width - margin * 2));
   const height = args.popup.height;
+  const obstacles = args.obstacles ?? [];
 
   let left = args.anchor.left;
   const maxLeft = args.viewport.width - margin - width;
@@ -92,7 +104,10 @@ export function placeTooltip(args: {
   if (left < margin) left = margin;
 
   const aboveTop = args.anchor.top - margin - height;
-  if (aboveTop >= margin) {
+  const aboveHitsField = obstacles.some((obstacle) =>
+    boxesOverlap(aboveTop, left, width, height, obstacle),
+  );
+  if (aboveTop >= margin && !aboveHitsField) {
     return { top: aboveTop, left, placement: 'above' };
   }
 
@@ -230,11 +245,17 @@ function applySignal(signal: TooltipSignal): void {
 
   const popupRect = popup.getBoundingClientRect();
   const avoidEl = tip.avoid ? tip.avoid() : null;
+  const obstacles = [
+    ...document.querySelectorAll<HTMLElement>('.field-input, .segmented-control'),
+  ]
+    .filter((element) => element !== avoidEl && !avoidEl?.contains(element))
+    .map((element) => toBox(element.getBoundingClientRect()));
   const placement = placeTooltip({
     anchor: toBox(tip.button.getBoundingClientRect()),
     popup: { width: popupRect.width, height: popupRect.height },
     viewport: { width: window.innerWidth, height: window.innerHeight },
     avoid: avoidEl ? toBox(avoidEl.getBoundingClientRect()) : null,
+    obstacles,
   });
   popup.style.top = `${placement.top}px`;
   popup.style.left = `${placement.left}px`;
