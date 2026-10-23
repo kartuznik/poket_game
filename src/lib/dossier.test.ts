@@ -1,0 +1,153 @@
+import { describe, expect, it } from 'vitest';
+import { ToolBridge } from './bridge';
+import {
+  DOSSIER_STORAGE_KEY,
+  createDossierStore,
+  draftStepFor,
+  emptyDossier,
+  hydrateBridge,
+  parseDossier,
+  validateContacts,
+  type BusinessDossier,
+} from './dossier';
+import type { KeyValueStorage } from './storage';
+
+function memoryStorage(initial = new Map<string, string>()): KeyValueStorage & {
+  readonly dump: Map<string, string>;
+} {
+  return {
+    dump: initial,
+    getItem: (key) => initial.get(key) ?? null,
+    setItem: (key, value) => {
+      initial.set(key, value);
+    },
+    removeItem: (key) => {
+      initial.delete(key);
+    },
+  };
+}
+
+describe('business dossier', () => {
+  it('starts empty, so default answers are not treated as a finished tool', () => {
+    const dossier = emptyDossier(10);
+    expect(dossier.version).toBe(1);
+    expect(dossier.revenue).toBeNull();
+    expect(dossier.readiness).toBeNull();
+    expect(draftStepFor(dossier, 'revenue-risk')).toBeNull();
+  });
+
+  it('persists a draft and a confirmed tool, then restores both', () => {
+    const storage = memoryStorage();
+    const store = createDossierStore(() => storage, () => 50);
+    const written = store.update((current) => ({
+      ...current,
+      revenueDraft: {
+        step: 2,
+        leadsPerMonth: '80',
+        lateSharePercent: '35',
+        conversionPercent: '20',
+        avgCheck: '4500',
+        lossFactorPercent: '30',
+        mode: 'custom',
+        presetId: null,
+      },
+      contacts: { name: 'Анна', telegram: '@anna', phone: '', business: 'салон' },
+    }));
+    expect(written.persisted).toBe(true);
+    expect(storage.dump.get(DOSSIER_STORAGE_KEY)).toContain('"step":2');
+
+    const restored = createDossierStore(() => storage, () => 1).read();
+    expect(restored.revenueDraft?.leadsPerMonth).toBe('80');
+    expect(restored.revenue).toBeNull();
+    expect(draftStepFor(restored, 'revenue-risk')).toBe(2);
+    expect(restored.contacts.name).toBe('Анна');
+    expect(restored.updatedAt).toBe(50);
+  });
+
+  it('keeps the session copy when storage throws', () => {
+    const store = createDossierStore(
+      () => ({
+        getItem: () => {
+          throw new Error('private');
+        },
+        setItem: () => {
+          throw new Error('private');
+        },
+        removeItem: () => undefined,
+      }),
+      () => 3,
+    );
+    const written = store.update((current) => ({
+      ...current,
+      contacts: { ...current.contacts, name: 'Илья' },
+    }));
+    expect(written.persisted).toBe(false);
+    expect(store.read().contacts.name).toBe('Илья');
+  });
+
+  it('ignores a broken or outdated record', () => {
+    expect(parseDossier({ version: 2, updatedAt: 1 })).toBeNull();
+    expect(parseDossier('{bad')).toBeNull();
+    const storage = memoryStorage(new Map([[DOSSIER_STORAGE_KEY, '{bad']]));
+    const store = createDossierStore(() => storage, () => 4);
+    expect(store.read().revenue).toBeNull();
+    expect(store.read().updatedAt).toBe(4);
+  });
+
+  it('hydrates the bridge only from confirmed tools', () => {
+    const base: BusinessDossier = {
+      ...emptyDossier(1),
+      readinessDraft: {
+        step: 2,
+        answers: {
+          repeated: 'no',
+          rules: 'no',
+          'one-path': 'no',
+          'one-place': 'no',
+          faq: 'no',
+          numbers: 'no',
+          owner: 'no',
+          channel: 'no',
+          time: 'no',
+        },
+      },
+      revenue: {
+        toolId: 'revenue-risk',
+        updatedAt: 5,
+        inputs: {
+          leadsPerMonth: 100,
+          lateSharePercent: 35,
+          conversionPercent: 20,
+          avgCheck: 4500,
+          lossFactor: 0.3,
+          mode: 'custom',
+        },
+        results: {
+          lateLeads: 35,
+          revenueAtRiskMax: 31500,
+          recoverableRevenue: 22050,
+          revenueAtRiskPerYear: 378000,
+          costPerMissedDialog: 900,
+        },
+      },
+    };
+    const bridge = new ToolBridge();
+    hydrateBridge(base, bridge);
+    expect(bridge.getRevenueRiskResult()?.results.revenueAtRiskMax).toBe(31500);
+    expect(bridge.getReadinessResult()).toBeNull();
+  });
+
+  it('asks for a name and at least one way to reply', () => {
+    expect(validateContacts({ name: ' ', telegram: '', phone: '', business: '' }).ok).toBe(false);
+    expect(validateContacts({ name: 'Анна', telegram: '', phone: '', business: '' }).errors.contact).toBeTruthy();
+    const ready = validateContacts({
+      name: 'Анна',
+      telegram: '',
+      phone: '+7 900 000-00-00',
+      business: '',
+    });
+    expect(ready.ok).toBe(true);
+    expect(ready.errors.name).toBeNull();
+    expect(ready.errors.contact).toBeNull();
+  });
+});

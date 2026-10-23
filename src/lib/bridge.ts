@@ -40,6 +40,13 @@ export function isValidThemeId(
 export interface RouteState {
   readonly toolId: ToolId;
   readonly themeId: DesignThemeId;
+  readonly step: number | null;
+}
+
+function parseStep(value: string | null): number | null {
+  if (!value || !/^[1-9]\d?$/.test(value)) return null;
+  const step = Number(value);
+  return step >= 1 && step <= 20 ? step : null;
 }
 
 /**
@@ -68,9 +75,12 @@ export function parseRouteState(
     hashParams.get('theme') ||
     searchParams.get('theme');
 
+  const candidateStep = hashParams.get('step') || searchParams.get('step');
+
   return {
     toolId: isValidToolId(candidateTool) ? candidateTool : DEFAULT_TOOL_ID,
     themeId: isValidThemeId(candidateTheme) ? candidateTheme : DEFAULT_THEME_ID,
+    step: parseStep(candidateStep),
   };
 }
 
@@ -78,18 +88,26 @@ export function parseRouteState(
  * The summary must rebuild on every arrival, including a repeat visit,
  * because the other tools may have written new snapshots since the last paint.
  */
-export function shouldRedrawOnRoute(activeToolId: ToolId, nextToolId: ToolId): boolean {
-  return nextToolId === 'final-report' || nextToolId !== activeToolId;
+export function shouldRedrawOnRoute(
+  activeToolId: ToolId,
+  nextToolId: ToolId,
+  activeStep: number | null = null,
+  nextStep: number | null = null,
+): boolean {
+  if (nextToolId === 'final-report' || nextToolId !== activeToolId) return true;
+  return nextStep !== activeStep;
 }
 
 export function buildRouteHash(
   toolId: ToolId,
   themeId: DesignThemeId = DEFAULT_THEME_ID,
+  step: number | null = null,
 ): string {
-  if (themeId === DEFAULT_THEME_ID) {
-    return `#${toolId}`;
-  }
-  return `#${toolId}?theme=${themeId}`;
+  const params = new URLSearchParams();
+  if (themeId !== DEFAULT_THEME_ID) params.set('theme', themeId);
+  if (step !== null && step > 1) params.set('step', String(step));
+  const query = params.toString();
+  return query ? `#${toolId}?${query}` : `#${toolId}`;
 }
 
 /**

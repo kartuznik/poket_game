@@ -214,22 +214,38 @@ describe('URL routing and cross-tool handoff bridge', () => {
     expect(parseRouteState('', '#routine-calc')).toEqual({
       toolId: 'routine-calc',
       themeId: DEFAULT_THEME_ID,
+      step: null,
     });
 
     expect(parseRouteState('?theme=playful', '#priority-diag')).toEqual({
       toolId: 'priority-diag',
       themeId: 'playful',
+      step: null,
     });
 
     expect(parseRouteState('', '#readiness-check?theme=editorial')).toEqual({
       toolId: 'readiness-check',
       themeId: 'editorial',
+      step: null,
     });
 
     expect(parseRouteState('?tool=unknown&theme=invalid', '#bad-hash')).toEqual({
       toolId: DEFAULT_TOOL_ID,
       themeId: DEFAULT_THEME_ID,
+      step: null,
     });
+
+    expect(parseRouteState('', '#revenue-risk?step=2')).toEqual({
+      toolId: 'revenue-risk',
+      themeId: DEFAULT_THEME_ID,
+      step: 2,
+    });
+    expect(parseRouteState('', '#revenue-risk?step=0').step).toBeNull();
+    expect(buildRouteHash('revenue-risk', 'minimal', 2)).toBe('#revenue-risk?step=2');
+    expect(buildRouteHash('revenue-risk', 'playful', 3)).toBe(
+      '#revenue-risk?theme=playful&step=3',
+    );
+    expect(buildRouteHash('revenue-risk', 'minimal', 1)).toBe('#revenue-risk');
 
     expect(buildRouteHash('priority-diag', 'minimal')).toBe('#priority-diag');
     expect(buildRouteHash('priority-diag', 'playful')).toBe(
@@ -239,6 +255,7 @@ describe('URL routing and cross-tool handoff bridge', () => {
     expect(shouldRedrawOnRoute('revenue-risk', 'final-report')).toBe(true);
     expect(shouldRedrawOnRoute('final-report', 'final-report')).toBe(true);
     expect(shouldRedrawOnRoute('revenue-risk', 'revenue-risk')).toBe(false);
+    expect(shouldRedrawOnRoute('revenue-risk', 'revenue-risk', 1, 2)).toBe(true);
   });
 
   it('passes handoff payload between tools in memory and consumes once', () => {
