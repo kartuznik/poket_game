@@ -73,19 +73,93 @@ body {
 }
 
 .theme-switch {
-  max-width: 100%;
+  position: relative;
+  flex: none;
+}
+
+.theme-switch__button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   min-height: 44px;
   margin: 0;
-  padding: 6px 12px;
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.2;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
   color: var(--text-secondary);
   background: var(--bg-page);
   border: var(--border-width) solid var(--border-color);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
   cursor: pointer;
+}
+
+.theme-switch__button:hover,
+.theme-switch__button[aria-expanded="true"] {
+  color: var(--text-accent);
+  background: var(--bg-badge);
+}
+
+.theme-switch__icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  pointer-events: none;
+}
+
+.theme-switch__menu {
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 168px;
+  max-width: calc(100vw - 28px);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 520px) {
+  .theme-switch__menu {
+    left: auto;
+    right: 0;
+  }
+}
+
+.theme-switch__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.theme-switch__option:hover {
+  background: var(--bg-subtle);
+}
+
+.theme-switch__option[aria-selected="true"] {
+  color: var(--text-accent);
+  background: var(--bg-badge);
+}
+
+.theme-switch__option--active {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
 }
 
 .brand-header__title {

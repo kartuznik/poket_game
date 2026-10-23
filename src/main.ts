@@ -1,5 +1,6 @@
 import './styles/main.css';
 import { createToolNav } from './components/nav-tabs';
+import { createThemeSwitch } from './components/theme-switch';
 import {
   buildRouteHash,
   defaultToolBridge,
@@ -7,23 +8,13 @@ import {
   shouldRedrawOnRoute,
 } from './lib/bridge';
 import { createColorSchemeController } from './lib/color-scheme';
-import {
-  defaultColorSchemeStore,
-  defaultScenarioStore,
-  isColorSchemePreference,
-} from './lib/storage';
+import { defaultColorSchemeStore, defaultScenarioStore } from './lib/storage';
 import type { ToolId } from './lib/types';
 import { renderFinalReportTool } from './tools/final-report/view';
 import { renderPriorityDiagTool } from './tools/priority-diag/view';
 import { renderReadinessCheckTool } from './tools/readiness-check/view';
 import { renderRevenueRiskTool } from './tools/revenue-risk/view';
 import { renderRoutineCalcTool } from './tools/routine-calc/view';
-
-const THEME_OPTIONS = [
-  { value: 'system', label: 'Системная' },
-  { value: 'light', label: 'Светлая' },
-  { value: 'dark', label: 'Тёмная' },
-] as const;
 
 function mountApp(root: HTMLElement): void {
   const colorScheme = createColorSchemeController({
@@ -59,25 +50,13 @@ function mountApp(root: HTMLElement): void {
   authorBadge.rel = 'noopener noreferrer';
   authorBadge.textContent = '@_kartuzzz · Threads';
 
-  const themeSelect = document.createElement('select');
-  themeSelect.className = 'theme-switch';
-  themeSelect.setAttribute('aria-label', 'Тема оформления');
-  for (const option of THEME_OPTIONS) {
-    const item = document.createElement('option');
-    item.value = option.value;
-    item.textContent = option.label;
-    themeSelect.append(item);
-  }
-  themeSelect.value = colorScheme.getPreference();
-  themeSelect.addEventListener('change', () => {
-    if (isColorSchemePreference(themeSelect.value)) {
-      colorScheme.setPreference(themeSelect.value);
-    }
+  const themeSwitch = createThemeSwitch(colorScheme.getPreference(), (preference) => {
+    colorScheme.setPreference(preference);
   });
 
   const headerTools = document.createElement('div');
   headerTools.className = 'brand-header__tools';
-  headerTools.append(themeSelect, authorBadge);
+  headerTools.append(themeSwitch.element, authorBadge);
 
   headerTop.append(title, headerTools);
 
