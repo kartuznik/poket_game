@@ -1,3 +1,5 @@
+import { createFieldHeading } from '../components/field-heading';
+import { releaseHelpTipsWithin } from '../components/tooltip';
 import type { ToolBridge } from '../lib/bridge';
 import { copyTextToClipboard } from '../lib/clipboard';
 import {
@@ -15,6 +17,7 @@ export interface ToolStubRenderContext {
   readonly bridge: ToolBridge;
   readonly store: ScenarioStore;
   readonly onNavigateTool: (targetTool: ToolId) => void;
+  readonly helpText?: string;
 }
 
 /**
@@ -78,6 +81,7 @@ export function renderToolStub(
     ? incomingHandoff.suggestedValue
     : meta.defaultInput;
 
+  releaseHelpTipsWithin(container);
   container.innerHTML = '';
 
   const panel = document.createElement('section');
@@ -118,19 +122,6 @@ export function renderToolStub(
   const fieldGroup = document.createElement('div');
   fieldGroup.className = 'field-group';
 
-  const labelEl = document.createElement('label');
-  labelEl.className = 'field-label';
-  labelEl.htmlFor = `input-${meta.id}`;
-
-  const labelText = document.createElement('span');
-  labelText.textContent = meta.inputLabel;
-
-  const unitText = document.createElement('span');
-  unitText.className = 'field-unit';
-  unitText.textContent = meta.inputUnit;
-
-  labelEl.append(labelText, unitText);
-
   const inputRow = document.createElement('div');
   inputRow.className = 'field-input-row';
 
@@ -145,7 +136,17 @@ export function renderToolStub(
   inputEl.value = String(currentValue);
 
   inputRow.appendChild(inputEl);
-  fieldGroup.append(labelEl, inputRow);
+
+  const heading = createFieldHeading(
+    inputEl.id,
+    meta.inputLabel,
+    meta.inputUnit,
+    ctx.helpText ??
+      'Это поле участвует в расчёте. Измените число, чтобы увидеть, как сдвинется результат.',
+    () => inputEl,
+  );
+
+  fieldGroup.append(heading.row, inputRow);
   inputCard.appendChild(fieldGroup);
 
   // 2. Result Card (Screenshot & Repost ready)

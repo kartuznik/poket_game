@@ -8,5 +8,7 @@ export function renderReadinessCheckTool(
   renderToolStub(container, {
     ...ctx,
     meta: TOOLS_CATALOG['readiness-check'],
+    helpText:
+      'Сколько из девяти условий уже выполнено. Меньше 4 баллов — рано, от 4 до 7 — закройте пробелы, 7 и больше — можно начинать.',
   });
 }

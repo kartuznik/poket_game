@@ -8,5 +8,7 @@ export function renderRoutineCalcTool(
   renderToolStub(container, {
     ...ctx,
     meta: TOOLS_CATALOG['routine-calc'],
+    helpText:
+      'Сколько минут в неделю уходит на однотипную ручную работу: ответы, заказы, записи, таблицы. Чем больше минут, тем больше часов в месяце и рабочих дней в году съедает эта рутина.',
   });
 }

@@ -8,5 +8,7 @@ export function renderPriorityDiagTool(
   renderToolStub(container, {
     ...ctx,
     meta: TOOLS_CATALOG['priority-diag'],
+    helpText:
+      'Насколько сильно узкое место мешает бизнесу. Дальше частота, время и цена ошибки сложатся в приоритет: что автоматизировать первым.',
   });
 }
