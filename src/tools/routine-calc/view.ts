@@ -34,7 +34,8 @@ const HELP = {
 const WORKDAY_FORMS = ['рабочий день', 'рабочих дня', 'рабочих дней'] as const;
 
 function formatWorkDays(days: number): string {
-  return formatCountWithNoun(days, WORKDAY_FORMS);
+  const rounded = Math.round(days * 10) / 10;
+  return formatCountWithNoun(rounded, WORKDAY_FORMS);
 }
 
 export function buildRoutineShareText(params: {

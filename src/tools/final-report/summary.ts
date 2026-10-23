@@ -1,4 +1,4 @@
-import { formatRubles, formatWorkHours } from '../../lib/format';
+import { formatCountWithNoun, formatRubles, formatWorkHours } from '../../lib/format';
 import type {
   PriorityBridgeSnapshot,
   ReadinessBridgeSnapshot,
@@ -68,9 +68,10 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
       routine.results.savedMoneyPerMonth === null
         ? 'Ставка не указана, поэтому экономия в рублях не считается.'
         : `В деньгах это ${formatRubles(routine.results.savedMoneyPerMonth)} в месяц.`;
+    const workDays = Math.round(routine.results.workDaysPerYear * 10) / 10;
     blocks.push({
       title: 'Рутина',
-      text: `На эту работу уходит ${formatWorkHours(routine.results.hoursPerMonth)} в месяц, ${routine.results.workDaysPerYear.toString().replace('.', ',')} рабочих дней в год. ${money}`,
+      text: `На эту работу уходит ${formatWorkHours(routine.results.hoursPerMonth)} в месяц, ${formatCountWithNoun(workDays, ['рабочий день', 'рабочих дня', 'рабочих дней'])} в год. ${money}`,
     });
   }
   if (revenue) {
