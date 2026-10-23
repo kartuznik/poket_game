@@ -19,10 +19,10 @@ export interface NichePreset {
 }
 
 export const MARKET_AVERAGE_BADGE_DISCLAIMER =
-  'Усреднённая оценка по рынку РФ, не ваши данные';
+  'Оценка по рынку РФ, не ваши цифры';
 
 export const MARKET_AVERAGE_RESULT_DISCLAIMER =
-  'Расчёт опирается на усреднённую оценку по рынку РФ (не ваши фактические данные). Даже при погрешности ±30% порядок потерь показывает зону риска';
+  'Это оценка по рынку РФ, не ваши цифры. Даже при погрешности ±30% виден порядок потерь.';
 
 export const DEFAULT_LOSS_FACTOR = 0.3;
 export const DEFAULT_LOSS_FACTOR_PERCENT = 30;
@@ -40,19 +40,19 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
   {
     id: 'beauty-local',
     title: 'Бьюти, здоровье, локальные услуги',
-    description: 'Запись на приём/визит',
+    description: 'Запись на приём или визит',
     defaultConversionPercent: 30,
     defaultLossFactor: 0.5,
-    rangeLabel: 'Диапазон 25-40%, дефолт 30%',
+    rangeLabel: 'Обычно 25–40%, в расчёте 30%',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
     id: 'ecommerce',
-    title: 'Товарный бизнес / E-commerce',
+    title: 'Товарный бизнес',
     description: 'Одежда, подарки, декор, цветы',
     defaultConversionPercent: 20,
     defaultLossFactor: 0.5,
-    rangeLabel: 'Диапазон 15-25%, дефолт 20%',
+    rangeLabel: 'Обычно 15–25%, в расчёте 20%',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
@@ -61,16 +61,16 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Фриланс, агентства, наставничество',
     defaultConversionPercent: 12,
     defaultLossFactor: 0.42,
-    rangeLabel: 'Диапазон 8-18%, дефолт 12%',
+    rangeLabel: 'Обычно 8–18%, в расчёте 12%',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
     id: 'b2b-services',
-    title: 'B2B / Сложные услуги с высоким чеком',
+    title: 'Сложные услуги с высоким чеком',
     description: 'Ремонт, производство, разработка',
     defaultConversionPercent: 8,
     defaultLossFactor: 0.37,
-    rangeLabel: 'Диапазон 5-12%, дефолт 8%',
+    rangeLabel: 'Обычно 5–12%, в расчёте 8%',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
 ] as const;

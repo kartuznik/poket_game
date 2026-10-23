@@ -51,7 +51,9 @@ const sources: ReportSources = {
 describe('report export', () => {
   it('writes a note for Efim from the same summary', () => {
     const text = buildEfimReport(sources);
-    expect(text.startsWith('Игра в бизнес — сводка для Ефима')).toBe(true);
+    expect(text.startsWith('Игра в бизнес — отчёт для Ефима')).toBe(true);
+    expect(text).toContain('• Правила ответа');
+    expect(text).toContain('• Один сценарий');
     expect(text).toContain(buildFinalSummary(sources).lead);
     expect(text).toContain('Рано');
     expect(buildEfimReport({ revenue: null, routine: null, priority: null, readiness: null })).toContain(

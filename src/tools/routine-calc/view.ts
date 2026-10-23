@@ -24,7 +24,7 @@ const HELP = {
   minutes:
     'Сколько минут занимает один такой раз, от начала до конца. Если обычно 5–10 минут, поставьте типичное время, а не самый долгий случай.',
   rate:
-    'Сколько стоит ваш час в рублях. Пустое поле оставляет расчёт в часах и рабочих днях, без денег. Ноль значит, что ставка указана и экономия в рублях нулевая.',
+    'Сколько стоит ваш час. Пустое поле оставляет расчёт в часах и рабочих днях, без рублей.\n\nНоль — это указанная ставка: экономия в рублях будет нулевой.',
   automation:
     'Какую долю этих операций можно отдать шаблону или боту. 0% — всё остаётся руками, 100% — операция уходит целиком. Часы и рубли экономии считаются от этой доли.',
   preset:
@@ -105,7 +105,7 @@ export function renderRoutineCalcTool(
     const banner = document.createElement('div');
     banner.className = 'handoff-banner';
     banner.setAttribute('role', 'status');
-    banner.textContent = `Связка инструментов: ${incoming.label}. ${incoming.note}.`;
+    banner.textContent = `С прошлого шага: ${incoming.label}. ${incoming.note}.`;
     inputCard.append(banner);
   }
 
@@ -342,6 +342,7 @@ export function renderRoutineCalcTool(
       valueEl.textContent = 'Проверьте поля';
       noteEl.textContent = 'Расчёт появится, когда числа будут в допустимых границах.';
       metrics.replaceChildren();
+      howBody.replaceChildren();
       return;
     }
 
@@ -363,7 +364,22 @@ export function renderRoutineCalcTool(
       metric('Экономия', money),
     );
 
-    howBody.textContent = `Часы в месяц = ${operationsRaw} × ${minutesRaw} мин × 4,33 ÷ 60 = ${formatWorkHours(result.hoursPerMonth)}. Рабочие дни в год = часы × 12 ÷ 8 = ${formatWorkDays(result.workDaysPerYear)}. Экономия часов = часы × ${shareRaw}% = ${formatWorkHours(result.savedHoursPerMonth)}.`;
+    const steps = [
+      `Часы в месяц = ${operationsRaw} × ${minutesRaw} мин × 4,33 ÷ 60 = ${formatWorkHours(result.hoursPerMonth)}.`,
+      `Рабочие дни в год = часы × 12 ÷ 8 = ${formatWorkDays(result.workDaysPerYear)}.`,
+      `Экономия часов = часы × ${shareRaw}% = ${formatWorkHours(result.savedHoursPerMonth)}.`,
+      result.savedMoneyPerMonth === null
+        ? 'Ставка не указана, поэтому рубли не считаются.'
+        : `Экономия в рублях = часы экономии × ставка = ${formatRubles(result.savedMoneyPerMonth)} в месяц.`,
+    ];
+    const formula = document.createElement('ol');
+    formula.className = 'formula-list';
+    for (const step of steps) {
+      const item = document.createElement('li');
+      item.textContent = step;
+      formula.append(item);
+    }
+    howBody.replaceChildren(formula);
 
     bridge.saveRoutineResult({
       inputs: {

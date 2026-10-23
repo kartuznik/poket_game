@@ -76,7 +76,7 @@ export function renderReadinessCheckTool(
     const banner = document.createElement('div');
     banner.className = 'handoff-banner';
     banner.setAttribute('role', 'status');
-    banner.textContent = `Связка инструментов: ${incoming.label}. ${incoming.note}.`;
+    banner.textContent = `С прошлого шага: ${incoming.label}. ${incoming.note}.`;
     inputCard.append(banner);
   }
 
@@ -130,6 +130,9 @@ export function renderReadinessCheckTool(
   valueEl.className = 'result-card__value';
   const noteEl = document.createElement('p');
   noteEl.className = 'result-card__note';
+  const gapsTitle = document.createElement('p');
+  gapsTitle.className = 'field-hint';
+  gapsTitle.textContent = 'Не закрыто';
   const gaps = document.createElement('ul');
   gaps.className = 'rank-list';
   const diffBox = document.createElement('div');
@@ -161,13 +164,25 @@ export function renderReadinessCheckTool(
   const howSummary = document.createElement('summary');
   howSummary.className = 'info-details__summary';
   howSummary.textContent = 'Как посчитано';
-  const howBody = document.createElement('p');
+  const howBody = document.createElement('div');
   howBody.className = 'info-details__body';
-  howBody.textContent =
-    'Да = 1, Частично = 0,5, Нет = 0. Меньше 4 — «Рано». От 4 и до 7, не включая 7 — «Закройте пробелы». 7 и выше — «Можно начинать». Незакрытые пункты — все, где ответ не «Да».';
+  const howList = document.createElement('ul');
+  howList.className = 'rank-list';
+  for (const line of [
+    '«Да» — 1 балл, «Частично» — 0,5, «Нет» — 0.',
+    'Меньше 4 — «Рано».',
+    'От 4 до 6,5 — «Закройте пробелы».',
+    '7 и выше — «Можно начинать».',
+    'В списке ниже всё, где ответ не «Да».',
+  ]) {
+    const item = document.createElement('li');
+    item.textContent = line;
+    howList.append(item);
+  }
+  howBody.append(howList);
   how.append(howSummary, howBody);
 
-  resultCard.append(eyebrow, valueEl, noteEl, gaps, diffBox, actions, toast, how);
+  resultCard.append(eyebrow, valueEl, noteEl, gapsTitle, gaps, diffBox, actions, toast, how);
   panel.append(inputCard, resultCard);
   container.append(panel);
 
@@ -180,13 +195,15 @@ export function renderReadinessCheckTool(
     noteEl.textContent = `${formatScore(result.score)} из 9. ${result.note}`;
     gaps.replaceChildren();
     if (result.unclosed.length === 0) {
+      gapsTitle.hidden = true;
       const item = document.createElement('li');
       item.textContent = 'Все пункты закрыты.';
       gaps.append(item);
     } else {
+      gapsTitle.hidden = false;
       for (const open of result.unclosed) {
         const item = document.createElement('li');
-        const mark = open.status === 'partial' ? 'частично' : 'нет';
+        const mark = open.status === 'partial' ? 'Частично' : 'Нет';
         item.textContent = `${open.title} — ${mark}`;
         gaps.append(item);
       }

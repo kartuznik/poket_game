@@ -26,7 +26,7 @@ export const PRIORITY_PROCESSES: readonly PriorityProcess[] = [
     id: 'answers',
     title: 'Ответы на вопросы',
     recommendation:
-      'Соберите десять частых вопросов в готовые ответы. Типовое закрывает бот, к вам попадает только нестандартное.',
+      'Соберите десять частых вопросов в готовые ответы. Обычные вопросы закрывает бот, к вам попадает только нестандарт.',
     defaults: { frequency: 5, time: 3, errorCost: 4 },
   },
   {
@@ -54,7 +54,7 @@ export const PRIORITY_PROCESSES: readonly PriorityProcess[] = [
     id: 'reports',
     title: 'Отчёты',
     recommendation:
-      'Недельный отчёт собирайте из того же места, куда уже падают заявки. Ручной свод не должен занимать полдня.',
+      'Недельный отчёт собирайте из того же места, куда уже попадают обращения. Ручной отчёт не должен занимать полдня.',
     defaults: { frequency: 2, time: 4, errorCost: 2 },
   },
 ] as const;

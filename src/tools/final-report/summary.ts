@@ -7,7 +7,7 @@ import type {
 } from '../../lib/types';
 
 export const EMPTY_REPORT_TEXT =
-  'Заполните хотя бы один инструмент, чтобы увидеть сводку';
+  'Заполните хотя бы один инструмент, чтобы увидеть итоги.';
 
 export interface ReportSources {
   readonly revenue: RevenueRiskBridgeSnapshot | null;
@@ -19,6 +19,7 @@ export interface ReportSources {
 export interface SummaryBlock {
   readonly title: string;
   readonly text: string;
+  readonly lines?: readonly string[];
 }
 
 export interface FinalSummary {
@@ -45,7 +46,7 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
   }
   if (routine) {
     parts.push(
-      `Потенциальная экономия: ${formatWorkHours(routine.results.savedHoursPerMonth)} в месяц.`,
+      `Можно вернуть ${formatWorkHours(routine.results.savedHoursPerMonth)} в месяц.`,
     );
   }
   if (revenue) {
@@ -77,18 +78,24 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
   if (revenue) {
     blocks.push({
       title: 'Выручка под риском',
-      text: `${formatRubles(revenue.results.revenueAtRiskMax)} в месяц. Вернуть автоматизацией можно около ${formatRubles(revenue.results.recoverableRevenue)}.`,
+      text: `${formatRubles(revenue.results.revenueAtRiskMax)} в месяц. Если отвечать вовремя, можно удержать около ${formatRubles(revenue.results.recoverableRevenue)}.`,
     });
   }
   if (readiness) {
-    const open =
-      readiness.results.unclosedTitles.length === 0
-        ? 'Незакрытых пунктов нет.'
-        : `Не закрыто: ${readiness.results.unclosedTitles.join('; ')}.`;
-    blocks.push({
-      title: 'Готовность',
-      text: `${readiness.results.bandLabel}, ${String(readiness.results.score).replace('.', ',')} из 9. ${open}`,
-    });
+    const open = readiness.results.unclosedTitles;
+    const scoreText = `${readiness.results.bandLabel}, ${String(readiness.results.score).replace('.', ',')} из 9.`;
+    blocks.push(
+      open.length === 0
+        ? {
+            title: 'Готовность',
+            text: `${scoreText} Незакрытых пунктов нет.`,
+          }
+        : {
+            title: 'Готовность',
+            text: `${scoreText} Не закрыто:`,
+            lines: open,
+          },
+    );
   }
 
   const headline = priority

@@ -91,7 +91,7 @@ export function renderPriorityDiagTool(
     const banner = document.createElement('div');
     banner.className = 'handoff-banner';
     banner.setAttribute('role', 'status');
-    banner.textContent = `Связка инструментов: ${incoming.label}. ${incoming.note}.`;
+    banner.textContent = `С прошлого шага: ${incoming.label}. ${incoming.note}.`;
     inputCard.append(banner);
   }
 
@@ -196,7 +196,7 @@ export function renderPriorityDiagTool(
   const howBody = document.createElement('p');
   howBody.className = 'info-details__body';
   howBody.textContent =
-    'Балл = частота × 0,4 + время × 0,3 + цена ошибки × 0,3. При равном балле выше процесс, где дороже ошибка, затем где выше частота.';
+    'Балл = частота × 0,4 + время × 0,3 + цена ошибки × 0,3. При равном балле выше тот, где дороже ошибка, затем тот, где выше частота.';
   how.append(howSummary, howBody);
 
   resultCard.append(eyebrow, valueEl, noteEl, list, diffBox, actions, toast, how);

@@ -18,7 +18,7 @@ export const ROUTINE_PRESETS: readonly RoutinePreset[] = [
   {
     id: 'answers',
     title: 'Ответы на вопросы',
-    description: 'Типовые сообщения в чатах и директ',
+    description: 'Типовые сообщения в чатах и личных сообщениях',
     operationsPerWeek: 40,
     minutesPerOperation: 6,
     automationSharePercent: 70,
@@ -42,7 +42,7 @@ export const ROUTINE_PRESETS: readonly RoutinePreset[] = [
   {
     id: 'sheets',
     title: 'Перенос в таблицы',
-    description: 'Скопировать заявку из чата в таблицу',
+    description: 'Перенести обращение из чата в таблицу',
     operationsPerWeek: 15,
     minutesPerOperation: 12,
     automationSharePercent: 80,

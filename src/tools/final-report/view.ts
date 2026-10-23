@@ -59,7 +59,7 @@ export function renderFinalReportTool(
     result.className = 'result-card';
     const eyebrow = document.createElement('div');
     eyebrow.className = 'result-card__eyebrow';
-    eyebrow.innerHTML = '<span>СВОДКА</span><span>@_kartuzzz</span>';
+    eyebrow.innerHTML = '<span>ИТОГИ</span><span>@_kartuzzz</span>';
     const headline = document.createElement('p');
     headline.className = 'result-card__value';
     headline.textContent = summary.headline;
@@ -80,6 +80,16 @@ export function renderFinalReportTool(
       text.className = 'report-block__text';
       text.textContent = block.text;
       item.append(label, text);
+      if (block.lines && block.lines.length > 0) {
+        const list = document.createElement('ul');
+        list.className = 'rank-list';
+        for (const line of block.lines) {
+          const row = document.createElement('li');
+          row.textContent = line;
+          list.append(row);
+        }
+        item.append(list);
+      }
       blocks.append(item);
     }
     card.append(result, blocks);
@@ -117,7 +127,7 @@ export function renderFinalReportTool(
       'text/csv;charset=utf-8',
     );
     toast.hidden = false;
-    toast.textContent = 'Файл business-game-report.csv сохранён в загрузки.';
+    toast.textContent = 'Таблица скачана: business-game-report.csv.';
   });
 
   card.append(actions, toast);

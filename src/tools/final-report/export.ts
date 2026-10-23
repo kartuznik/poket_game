@@ -12,10 +12,13 @@ export function buildEfimReport(sources: ReportSources): string {
   const summary = buildFinalSummary(sources);
   if (!summary.hasData) return EMPTY_REPORT_TEXT;
 
-  const lines = ['Игра в бизнес — сводка для Ефима', '', summary.lead, ''];
+  const lines = ['Игра в бизнес — отчёт для Ефима', '', summary.lead, ''];
   for (const block of summary.blocks) {
-    lines.push(`${block.title}`);
+    lines.push(block.title);
     lines.push(block.text);
+    if (block.lines) {
+      for (const line of block.lines) lines.push(`• ${line}`);
+    }
     lines.push('');
   }
   lines.push('@_kartuzzz');
@@ -37,7 +40,7 @@ export function buildReportCsv(sources: ReportSources): string {
       row('Выручка', 'Доля поздних, %', formatCsvNumber(revenue.inputs.lateSharePercent)),
       row('Выручка', 'Конверсия, %', formatCsvNumber(revenue.inputs.conversionPercent)),
       row('Выручка', 'Средний чек, ₽', formatCsvNumber(revenue.inputs.avgCheck)),
-      row('Выручка', 'Доля потерь', formatCsvNumber(revenue.inputs.lossFactor)),
+      row('Выручка', 'Доля потерь, %', formatCsvNumber(revenue.inputs.lossFactor * 100)),
       row('Выручка', 'Режим', revenue.inputs.mode === 'preset' ? 'Средняя по нише' : 'Моя конверсия'),
       row('Выручка', 'Поздних обращений', formatCsvNumber(revenue.results.lateLeads)),
       row('Выручка', 'Риск в месяц, ₽', formatCsvNumber(revenue.results.revenueAtRiskMax)),
@@ -51,7 +54,7 @@ export function buildReportCsv(sources: ReportSources): string {
     rows.push(
       row(
         'Рутина',
-        'Пресет',
+        'Типовая рутина',
         routine.inputs.presetId ? getRoutinePresetById(routine.inputs.presetId).title : 'свои цифры',
       ),
       row('Рутина', 'Операций в неделю', formatCsvNumber(routine.inputs.operationsPerWeek)),

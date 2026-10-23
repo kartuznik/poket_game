@@ -121,7 +121,7 @@ export function renderToolStub(
     const handoffBanner = document.createElement('div');
     handoffBanner.className = 'handoff-banner';
     handoffBanner.setAttribute('role', 'status');
-    handoffBanner.textContent = `Связка инструментов: получено значение «${incomingHandoff.label}» (${incomingHandoff.note}).`;
+    handoffBanner.textContent = `С прошлого шага: ${incomingHandoff.label}. ${incomingHandoff.note}.`;
     inputCard.appendChild(handoffBanner);
   }
 

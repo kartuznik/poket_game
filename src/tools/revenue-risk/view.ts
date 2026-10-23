@@ -25,19 +25,19 @@ import {
 
 const HELP = {
   leads:
-    'Сколько клиентов пишут вам в месяц (звонки, сообщения, заявки). Чем больше обращений, тем выше потенциальные потери при поздних ответах.',
+    'Сколько раз за месяц вам пишут или звонят. Сообщение, звонок и заявка здесь считаются одним обращением.\n\nЧем больше обращений, тем выше возможные потери, если отвечать поздно.',
   late:
-    'Процент обращений, на которые ответили позже 5-15 минут или не ответили вообще. Исследования показывают, что после 30 минут вероятность покупки падает в 2-3 раза.',
+    'Доля обращений, на которые ответили позже 5–15 минут или не ответили совсем.\n\nПосле получаса шанс покупки обычно падает в 2–3 раза. Это ориентир, не точный закон.',
   customMode:
-    'Какая доля обращений превращается в покупку при своевременном ответе. Если не знаете точной цифры, используйте режим «Средняя по нише» для ориентира.',
+    'Какая доля обращений становится покупкой, если ответить вовремя.\n\nЕсли точной цифры нет, переключитесь на «Средняя по нише (РФ)». Это ориентир.',
   presetMode:
-    'Усреднённая оценка по рынку РФ для вашей сферы. Это не ваши фактические данные, но помогает оценить порядок потерь. Точную конверсию можно узнать из CRM или ручной выборки.',
+    'Оценка по рынку РФ для вашей сферы. Это не ваши цифры.\n\nТочную конверсию можно взять из своей статистики или посчитать по последним диалогам.',
   preset:
-    'Выберите свою сферу бизнеса, чтобы калькулятор подставил типичную конверсию и долю потерь. После выбора значения можно скорректировать вручную.',
+    'Подставляет типичную конверсию и долю потерь для этой сферы. Цифры можно сразу поправить.',
   loss:
-    'Какая часть опоздавших обращений уходит к конкурентам. Если отвечаете за 1-5 минут — потери около 20-30%. Если за час и больше — потери могут достигать 70-80%.',
+    'Какая часть опоздавших обращений уходит к конкурентам.\n\nОтвет за 1–5 минут — потери около 20–30%. Ответ через час и позже — до 70–80%. Это оценка, не замер вашего бизнеса.',
   check:
-    'Средняя сумма одной покупки в рублях. Если чек варьируется, используйте наиболее частый или медианный.',
+    'Средняя сумма одной покупки. Если чек скачет, возьмите самый частый.',
 } as const;
 
 function fieldHeading(
@@ -109,7 +109,7 @@ export function buildRevenueRiskShareText(params: {
     '',
     'Входные данные:',
     `• Обращений в месяц: ${formatIntegerGrouping(params.leadsPerMonth)}`,
-    `• Доля поздних/неотвеченных ответов: ${formatPercent(params.lateSharePercent, { decimals: 1 })}`,
+    `• Доля поздних или пропущенных ответов: ${formatPercent(params.lateSharePercent, { decimals: 1 })}`,
     `• Конверсия в покупку: ${formatPercent(params.conversionPercent, { decimals: 1 })} (${modeNote})`,
     `• Доля потерь при позднем ответе: ${formatPercent(params.lossFactorPercent, { decimals: 0 })}`,
     `• Средний чек: ${formatRubles(params.avgCheck)}`,
@@ -118,7 +118,7 @@ export function buildRevenueRiskShareText(params: {
     `• Поздних обращений: ${formatCountWithNoun(Math.round(params.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес`,
     `• Выручка под риском в месяц: ${formatRubles(params.revenueAtRiskMax)}`,
     `• Выручка под риском в год: ${formatRubles(params.revenueAtRiskPerYear)}`,
-    `• Потенциал возврата при автоматизации: ${formatRubles(params.recoverableRevenue)}/мес`,
+    `• Потенциал возврата: ${formatRubles(params.recoverableRevenue)}/мес`,
     `• Каждый пропущенный диалог стоит вам ${formatRubles(params.costPerMissedDialog)}`,
     '',
     '@_kartuzzz · Игра в бизнес',
@@ -197,7 +197,7 @@ export function renderRevenueRiskTool(
     const handoffBanner = document.createElement('div');
     handoffBanner.className = 'handoff-banner';
     handoffBanner.setAttribute('role', 'status');
-    handoffBanner.textContent = `Связка инструментов: получено значение «${incomingHandoff.label}» (${incomingHandoff.note}).`;
+    handoffBanner.textContent = `С прошлого шага: ${incomingHandoff.label}. ${incomingHandoff.note}.`;
     inputCard.appendChild(handoffBanner);
   }
 
@@ -247,7 +247,7 @@ export function renderRevenueRiskTool(
   lateSlider.value = lateShareRaw;
   lateSlider.setAttribute(
     'aria-label',
-    'Ползунок доли поздних или неотвеченных ответов в процентах',
+    'Ползунок доли поздних или пропущенных ответов в процентах',
   );
 
   const lateInput = document.createElement('input');
@@ -264,7 +264,7 @@ export function renderRevenueRiskTool(
 
   const lateHeading = fieldHeading(
     'rr-late-input',
-    'Доля поздних или неотвеченных ответов',
+    'Доля поздних или пропущенных ответов',
     '0–100%',
     HELP.late,
     () => lateSliderRow,
@@ -387,7 +387,7 @@ export function renderRevenueRiskTool(
   const lossHint = document.createElement('p');
   lossHint.className = 'field-hint';
   lossHint.id = 'rr-loss-hint';
-  lossHint.textContent = 'Какая доля опоздавших обращений уходит к конкурентам';
+  lossHint.textContent = 'Какая доля опоздавших обращений уходит к конкурентам.';
 
   const lossSliderRow = document.createElement('div');
   lossSliderRow.className = 'slider-row';
@@ -716,7 +716,7 @@ export function renderRevenueRiskTool(
     // Update collapsible "Как посчитано" with live substituted numbers
     const lossPercent = Math.round(normalizedInput.lossFactor * 100);
     howBody.innerHTML = `
-      <p style="margin: 8px 0 0;">Расчёт выполняется мгновенно по четырём шагам:</p>
+      <p>Шаги расчёта:</p>
       <ol class="formula-list">
         <li>Поздние обращения = ${formatIntegerGrouping(normalizedInput.leadsPerMonth)} × ${formatPercent(normalizedInput.lateSharePercent)} = <strong>${formatCountWithNoun(Math.round(calcResult.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес</strong></li>
         <li>Выручка под риском в месяц = ${Math.round(calcResult.lateLeads)} × ${formatPercent(normalizedInput.conversionPercent)} × ${formatRubles(normalizedInput.avgCheck)} = <strong>${formatRubles(calcResult.revenueAtRiskMax)}</strong></li>
@@ -897,7 +897,7 @@ export function renderRevenueRiskTool(
         15,
         Math.round(calcResult.normalizedInput.leadsPerMonth * 2),
       ),
-      note: `поток ${formatIntegerGrouping(calcResult.normalizedInput.leadsPerMonth)} обращений/мес, поздних ${Math.round(calcResult.lateLeads)}`,
+      note: `${formatIntegerGrouping(calcResult.normalizedInput.leadsPerMonth)} обращений в месяц, из них поздних ${Math.round(calcResult.lateLeads)}`,
       revenueRiskSnapshot: bridgeSnapshot,
     });
     onNavigateTool(meta.nextToolId);

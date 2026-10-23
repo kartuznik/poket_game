@@ -114,7 +114,7 @@ describe('buildFinalSummary', () => {
   it('joins priority, savings and revenue into one lead', () => {
     const summary = buildFinalSummary({ revenue, routine, priority, readiness });
     expect(summary.lead).toBe(
-      'Ваш главный приоритет: Приём обращений. Потенциальная экономия: 12,1\u00A0часа в месяц. Риск выручки: 31\u00A0500\u00A0₽. Готовность: Рано.',
+      'Ваш главный приоритет: Приём обращений. Можно вернуть 12,1\u00A0часа в месяц. Риск выручки: 31\u00A0500\u00A0₽. Готовность: Рано.',
     );
     expect(summary.headline).toBe('Приём обращений');
     expect(summary.blocks.map((block) => block.title)).toEqual([
