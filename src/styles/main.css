@@ -377,6 +377,10 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 /* Segmented Control (Mode Switcher) */
 .segmented-control {
   display: grid;
