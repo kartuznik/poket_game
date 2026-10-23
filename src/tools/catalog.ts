@@ -63,7 +63,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     maxInput: 9,
     stepInput: 1,
     nextToolId: 'final-report',
-    nextToolCta: 'Посмотреть итоговый отчёт 📊',
+    nextToolCta: 'Посмотреть итоговый отчёт',
   },
   'final-report': {
     id: 'final-report',

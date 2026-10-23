@@ -194,6 +194,53 @@ body {
   color: var(--text-secondary);
 }
 
+.prior-context {
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.prior-context__title {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.prior-context__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prior-context__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.prior-context__label {
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.prior-context__label::after {
+  content: ':';
+}
+
+.prior-context__text {
+  font-weight: 600;
+  min-width: 0;
+}
+
 .handoff-banner {
   padding: 10px 12px;
   background: var(--bg-badge);

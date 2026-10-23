@@ -1,4 +1,5 @@
 import { createFieldHeading } from '../../components/field-heading';
+import { appendPriorContext } from '../../components/prior-context';
 import { createHelpTip, releaseHelpTipsWithin } from '../../components/tooltip';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import {
@@ -62,7 +63,7 @@ export function renderRoutineCalcTool(
 ): void {
   const meta = TOOLS_CATALOG['routine-calc'];
   const { bridge, store, onNavigateTool } = ctx;
-  const incoming = bridge.consume('routine-calc');
+  bridge.consume('routine-calc');
   const saved = bridge.getRoutineResult();
 
   let presetId: RoutinePresetId | null = saved?.inputs.presetId ?? ROUTINE_DEFAULTS.presetId;
@@ -100,14 +101,15 @@ export function renderRoutineCalcTool(
   subtitle.textContent = meta.subtitle;
   header.append(badge, title, subtitle);
   inputCard.append(header);
-
-  if (incoming) {
-    const banner = document.createElement('div');
-    banner.className = 'handoff-banner';
-    banner.setAttribute('role', 'status');
-    banner.textContent = `С прошлого шага: ${incoming.label}. ${incoming.note}.`;
-    inputCard.append(banner);
-  }
+  appendPriorContext(
+    inputCard,
+    {
+      revenue: bridge.getRevenueRiskResult(),
+      routine: null,
+      priority: null,
+    },
+    'routine-calc',
+  );
 
   const presetsGrid = document.createElement('div');
   presetsGrid.className = 'presets-grid';

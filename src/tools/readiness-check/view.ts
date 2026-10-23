@@ -1,4 +1,5 @@
 import { createFieldHeading } from '../../components/field-heading';
+import { appendPriorContext } from '../../components/prior-context';
 import { bindHelpTipHover, releaseHelpTipsWithin } from '../../components/tooltip';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import type { ReadinessItemId, ReadinessStatus } from '../../lib/types';
@@ -42,7 +43,7 @@ export function renderReadinessCheckTool(
 ): void {
   const meta = TOOLS_CATALOG['readiness-check'];
   const { bridge, store, onNavigateTool } = ctx;
-  const incoming = bridge.consume('readiness-check');
+  bridge.consume('readiness-check');
   const saved = bridge.getReadinessResult();
   const answers: Record<ReadinessItemId, ReadinessStatus> = saved
     ? { ...saved.inputs }
@@ -71,14 +72,15 @@ export function renderReadinessCheckTool(
   subtitle.textContent = meta.subtitle;
   header.append(badge, title, subtitle);
   inputCard.append(header);
-
-  if (incoming) {
-    const banner = document.createElement('div');
-    banner.className = 'handoff-banner';
-    banner.setAttribute('role', 'status');
-    banner.textContent = `С прошлого шага: ${incoming.label}. ${incoming.note}.`;
-    inputCard.append(banner);
-  }
+  appendPriorContext(
+    inputCard,
+    {
+      revenue: bridge.getRevenueRiskResult(),
+      routine: bridge.getRoutineResult(),
+      priority: bridge.getPriorityResult(),
+    },
+    'readiness-check',
+  );
 
   let lastGroup = '';
   for (const item of READINESS_ITEMS) {

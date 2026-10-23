@@ -1,4 +1,5 @@
 import { createFieldHeading } from '../../components/field-heading';
+import { appendPriorContext } from '../../components/prior-context';
 import { releaseHelpTipsWithin } from '../../components/tooltip';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import type { PriorityProcessId, PriorityScoreInput } from '../../lib/types';
@@ -50,7 +51,7 @@ export function renderPriorityDiagTool(
 ): void {
   const meta = TOOLS_CATALOG['priority-diag'];
   const { bridge, store, onNavigateTool } = ctx;
-  const incoming = bridge.consume('priority-diag');
+  bridge.consume('priority-diag');
   const saved = bridge.getPriorityResult();
   const scores: Record<PriorityProcessId, PriorityScoreInput> = saved
     ? {
@@ -86,14 +87,15 @@ export function renderPriorityDiagTool(
   subtitle.textContent = meta.subtitle;
   header.append(badge, title, subtitle);
   inputCard.append(header);
-
-  if (incoming) {
-    const banner = document.createElement('div');
-    banner.className = 'handoff-banner';
-    banner.setAttribute('role', 'status');
-    banner.textContent = `С прошлого шага: ${incoming.label}. ${incoming.note}.`;
-    inputCard.append(banner);
-  }
+  appendPriorContext(
+    inputCard,
+    {
+      revenue: bridge.getRevenueRiskResult(),
+      routine: bridge.getRoutineResult(),
+      priority: null,
+    },
+    'priority-diag',
+  );
 
   const hint = document.createElement('p');
   hint.className = 'field-hint';
