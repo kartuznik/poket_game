@@ -372,10 +372,24 @@ export function renderRoutineCalcTool(
       automationSharePercentRaw: shareRaw,
       hourlyRateRaw: rateRaw,
     });
-    showError(operationsError, operationsInput, validated.errors.operationsPerWeek);
-    showError(minutesError, minutesInput, validated.errors.minutesPerOperation);
-    showError(rateError, rateInput, validated.errors.hourlyRate);
-    showError(shareError, shareInput, validated.errors.automationSharePercent);
+    const visibleError = (raw: string, message: string | undefined): string | undefined =>
+      raw.trim() === '' ? undefined : message;
+    showError(
+      operationsError,
+      operationsInput,
+      visibleError(operationsRaw, validated.errors.operationsPerWeek),
+    );
+    showError(
+      minutesError,
+      minutesInput,
+      visibleError(minutesRaw, validated.errors.minutesPerOperation),
+    );
+    showError(rateError, rateInput, visibleError(rateRaw, validated.errors.hourlyRate));
+    showError(
+      shareError,
+      shareInput,
+      visibleError(shareRaw, validated.errors.automationSharePercent),
+    );
     lastErrors = validated.errors;
 
     if (!validated.isValid || !validated.input) {

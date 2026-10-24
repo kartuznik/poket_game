@@ -706,11 +706,17 @@ export function renderRevenueRiskTool(
       mode,
     });
 
-    setFieldError(leadsInput, leadsError, validation.errors.leadsPerMonth);
-    setFieldError(lateInput, lateError, validation.errors.lateSharePercent);
-    setFieldError(convInput, convError, validation.errors.conversionPercent);
-    setFieldError(lossInput, lossError, validation.errors.lossFactorPercent);
-    setFieldError(checkInput, checkError, validation.errors.avgCheck);
+    const visibleError = (raw: string, message: string | undefined): string | undefined =>
+      raw.trim() === '' ? undefined : message;
+    setFieldError(leadsInput, leadsError, visibleError(leadsRaw, validation.errors.leadsPerMonth));
+    setFieldError(lateInput, lateError, visibleError(lateShareRaw, validation.errors.lateSharePercent));
+    setFieldError(
+      convInput,
+      convError,
+      visibleError(activeConvRaw, validation.errors.conversionPercent),
+    );
+    setFieldError(lossInput, lossError, visibleError(recoveryRaw, validation.errors.lossFactorPercent));
+    setFieldError(checkInput, checkError, visibleError(avgCheckRaw, validation.errors.avgCheck));
     lastErrors = validation.errors;
 
     const calcResult = calculateRevenueRisk({
