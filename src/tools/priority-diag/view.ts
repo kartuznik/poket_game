@@ -10,10 +10,10 @@ import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
 import {
   PRIORITY_PROCESSES,
-  defaultPriorityInputs,
   rankProcesses,
   type PriorityResult,
 } from './calc';
+import type { PriorityScoreDraft } from '../../lib/dossier';
 
 const HELP = {
   frequency:
@@ -57,14 +57,15 @@ export function renderPriorityDiagTool(
   bridge.consume('priority-diag');
   const saved = bridge.getPriorityResult();
   const draft = dossier.read().priorityDraft;
-  const sourceScores = draft?.scores ?? saved?.inputs ?? defaultPriorityInputs();
-  const scores: Record<PriorityProcessId, PriorityScoreInput> = {
-    inquiries: { ...sourceScores.inquiries },
-    answers: { ...sourceScores.answers },
-    booking: { ...sourceScores.booking },
-    payment: { ...sourceScores.payment },
-    reminders: { ...sourceScores.reminders },
-    reports: { ...sourceScores.reports },
+  const blank: PriorityScoreDraft = { frequency: null, time: null, errorCost: null };
+  const sourceScores = draft?.scores ?? saved?.inputs ?? null;
+  const scores: Record<PriorityProcessId, PriorityScoreDraft> = {
+    inquiries: sourceScores ? { ...sourceScores.inquiries } : { ...blank },
+    answers: sourceScores ? { ...sourceScores.answers } : { ...blank },
+    booking: sourceScores ? { ...sourceScores.booking } : { ...blank },
+    payment: sourceScores ? { ...sourceScores.payment } : { ...blank },
+    reminders: sourceScores ? { ...sourceScores.reminders } : { ...blank },
+    reports: sourceScores ? { ...sourceScores.reports } : { ...blank },
   };
   const openedStep = resolveInitialStep(6, initialStep, draft?.step ?? null);
 
@@ -129,7 +130,7 @@ export function renderPriorityDiagTool(
         button.type = 'button';
         button.className = 'choice-scale__btn';
         button.textContent = String(value);
-        button.setAttribute('aria-pressed', String(value === current));
+        button.setAttribute('aria-pressed', String(current !== null && value === current));
         button.setAttribute('aria-label', `${process.title}, ${criterion.title}: ${value}`);
         button.addEventListener('click', () => {
           scores[process.id] = { ...scores[process.id], [criterion.key]: value };
@@ -215,8 +216,32 @@ export function renderPriorityDiagTool(
 
   let latest: PriorityResult | null = null;
 
+  function completedScores(): Record<PriorityProcessId, PriorityScoreInput> | null {
+    const next = {} as Record<PriorityProcessId, PriorityScoreInput>;
+    for (const process of PRIORITY_PROCESSES) {
+      const row = scores[process.id];
+      if (row.frequency === null || row.time === null || row.errorCost === null) return null;
+      next[process.id] = {
+        frequency: row.frequency,
+        time: row.time,
+        errorCost: row.errorCost,
+      };
+    }
+    return next;
+  }
+
   function recalculate(): void {
-    const result = rankProcesses(scores);
+    const ready = completedScores();
+    if (!ready) {
+      latest = null;
+      valueEl.textContent = '';
+      noteEl.textContent = '';
+      list.replaceChildren();
+      diffBox.hidden = true;
+      refreshSteps();
+      return;
+    }
+    const result = rankProcesses(ready);
     latest = result;
     valueEl.textContent = result.top.title;
     const tieNote = result.tied
@@ -281,16 +306,10 @@ export function renderPriorityDiagTool(
 
   function finishPriority(): void {
     recalculate();
-    if (!latest) return;
+    const ready = completedScores();
+    if (!latest || !ready) return;
     const snapshot = bridge.savePriorityResult({
-      inputs: {
-        inquiries: scores.inquiries,
-        answers: scores.answers,
-        booking: scores.booking,
-        payment: scores.payment,
-        reminders: scores.reminders,
-        reports: scores.reports,
-      },
+      inputs: ready,
       results: {
         topProcessId: latest.top.id,
         topTitle: latest.top.title,
@@ -314,11 +333,17 @@ export function renderPriorityDiagTool(
     initialStep: openedStep,
     panels: processPanels,
     extras: [resultCard],
-    isStepValid: () => true,
+    isStepValid: (step) => {
+      const process = PRIORITY_PROCESSES[step - 1];
+      if (!process) return false;
+      const row = scores[process.id];
+      return row.frequency !== null && row.time !== null && row.errorCost !== null;
+    },
     finishLabel: meta.nextToolCta,
     onStep: (step) => {
       onWizardStep(step);
       persistPriorityDraft(step);
+      if (step === PRIORITY_PROCESSES.length && !latest) resultCard.hidden = true;
     },
     onFinish: finishPriority,
   });

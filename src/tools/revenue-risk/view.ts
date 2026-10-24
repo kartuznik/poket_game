@@ -15,7 +15,6 @@ import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
 import {
   type ConversionInputMode,
-  DEFAULT_LOSS_FACTOR_PERCENT,
   MARKET_AVERAGE_BADGE_DISCLAIMER,
   MARKET_AVERAGE_RESULT_DISCLAIMER,
   NICHE_PRESETS,
@@ -153,30 +152,25 @@ export function renderRevenueRiskTool(
 
   let leadsRaw =
     draft?.leadsPerMonth ??
-    String(
-      saved?.inputs.leadsPerMonth ??
-        (incomingHandoff
-          ? Math.max(1, Math.round(incomingHandoff.suggestedValue))
-          : REVENUE_RISK_DEFAULTS.leadsPerMonth),
-    );
+    (saved
+      ? String(saved.inputs.leadsPerMonth)
+      : incomingHandoff
+        ? String(Math.max(1, Math.round(incomingHandoff.suggestedValue)))
+        : '');
   let lateShareRaw =
-    draft?.lateSharePercent ??
-    String(saved?.inputs.lateSharePercent ?? REVENUE_RISK_DEFAULTS.lateSharePercent);
+    draft?.lateSharePercent ?? (saved ? String(saved.inputs.lateSharePercent) : '');
   let customConversionRaw =
     draft?.conversionPercent ??
-    String(
-      saved && saved.inputs.mode === 'custom'
-        ? saved.inputs.conversionPercent
-        : REVENUE_RISK_DEFAULTS.conversionPercent,
-    );
+    (saved && saved.inputs.mode === 'custom' ? String(saved.inputs.conversionPercent) : '');
   const storedLossPercent =
     draft?.lossFactorPercent ??
-    String(saved ? Math.round(saved.inputs.lossFactor * 100) : DEFAULT_LOSS_FACTOR_PERCENT);
-  let customRecoveryRaw = String(
-    recoveryPercentFromLossFactor(Number(storedLossPercent) / 100),
-  );
+    (saved ? String(Math.round(saved.inputs.lossFactor * 100)) : '');
+  let customRecoveryRaw =
+    storedLossPercent.trim() === '' || !Number.isFinite(Number(storedLossPercent))
+      ? ''
+      : String(recoveryPercentFromLossFactor(Number(storedLossPercent) / 100));
   let recoveryRaw = customRecoveryRaw;
-  let avgCheckRaw = draft?.avgCheck ?? String(saved?.inputs.avgCheck ?? REVENUE_RISK_DEFAULTS.avgCheck);
+  let avgCheckRaw = draft?.avgCheck ?? (saved ? String(saved.inputs.avgCheck) : '');
   let lastErrors: RevenueRiskFieldErrors = {};
   const openedStep = resolveInitialStep(4, initialStep, draft?.step ?? null);
 
@@ -231,6 +225,7 @@ export function renderRevenueRiskTool(
   leadsInput.max = '1000000';
   leadsInput.step = '10';
   leadsInput.value = leadsRaw;
+  leadsInput.placeholder = 'например, 100';
 
   const leadsHeading = fieldHeading(
     'rr-leads-input',
@@ -261,7 +256,7 @@ export function renderRevenueRiskTool(
   lateSlider.min = '0';
   lateSlider.max = '100';
   lateSlider.step = '1';
-  lateSlider.value = lateShareRaw;
+  lateSlider.value = lateShareRaw === '' ? '0' : lateShareRaw;
   lateSlider.setAttribute(
     'aria-label',
     'Ползунок доли поздних или пропущенных ответов в процентах',
@@ -276,6 +271,7 @@ export function renderRevenueRiskTool(
   lateInput.max = '100';
   lateInput.step = '1';
   lateInput.value = lateShareRaw;
+  lateInput.placeholder = 'например, 35';
 
   lateSliderRow.append(lateSlider, lateInput);
 
@@ -389,6 +385,7 @@ export function renderRevenueRiskTool(
   convInput.max = '95';
   convInput.step = '1';
   convInput.value = customConversionRaw;
+  convInput.placeholder = 'например, 20';
 
   const convError = document.createElement('p');
   convError.className = 'field-error';
@@ -416,7 +413,7 @@ export function renderRevenueRiskTool(
   lossSlider.min = '0';
   lossSlider.max = '100';
   lossSlider.step = '5';
-  lossSlider.value = recoveryRaw;
+  lossSlider.value = recoveryRaw === '' ? '0' : recoveryRaw;
   lossSlider.setAttribute('aria-describedby', 'rr-loss-hint');
   lossSlider.setAttribute(
     'aria-label',
@@ -432,6 +429,7 @@ export function renderRevenueRiskTool(
   lossInput.max = '100';
   lossInput.step = '1';
   lossInput.value = recoveryRaw;
+  lossInput.placeholder = 'например, 70';
   lossInput.setAttribute('aria-describedby', 'rr-loss-hint');
 
   lossSliderRow.append(lossSlider, lossInput);
@@ -464,6 +462,7 @@ export function renderRevenueRiskTool(
   checkInput.max = '100000000';
   checkInput.step = '500';
   checkInput.value = avgCheckRaw;
+  checkInput.placeholder = 'например, 4500';
 
   const checkHeading = fieldHeading(
     'rr-check-input',
@@ -630,11 +629,11 @@ export function renderRevenueRiskTool(
   function writeRecovery(raw: string): void {
     recoveryRaw = raw;
     lossInput.value = raw;
-    const numeric = normalizeFiniteNumber(
-      raw,
-      recoveryPercentFromLossFactor(DEFAULT_LOSS_FACTOR_PERCENT / 100),
-    );
-    lossSlider.value = String(Math.min(100, Math.max(0, numeric)));
+    if (raw.trim() === '' || !Number.isFinite(Number(raw))) {
+      lossSlider.value = '0';
+      return;
+    }
+    lossSlider.value = String(Math.min(100, Math.max(0, Number(raw))));
   }
 
   function applyPresetRecovery(): void {
@@ -818,11 +817,11 @@ export function renderRevenueRiskTool(
 
   lossInput.addEventListener('input', () => {
     recoveryRaw = lossInput.value;
-    const num = normalizeFiniteNumber(
-      recoveryRaw,
-      recoveryPercentFromLossFactor(DEFAULT_LOSS_FACTOR_PERCENT / 100),
-    );
-    lossSlider.value = String(Math.min(100, Math.max(0, num)));
+    if (recoveryRaw.trim() === '' || !Number.isFinite(Number(recoveryRaw))) {
+      lossSlider.value = '0';
+    } else {
+      lossSlider.value = String(Math.min(100, Math.max(0, Number(recoveryRaw))));
+    }
     if (mode === 'custom') {
       customRecoveryRaw = recoveryRaw;
     }
@@ -905,9 +904,10 @@ export function renderRevenueRiskTool(
         lateSharePercent: lateShareRaw,
         conversionPercent: customConversionRaw,
         avgCheck: avgCheckRaw,
-        lossFactorPercent: String(
-          Math.round(100 - Math.min(100, Math.max(0, Number(recoveryRaw) || 0))),
-        ),
+        lossFactorPercent:
+          recoveryRaw.trim() === '' || !Number.isFinite(Number(recoveryRaw))
+            ? ''
+            : String(Math.round(100 - Math.min(100, Math.max(0, Number(recoveryRaw))))),
         mode,
         presetId: mode === 'preset' ? selectedPresetId : null,
       },
@@ -954,6 +954,18 @@ export function renderRevenueRiskTool(
     onNavigateTool(meta.nextToolId);
   }
 
+  lastErrors = validateRevenueRiskDraft({
+    leadsPerMonthRaw: leadsRaw,
+    lateSharePercentRaw: lateShareRaw,
+    conversionPercentRaw:
+      mode === 'preset'
+        ? String(getNichePresetById(selectedPresetId).defaultConversionPercent)
+        : customConversionRaw,
+    avgCheckRaw,
+    lossFactorPercentRaw: recoveryRaw,
+    mode,
+  }).errors;
+
   let refreshSteps = (): void => {};
   const wizard = createWizard({
     toolId: 'revenue-risk',
@@ -965,6 +977,9 @@ export function renderRevenueRiskTool(
     onStep: (step) => {
       onWizardStep(step);
       persistRevenueDraft(step);
+      const showResult = step === 4 && isRevenueStepValid(4, lastErrors);
+      resultCard.hidden = !showResult;
+      howDetails.hidden = !showResult;
     },
     onFinish: finishRevenue,
   });

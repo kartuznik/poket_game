@@ -65,6 +65,66 @@ describe('business dossier', () => {
     expect(restored.updatedAt).toBe(50);
   });
 
+  it('keeps an unfinished visit, including a blank recovery field and a half-scored process', () => {
+    const storage = memoryStorage();
+    const store = createDossierStore(() => storage, () => 8);
+    store.update((current) => ({
+      ...current,
+      revenueDraft: {
+        step: 1,
+        leadsPerMonth: '',
+        lateSharePercent: '',
+        conversionPercent: '',
+        avgCheck: '',
+        lossFactorPercent: '',
+        mode: 'custom',
+        presetId: null,
+      },
+      routineDraft: {
+        step: 1,
+        presetId: null,
+        customEntry: false,
+        operationsPerWeek: '',
+        minutesPerOperation: '',
+        automationSharePercent: '',
+        hourlyRate: '',
+      },
+      priorityDraft: {
+        step: 1,
+        scores: {
+          inquiries: { frequency: 5, time: null, errorCost: null },
+          answers: { frequency: null, time: null, errorCost: null },
+          booking: { frequency: null, time: null, errorCost: null },
+          payment: { frequency: null, time: null, errorCost: null },
+          reminders: { frequency: null, time: null, errorCost: null },
+          reports: { frequency: null, time: null, errorCost: null },
+        },
+      },
+      readinessDraft: {
+        step: 1,
+        answers: {
+          repeated: 'yes',
+          rules: null,
+          'one-path': null,
+          'one-place': null,
+          faq: null,
+          numbers: null,
+          owner: null,
+          channel: null,
+          time: null,
+        },
+      },
+    }));
+    const restored = createDossierStore(() => storage, () => 1).read();
+    expect(restored.revenueDraft?.lossFactorPercent).toBe('');
+    expect(restored.routineDraft?.customEntry).toBe(false);
+    expect(restored.priorityDraft?.scores.inquiries.frequency).toBe(5);
+    expect(restored.priorityDraft?.scores.inquiries.time).toBeNull();
+    expect(restored.readinessDraft?.answers.repeated).toBe('yes');
+    expect(restored.readinessDraft?.answers.rules).toBeNull();
+    expect(restored.priority).toBeNull();
+  });
+
   it('keeps the session copy when storage throws', () => {
     const store = createDossierStore(
       () => ({

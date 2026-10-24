@@ -30,20 +30,28 @@ export interface RevenueDraft {
 export interface RoutineDraft {
   readonly step: number;
   readonly presetId: RoutinePresetId | null;
+  /** True after «Введу свои цифры» or a typed number, so step 1 is no longer blank. */
+  readonly customEntry: boolean;
   readonly operationsPerWeek: string;
   readonly minutesPerOperation: string;
   readonly automationSharePercent: string;
   readonly hourlyRate: string;
 }
 
+export interface PriorityScoreDraft {
+  readonly frequency: number | null;
+  readonly time: number | null;
+  readonly errorCost: number | null;
+}
+
 export interface PriorityDraft {
   readonly step: number;
-  readonly scores: Readonly<Record<PriorityProcessId, PriorityScoreInput>>;
+  readonly scores: Readonly<Record<PriorityProcessId, PriorityScoreDraft>>;
 }
 
 export interface ReadinessDraft {
   readonly step: number;
-  readonly answers: Readonly<Record<ReadinessItemId, ReadinessStatus>>;
+  readonly answers: Readonly<Record<ReadinessItemId, ReadinessStatus | null>>;
 }
 
 export interface ContactDraft {
@@ -208,6 +216,19 @@ function score(value: unknown): number | null {
   return parsed;
 }
 
+/** null means not answered yet. A present but illegal value is corrupt. */
+function draftScore(value: unknown): number | null | 'bad' {
+  if (value === null || value === undefined) return null;
+  const parsed = score(value);
+  return parsed === null ? 'bad' : parsed;
+}
+
+function draftStatus(value: unknown): ReadinessStatus | null | 'bad' {
+  if (value === null || value === undefined) return null;
+  const status = readinessStatus(value);
+  return status === null ? 'bad' : status;
+}
+
 function readinessStatus(value: unknown): ReadinessStatus | null {
   if (value === 'yes' || value === 'partial' || value === 'no') return value;
   return null;
@@ -278,9 +299,16 @@ function readRoutineDraft(value: unknown): RoutineDraft | null {
       ? null
       : ROUTINE_PRESETS.find((id) => id === presetRaw) ?? null;
   if (presetRaw !== null && presetId === null) return null;
+  const typedOwnNumbers =
+    operationsPerWeek !== '' ||
+    minutesPerOperation !== '' ||
+    automationSharePercent !== '';
+  const customEntry =
+    value.customEntry === true || (presetId === null && typedOwnNumbers);
   return {
     step,
     presetId,
+    customEntry,
     operationsPerWeek,
     minutesPerOperation,
     automationSharePercent,
@@ -292,14 +320,18 @@ function readPriorityDraft(value: unknown): PriorityDraft | null {
   if (!isRecord(value) || !isRecord(value.scores)) return null;
   const step = stepIn(value.step, 6);
   if (step === null) return null;
-  const scores = {} as Record<PriorityProcessId, PriorityScoreInput>;
+  const scores = {} as Record<PriorityProcessId, PriorityScoreDraft>;
   for (const id of PRIORITY_IDS) {
     const row = value.scores[id];
+    if (row === undefined || row === null) {
+      scores[id] = { frequency: null, time: null, errorCost: null };
+      continue;
+    }
     if (!isRecord(row)) return null;
-    const frequency = score(row.frequency);
-    const time = score(row.time);
-    const errorCost = score(row.errorCost);
-    if (frequency === null || time === null || errorCost === null) return null;
+    const frequency = draftScore(row.frequency);
+    const time = draftScore(row.time);
+    const errorCost = draftScore(row.errorCost);
+    if (frequency === 'bad' || time === 'bad' || errorCost === 'bad') return null;
     scores[id] = { frequency, time, errorCost };
   }
   return { step, scores };
@@ -309,10 +341,10 @@ function readReadinessDraft(value: unknown): ReadinessDraft | null {
   if (!isRecord(value) || !isRecord(value.answers)) return null;
   const step = stepIn(value.step, 3);
   if (step === null) return null;
-  const answers = {} as Record<ReadinessItemId, ReadinessStatus>;
+  const answers = {} as Record<ReadinessItemId, ReadinessStatus | null>;
   for (const id of READINESS_IDS) {
-    const status = readinessStatus(value.answers[id]);
-    if (!status) return null;
+    const status = draftStatus(value.answers[id]);
+    if (status === 'bad') return null;
     answers[id] = status;
   }
   return { step, answers };
@@ -434,6 +466,16 @@ function readPriority(value: unknown): PriorityBridgeSnapshot | null {
   if (!isRecord(inputs) || !isRecord(results)) return null;
   const draftLike = readPriorityDraft({ step: 1, scores: inputs });
   if (!draftLike) return null;
+  const completeScores = {} as Record<PriorityProcessId, PriorityScoreInput>;
+  for (const id of PRIORITY_IDS) {
+    const row = draftLike.scores[id];
+    if (row.frequency === null || row.time === null || row.errorCost === null) return null;
+    completeScores[id] = {
+      frequency: row.frequency,
+      time: row.time,
+      errorCost: row.errorCost,
+    };
+  }
   const topProcessId = PRIORITY_IDS.find((id) => id === results.topProcessId);
   const topTitle = text(results.topTitle);
   const topScore = finite(results.topScore);
@@ -452,7 +494,7 @@ function readPriority(value: unknown): PriorityBridgeSnapshot | null {
   return {
     toolId: 'priority-diag',
     updatedAt,
-    inputs: draftLike.scores,
+    inputs: completeScores,
     results: {
       topProcessId,
       topTitle,
@@ -470,6 +512,12 @@ function readReadiness(value: unknown): ReadinessBridgeSnapshot | null {
   if (!isRecord(inputs) || !isRecord(results)) return null;
   const draftLike = readReadinessDraft({ step: 1, answers: inputs });
   if (!draftLike) return null;
+  const completeAnswers = {} as Record<ReadinessItemId, ReadinessStatus>;
+  for (const id of READINESS_IDS) {
+    const status = draftLike.answers[id];
+    if (status === null) return null;
+    completeAnswers[id] = status;
+  }
   const scoreValue = finite(results.score);
   const band =
     results.band === 'early' || results.band === 'gaps' || results.band === 'ready'
@@ -487,7 +535,7 @@ function readReadiness(value: unknown): ReadinessBridgeSnapshot | null {
   return {
     toolId: 'readiness-check',
     updatedAt,
-    inputs: draftLike.answers,
+    inputs: completeAnswers,
     results: {
       score: scoreValue,
       band,

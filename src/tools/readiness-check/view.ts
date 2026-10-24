@@ -11,7 +11,6 @@ import type { ToolStubRenderContext } from '../stub-factory';
 import {
   READINESS_ITEMS,
   assessReadiness,
-  defaultReadinessAnswers,
   type ReadinessResult,
 } from './calc';
 
@@ -49,9 +48,23 @@ export function renderReadinessCheckTool(
   bridge.consume('readiness-check');
   const saved = bridge.getReadinessResult();
   const draft = dossier.read().readinessDraft;
-  const answers: Record<ReadinessItemId, ReadinessStatus> = {
-    ...(draft?.answers ?? saved?.inputs ?? defaultReadinessAnswers()),
+  const answers: Record<ReadinessItemId, ReadinessStatus | null> = {
+    repeated: null,
+    rules: null,
+    'one-path': null,
+    'one-place': null,
+    faq: null,
+    numbers: null,
+    owner: null,
+    channel: null,
+    time: null,
   };
+  const restored = draft?.answers ?? saved?.inputs ?? null;
+  if (restored) {
+    for (const item of READINESS_ITEMS) {
+      answers[item.id] = restored[item.id];
+    }
+  }
   const openedStep = resolveInitialStep(3, initialStep, draft?.step ?? null);
 
   releaseHelpTipsWithin(container);
@@ -196,8 +209,28 @@ export function renderReadinessCheckTool(
 
   let latest: ReadinessResult | null = null;
 
+  function answersComplete(): Record<ReadinessItemId, ReadinessStatus> | null {
+    const next = {} as Record<ReadinessItemId, ReadinessStatus>;
+    for (const item of READINESS_ITEMS) {
+      const status = answers[item.id];
+      if (status === null) return null;
+      next[item.id] = status;
+    }
+    return next;
+  }
+
   function recalculate(): void {
-    const result = assessReadiness(answers);
+    const ready = answersComplete();
+    if (!ready) {
+      latest = null;
+      valueEl.textContent = '';
+      noteEl.textContent = '';
+      gaps.replaceChildren();
+      diffBox.hidden = true;
+      refreshSteps();
+      return;
+    }
+    const result = assessReadiness(ready);
     latest = result;
     valueEl.textContent = result.bandLabel;
     noteEl.textContent = `${formatScore(result.score)} из 9. ${result.note}`;
@@ -256,9 +289,10 @@ export function renderReadinessCheckTool(
 
   function finishReadiness(): void {
     recalculate();
-    if (!latest) return;
+    const ready = answersComplete();
+    if (!latest || !ready) return;
     const snapshot = bridge.saveReadinessResult({
-      inputs: { ...answers },
+      inputs: ready,
       results: {
         score: latest.score,
         band: latest.band,
@@ -277,11 +311,19 @@ export function renderReadinessCheckTool(
     initialStep: openedStep,
     panels: readinessPanels,
     extras: [resultCard],
-    isStepValid: () => true,
+    isStepValid: (step) => {
+      const groups = [...new Set(READINESS_ITEMS.map((item) => item.group))];
+      const group = groups[step - 1];
+      if (!group) return false;
+      return READINESS_ITEMS.filter((item) => item.group === group).every(
+        (item) => answers[item.id] !== null,
+      );
+    },
     finishLabel: meta.nextToolCta,
     onStep: (step) => {
       onWizardStep(step);
       persistReadinessDraft(step);
+      if (step === 3 && !latest) resultCard.hidden = true;
     },
     onFinish: finishReadiness,
   });

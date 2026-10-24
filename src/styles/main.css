@@ -471,6 +471,12 @@ body {
   gap: 10px;
 }
 
+.field-input::placeholder,
+.field-textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
 .field-input {
   width: 100%;
   min-height: 46px;

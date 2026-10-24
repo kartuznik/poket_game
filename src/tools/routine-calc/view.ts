@@ -4,7 +4,7 @@ import { createHelpTip, releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
-import { isRoutineStepValid, resolveInitialStep } from '../../lib/wizard';
+import { isRoutineStartChosen, isRoutineStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
   formatCountWithNoun,
   formatRubles,
@@ -14,7 +14,6 @@ import type { RoutinePresetId } from '../../lib/types';
 import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
 import {
-  ROUTINE_DEFAULTS,
   ROUTINE_PRESETS,
   calculateRoutine,
   getRoutinePresetById,
@@ -73,12 +72,13 @@ export function renderRoutineCalcTool(
 
   let presetId: RoutinePresetId | null = draft
     ? draft.presetId
-    : (saved?.inputs.presetId ?? ROUTINE_DEFAULTS.presetId);
-  let operationsRaw = draft?.operationsPerWeek ?? String(saved?.inputs.operationsPerWeek ?? ROUTINE_DEFAULTS.operationsPerWeek);
-  let minutesRaw = draft?.minutesPerOperation ?? String(saved?.inputs.minutesPerOperation ?? ROUTINE_DEFAULTS.minutesPerOperation);
-  let shareRaw = draft?.automationSharePercent ?? String(
-    saved?.inputs.automationSharePercent ?? ROUTINE_DEFAULTS.automationSharePercent,
-  );
+    : (saved?.inputs.presetId ?? null);
+  let customEntry = draft
+    ? draft.customEntry
+    : saved !== null && saved.inputs.presetId === null;
+  let operationsRaw = draft?.operationsPerWeek ?? (saved ? String(saved.inputs.operationsPerWeek) : '');
+  let minutesRaw = draft?.minutesPerOperation ?? (saved ? String(saved.inputs.minutesPerOperation) : '');
+  let shareRaw = draft?.automationSharePercent ?? (saved ? String(saved.inputs.automationSharePercent) : '');
   let rateRaw = draft
     ? draft.hourlyRate
     : saved?.inputs.hourlyRate === null || saved?.inputs.hourlyRate === undefined
@@ -134,6 +134,7 @@ export function renderRoutineCalcTool(
   operationsInput.max = '10000';
   operationsInput.step = '1';
   operationsInput.value = operationsRaw;
+  operationsInput.placeholder = 'например, 40';
 
   const minutesInput = document.createElement('input');
   minutesInput.className = 'field-input';
@@ -144,6 +145,7 @@ export function renderRoutineCalcTool(
   minutesInput.max = '480';
   minutesInput.step = '1';
   minutesInput.value = minutesRaw;
+  minutesInput.placeholder = 'например, 6';
 
   const rateInput = document.createElement('input');
   rateInput.className = 'field-input';
@@ -164,7 +166,7 @@ export function renderRoutineCalcTool(
   shareSlider.min = '0';
   shareSlider.max = '100';
   shareSlider.step = '5';
-  shareSlider.value = shareRaw;
+  shareSlider.value = shareRaw === '' ? '0' : shareRaw;
   shareSlider.setAttribute('aria-label', 'Ползунок доли автоматизации в процентах');
   const shareInput = document.createElement('input');
   shareInput.className = 'field-input';
@@ -175,13 +177,17 @@ export function renderRoutineCalcTool(
   shareInput.max = '100';
   shareInput.step = '1';
   shareInput.value = shareRaw;
+  shareInput.placeholder = 'например, 70';
   shareRow.append(shareSlider, shareInput);
 
+  let ownNumbersBtn: HTMLButtonElement | null = null;
   function markPreset(next: RoutinePresetId | null): void {
     presetId = next;
+    if (next !== null) customEntry = false;
     for (const [id, button] of presetButtons) {
       button.setAttribute('aria-pressed', String(id === presetId));
     }
+    ownNumbersBtn?.setAttribute('aria-pressed', String(customEntry && presetId === null));
   }
 
   for (const preset of ROUTINE_PRESETS) {
@@ -260,9 +266,20 @@ export function renderRoutineCalcTool(
     shareError,
   );
 
+  ownNumbersBtn = document.createElement('button');
+  ownNumbersBtn.type = 'button';
+  ownNumbersBtn.className = 'action-btn action-btn--secondary';
+  ownNumbersBtn.textContent = 'Введу свои цифры';
+  ownNumbersBtn.setAttribute('aria-pressed', String(customEntry && presetId === null));
+  ownNumbersBtn.addEventListener('click', () => {
+    customEntry = true;
+    markPreset(null);
+    recalculate();
+  });
+
   const presetStep = document.createElement('div');
   presetStep.className = 'step-panel';
-  presetStep.append(presetsGrid);
+  presetStep.append(presetsGrid, ownNumbersBtn);
   const operationsStep = document.createElement('div');
   operationsStep.className = 'step-panel';
   operationsStep.append(operationsGroup);
@@ -420,6 +437,7 @@ export function renderRoutineCalcTool(
   }
 
   function onManualEdit(): void {
+    customEntry = true;
     markPreset(null);
     recalculate();
   }
@@ -482,6 +500,7 @@ export function renderRoutineCalcTool(
       routineDraft: {
         step,
         presetId,
+        customEntry,
         operationsPerWeek: operationsRaw,
         minutesPerOperation: minutesRaw,
         automationSharePercent: shareRaw,
@@ -514,17 +533,28 @@ export function renderRoutineCalcTool(
     onNavigateTool(meta.nextToolId);
   }
 
+  lastErrors = validateRoutineDraft({
+    operationsPerWeekRaw: operationsRaw,
+    minutesPerOperationRaw: minutesRaw,
+    automationSharePercentRaw: shareRaw,
+    hourlyRateRaw: rateRaw,
+  }).errors;
+
   let refreshSteps = (): void => {};
   const wizard = createWizard({
     toolId: 'routine-calc',
     initialStep: openedStep,
     panels: [presetStep, operationsStep, minutesStep, shareStep],
     extras: [resultCard],
-    isStepValid: (step) => isRoutineStepValid(step, lastErrors),
+    isStepValid: (step) =>
+      step === 1
+        ? isRoutineStartChosen(presetId !== null, customEntry)
+        : isRoutineStepValid(step, lastErrors),
     finishLabel: meta.nextToolCta,
     onStep: (step) => {
       onWizardStep(step);
       persistRoutineDraft(step);
+      if (step === 4 && !latest) resultCard.hidden = true;
     },
     onFinish: finishRoutine,
   });

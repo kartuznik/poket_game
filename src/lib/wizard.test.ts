@@ -4,6 +4,7 @@ import {
   editStepFor,
   globalProgressPercent,
   isRevenueStepValid,
+  isRoutineStartChosen,
   isRoutineStepValid,
   journeyIndex,
   localProgressPercent,
@@ -55,6 +56,9 @@ describe('wizard steps', () => {
     expect(isRevenueStepValid(4, { lossFactorPercent: 'пусто' })).toBe(false);
     expect(isRevenueStepValid(4, {})).toBe(true);
 
+    expect(isRoutineStartChosen(false, false)).toBe(false);
+    expect(isRoutineStartChosen(true, false)).toBe(true);
+    expect(isRoutineStartChosen(false, true)).toBe(true);
     expect(isRoutineStepValid(1, { operationsPerWeek: 'пусто' })).toBe(true);
     expect(isRoutineStepValid(2, { operationsPerWeek: 'пусто' })).toBe(false);
     expect(isRoutineStepValid(3, {})).toBe(true);

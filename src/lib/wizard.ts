@@ -90,6 +90,11 @@ export function isRevenueStepValid(step: number, errors: RevenueRiskFieldErrors)
   return errors.avgCheck === undefined && errors.lossFactorPercent === undefined;
 }
 
+/** Step 1 stays closed until a scenario card or «Введу свои цифры» is chosen. */
+export function isRoutineStartChosen(presetChosen: boolean, customEntry: boolean): boolean {
+  return presetChosen || customEntry;
+}
+
 export function isRoutineStepValid(step: number, errors: RoutineFieldErrors): boolean {
   if (step <= 1) return true;
   if (step === 2) return errors.operationsPerWeek === undefined;
