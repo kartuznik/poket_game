@@ -54,6 +54,9 @@ describe('wizard steps', () => {
     expect(isRevenueStepValid(3, {})).toBe(true);
     expect(isRevenueStepValid(4, { avgCheck: 'пусто' })).toBe(false);
     expect(isRevenueStepValid(4, { lossFactorPercent: 'пусто' })).toBe(false);
+    expect(isRevenueStepValid(4, { leadsPerMonth: 'пусто' })).toBe(false);
+    expect(isRevenueStepValid(4, { lateSharePercent: 'пусто' })).toBe(false);
+    expect(isRevenueStepValid(4, { conversionPercent: 'пусто' })).toBe(false);
     expect(isRevenueStepValid(4, {})).toBe(true);
 
     expect(isRoutineStartChosen(false, false)).toBe(false);

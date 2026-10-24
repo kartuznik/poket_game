@@ -630,6 +630,15 @@ export function renderRevenueRiskTool(
 
   trackingCard.append(trackingTitle, trackingList);
 
+  const incompleteNote = document.createElement('div');
+  incompleteNote.className = 'result-card';
+  incompleteNote.hidden = true;
+  const incompleteText = document.createElement('p');
+  incompleteText.className = 'result-card__note';
+  incompleteText.textContent =
+    'Чтобы увидеть расчёт, заполните количество обращений и долю поздних ответов на предыдущих шагах.';
+  incompleteNote.append(incompleteText);
+
   panel.append(inputCard);
   container.appendChild(panel);
 
@@ -986,7 +995,7 @@ export function renderRevenueRiskTool(
     toolId: 'revenue-risk',
     initialStep: openedStep,
     panels: [leadStep, lateStep, conversionStep, moneyStep],
-    extras: [resultCard, howDetails, trackingCard],
+    extras: [resultCard, howDetails, incompleteNote, trackingCard],
     isStepValid: (step) => isRevenueStepValid(step, lastErrors),
     finishLabel: meta.nextToolCta,
     onStep: (step) => {
@@ -995,11 +1004,23 @@ export function renderRevenueRiskTool(
       const showResult = step === 4 && isRevenueStepValid(4, lastErrors);
       resultCard.hidden = !showResult;
       howDetails.hidden = !showResult;
+      incompleteNote.hidden = step !== 4 || showResult;
     },
     onFinish: finishRevenue,
   });
   refreshSteps = () => wizard.refresh();
-  inputCard.append(wizard.progress, leadStep, lateStep, conversionStep, moneyStep, resultCard, howDetails, trackingCard, wizard.nav);
+  inputCard.append(
+    wizard.progress,
+    leadStep,
+    lateStep,
+    conversionStep,
+    moneyStep,
+    resultCard,
+    howDetails,
+    incompleteNote,
+    trackingCard,
+    wizard.nav,
+  );
 
   // Initial render
   syncConversionFieldWithMode();

@@ -87,7 +87,13 @@ export function isRevenueStepValid(step: number, errors: RevenueRiskFieldErrors)
   if (step <= 1) return errors.leadsPerMonth === undefined;
   if (step === 2) return errors.lateSharePercent === undefined;
   if (step === 3) return errors.conversionPercent === undefined;
-  return errors.avgCheck === undefined && errors.lossFactorPercent === undefined;
+  return (
+    errors.leadsPerMonth === undefined &&
+    errors.lateSharePercent === undefined &&
+    errors.conversionPercent === undefined &&
+    errors.avgCheck === undefined &&
+    errors.lossFactorPercent === undefined
+  );
 }
 
 /** Step 1 stays closed until a scenario card or «Введу свои цифры» is chosen. */
