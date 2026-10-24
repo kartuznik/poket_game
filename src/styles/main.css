@@ -424,7 +424,7 @@ body {
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .field-input,
@@ -851,7 +851,7 @@ textarea:focus-visible,
 summary:focus-visible,
 a:focus-visible {
   outline: 3px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline-offset: 0;
 }
 
 [hidden] {
@@ -903,7 +903,7 @@ a:focus-visible {
 .slider-row {
   display: grid;
   grid-template-columns: 1fr 86px;
-  gap: 10px;
+  gap: 16px;
   align-items: center;
 }
 
@@ -920,6 +920,10 @@ a:focus-visible {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
+}
+
+.presets-grid + .action-btn {
+  margin-top: 24px;
 }
 
 @media (min-width: 440px) {
