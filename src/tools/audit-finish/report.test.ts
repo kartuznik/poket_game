@@ -62,16 +62,11 @@ describe('audit handoff', () => {
     expect(items.join(' ')).not.toContain('рутин');
   });
 
-  it('puts the contact and the confirmed numbers into the copied text', () => {
-    const text = buildAuditHandoff(sources, {
-      name: 'Анна',
-      telegram: '@anna',
-      phone: '',
-      business: 'салон',
-    });
-    expect(text).toContain('Имя: Анна');
-    expect(text).toContain('Telegram: @anna');
-    expect(text).toContain('Бизнес: салон');
+  it('puts the confirmed numbers into the copied text and leaves contacts out', () => {
+    const text = buildAuditHandoff(sources);
+    expect(text.startsWith('Игра в бизнес — отчёт для Ефима')).toBe(true);
+    expect(text).not.toContain('Имя:');
+    expect(text).not.toContain('Telegram:');
     expect(text).not.toContain('Телефон:');
     expect(text).toContain('Выручка под риском');
     expect(text).toContain('Что сделать дальше');
@@ -79,12 +74,14 @@ describe('audit handoff', () => {
   });
 
   it('keeps an unfinished path out of the summary', () => {
-    const text = buildAuditHandoff(
-      { revenue: null, routine: null, priority: null, readiness: null },
-      { name: 'Илья', telegram: '', phone: '+7 900', business: '' },
-    );
-    expect(text).toContain('Имя: Илья');
+    const text = buildAuditHandoff({
+      revenue: null,
+      routine: null,
+      priority: null,
+      readiness: null,
+    });
     expect(text).toContain('Заполните хотя бы один инструмент');
+    expect(text).not.toContain('Имя:');
     expect(text).not.toContain('Что сделать дальше');
   });
 });

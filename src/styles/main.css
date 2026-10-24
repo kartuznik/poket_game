@@ -433,16 +433,6 @@ body {
   scroll-margin-block: 28px;
 }
 
-.contact-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.contact-form .field-group {
-  padding-block: 4px;
-}
-
 .field-label {
   display: flex;
   align-items: center;

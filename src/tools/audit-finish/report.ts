@@ -1,5 +1,4 @@
 import { formatRubles, formatWorkHours } from '../../lib/format';
-import type { ContactDraft } from '../../lib/dossier';
 import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from '../final-report/summary';
 
 export const THREADS_PROFILE_URL = 'https://www.threads.net/@_kartuzzz';
@@ -33,18 +32,10 @@ export function buildRecommendations(sources: ReportSources): readonly string[] 
   return items.slice(0, 3);
 }
 
-/** Text the visitor pastes to Efim: confirmed numbers plus the contact fields. */
-export function buildAuditHandoff(sources: ReportSources, contacts: ContactDraft): string {
+/** Text the visitor pastes to Efim: the confirmed numbers and the next steps. */
+export function buildAuditHandoff(sources: ReportSources): string {
   const summary = buildFinalSummary(sources);
   const lines = ['Игра в бизнес — отчёт для Ефима', ''];
-  lines.push(`Имя: ${contacts.name.trim()}`);
-  const telegram = contacts.telegram.trim();
-  const phone = contacts.phone.trim();
-  const business = contacts.business.trim();
-  if (telegram) lines.push(`Telegram: ${telegram}`);
-  if (phone) lines.push(`Телефон: ${phone}`);
-  if (business) lines.push(`Бизнес: ${business}`);
-  lines.push('');
 
   if (!summary.hasData) {
     lines.push(EMPTY_REPORT_TEXT, '', '@_kartuzzz');

@@ -2,7 +2,6 @@ import { celebrate } from '../../components/confetti';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { downloadTextFile } from '../../lib/csv';
-import { validateContacts } from '../../lib/dossier';
 import { resetVisitorProgress } from '../../lib/reset-progress';
 import { JOURNEY_LENGTH, globalProgressPercent } from '../../lib/wizard';
 import { TOOLS_CATALOG } from '../catalog';
@@ -21,7 +20,6 @@ export function renderAuditFinish(
   const sources = collectReportSources(bridge);
   const summary = buildFinalSummary(sources);
   const recommendations = buildRecommendations(sources);
-  const storedContacts = dossier.read().contacts;
 
   container.innerHTML = '';
 
@@ -127,113 +125,6 @@ export function renderAuditFinish(
     card.append(recTitle, recList);
   }
 
-  const formTitle = document.createElement('h3');
-  formTitle.className = 'check-group';
-  formTitle.textContent = 'Как с вами связаться';
-  const formNote = document.createElement('p');
-  formNote.className = 'field-hint';
-  formNote.textContent =
-    'Имя и Telegram или телефон. Описание бизнеса можно не заполнять. Текст останется у вас в буфере, пока вы сами не отправите его.';
-
-  const contacts = {
-    name: storedContacts.name,
-    telegram: storedContacts.telegram,
-    phone: storedContacts.phone,
-    business: storedContacts.business,
-  };
-  let attempted = false;
-
-  const nameError = document.createElement('p');
-  nameError.className = 'field-error';
-  nameError.hidden = true;
-  const contactError = document.createElement('p');
-  contactError.className = 'field-error';
-  contactError.hidden = true;
-
-  const nameInput = document.createElement('input');
-  nameInput.className = 'field-input';
-  nameInput.id = 'audit-name';
-  nameInput.type = 'text';
-  nameInput.autocomplete = 'name';
-  nameInput.value = contacts.name;
-  nameInput.setAttribute('aria-describedby', 'audit-name-error');
-  nameError.id = 'audit-name-error';
-
-  const telegramInput = document.createElement('input');
-  telegramInput.className = 'field-input';
-  telegramInput.id = 'audit-telegram';
-  telegramInput.type = 'text';
-  telegramInput.autocomplete = 'username';
-  telegramInput.placeholder = '@name';
-  telegramInput.value = contacts.telegram;
-  telegramInput.setAttribute('aria-describedby', 'audit-contact-error');
-
-  const phoneInput = document.createElement('input');
-  phoneInput.className = 'field-input';
-  phoneInput.id = 'audit-phone';
-  phoneInput.type = 'tel';
-  phoneInput.autocomplete = 'tel';
-  phoneInput.inputMode = 'tel';
-  phoneInput.value = contacts.phone;
-  phoneInput.setAttribute('aria-describedby', 'audit-contact-error');
-  contactError.id = 'audit-contact-error';
-
-  const businessInput = document.createElement('textarea');
-  businessInput.className = 'field-input field-textarea';
-  businessInput.id = 'audit-business';
-  businessInput.rows = 3;
-  businessInput.value = contacts.business;
-
-  function remember(): void {
-    contacts.name = nameInput.value;
-    contacts.telegram = telegramInput.value;
-    contacts.phone = phoneInput.value;
-    contacts.business = businessInput.value;
-    dossier.update((current) => ({ ...current, contacts: { ...contacts } }));
-    refreshCsvState();
-    if (attempted) showErrors();
-  }
-
-  function showErrors(): void {
-    const result = validateContacts(contacts);
-    nameError.hidden = !attempted || result.errors.name === null;
-    nameError.textContent = result.errors.name ?? '';
-    nameInput.setAttribute('aria-invalid', String(attempted && result.errors.name !== null));
-    contactError.hidden = !attempted || result.errors.contact === null;
-    contactError.textContent = result.errors.contact ?? '';
-    const contactInvalid = attempted && result.errors.contact !== null;
-    telegramInput.setAttribute('aria-invalid', String(contactInvalid));
-    phoneInput.setAttribute('aria-invalid', String(contactInvalid));
-  }
-
-  function field(id: string, label: string, control: HTMLElement, error?: HTMLElement): HTMLElement {
-    const group = document.createElement('div');
-    group.className = 'field-group';
-    const labelEl = document.createElement('label');
-    labelEl.className = 'field-label';
-    labelEl.htmlFor = id;
-    labelEl.textContent = label;
-    group.append(labelEl, control);
-    if (error) group.append(error);
-    return group;
-  }
-
-  const form = document.createElement('form');
-  form.className = 'contact-form';
-  form.noValidate = true;
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-  });
-  for (const input of [nameInput, telegramInput, phoneInput, businessInput]) {
-    input.addEventListener('input', remember);
-  }
-  form.append(
-    field('audit-name', 'Имя', nameInput, nameError),
-    field('audit-telegram', 'Telegram', telegramInput),
-    field('audit-phone', 'Телефон', phoneInput, contactError),
-    field('audit-business', 'Чем занимается бизнес', businessInput),
-  );
-
   const actions = document.createElement('div');
   actions.className = 'audit-actions';
   const copyBtn = document.createElement('button');
@@ -252,15 +143,7 @@ export function renderAuditFinish(
   threads.textContent = 'Открыть Threads';
   actions.append(copyBtn, csvBtn, threads);
 
-  function refreshCsvState(): void {
-    const sources = collectReportSources(bridge);
-    const hasTools = buildFinalSummary(sources).hasData;
-    const hasContacts = [contacts.name, contacts.telegram, contacts.phone, contacts.business].some(
-      (value) => value.trim().length > 0,
-    );
-    csvBtn.disabled = !hasTools && !hasContacts;
-  }
-  refreshCsvState();
+  csvBtn.disabled = !summary.hasData;
 
   const toast = document.createElement('p');
   toast.className = 'status-toast';
@@ -268,29 +151,18 @@ export function renderAuditFinish(
   toast.hidden = true;
 
   csvBtn.addEventListener('click', () => {
-    remember();
     if (csvBtn.disabled) return;
     downloadTextFile(
       REPORT_CSV_FILENAME,
-      buildReportCsv(collectReportSources(bridge), contacts),
+      buildReportCsv(collectReportSources(bridge)),
       'text/csv;charset=utf-8',
     );
     showStatusToast(toast, 'Таблица скачана: business-game-report.csv.');
   });
 
   copyBtn.addEventListener('click', async () => {
-    remember();
-    attempted = true;
-    showErrors();
-    const result = validateContacts(contacts);
-    if (!result.ok) {
-      showStatusToast(toast, 'Заполните имя и Telegram или телефон.');
-      if (result.errors.name) nameInput.focus();
-      else telegramInput.focus();
-      return;
-    }
     const copied = await copyTextToClipboard(
-      buildAuditHandoff(collectReportSources(bridge), contacts),
+      buildAuditHandoff(collectReportSources(bridge)),
       'отчёт для Ефима',
     );
     showStatusToast(
@@ -301,8 +173,7 @@ export function renderAuditFinish(
     );
   });
 
-  form.append(actions, toast);
-  card.append(formTitle, formNote, form);
+  card.append(actions, toast);
 
   const resetBtn = document.createElement('button');
   resetBtn.type = 'button';

@@ -71,21 +71,6 @@ describe('report export', () => {
     expect(csv).not.toContain('Контакты;');
   });
 
-  it('appends filled contact fields after the tool rows', () => {
-    const csv = buildReportCsv(sources, {
-      name: 'Анна',
-      telegram: '@anna',
-      phone: '',
-      business: 'салон',
-    });
-    expect(csv.charCodeAt(0)).toBe(0xfeff);
-    expect(csv).toContain('Контакты;Имя;Анна');
-    expect(csv).toContain('Контакты;Telegram;@anna');
-    expect(csv).toContain('Контакты;Бизнес;салон');
-    expect(csv).not.toContain('Контакты;Телефон');
-    expect(csv.indexOf('Готовность;Вердикт')).toBeLessThan(csv.indexOf('Контакты;Имя'));
-  });
-
   it('leaves money blank when the routine rate is empty', () => {
     const csv = buildReportCsv({
       revenue: null,
