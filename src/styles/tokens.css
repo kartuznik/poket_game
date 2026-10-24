@@ -41,7 +41,7 @@
   --shadow-inset: inset 0 1px 2px rgba(22, 24, 29, 0.06);
 }
 
-/* Dark gray surfaces, muted cobalt, light contour. Offset stays, but softer. */
+/* Dark gray surfaces, muted cobalt, light contour. Offset uses the same ink as the border. */
 :root[data-color-scheme="dark"] {
   color-scheme: dark;
 
@@ -67,8 +67,8 @@
   --border-color: #8f96a4;
   --border-strong: #aeb4c0;
 
-  --shadow-card: 3px 3px 0 rgba(8, 9, 12, 0.35);
-  --shadow-result: 4px 4px 0 rgba(8, 9, 12, 0.35);
-  --shadow-button: 2px 2px 0 rgba(8, 9, 12, 0.3);
+  --shadow-card: 3px 3px 0 #aeb4c0;
+  --shadow-result: 4px 4px 0 #aeb4c0;
+  --shadow-button: 2px 2px 0 #aeb4c0;
   --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
