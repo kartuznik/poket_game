@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ToolBridge } from './bridge';
+import { recoveryPercentFromLossFactor } from '../tools/revenue-risk/calc';
 import {
   DOSSIER_STORAGE_KEY,
   createDossierStore,
@@ -135,6 +136,11 @@ describe('business dossier', () => {
     hydrateBridge(base, bridge);
     expect(bridge.getRevenueRiskResult()?.results.revenueAtRiskMax).toBe(31500);
     expect(bridge.getReadinessResult()).toBeNull();
+    const restored = parseDossier(JSON.parse(JSON.stringify(base)) as unknown);
+    expect(restored?.revenue?.inputs.lossFactor).toBe(0.3);
+    expect(Number.isNaN(restored?.revenue?.results.recoverableRevenue)).toBe(false);
+    expect(restored?.revenue?.results.recoverableRevenue).toBe(22050);
+    expect(recoveryPercentFromLossFactor(restored?.revenue?.inputs.lossFactor ?? Number.NaN)).toBe(70);
   });
 
   it('asks for a name and at least one way to reply', () => {

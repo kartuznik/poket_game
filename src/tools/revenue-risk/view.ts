@@ -23,7 +23,8 @@ import {
   REVENUE_RISK_DEFAULTS,
   calculateRevenueRisk,
   getNichePresetById,
-  lossFactorFromPercent,
+  lossFactorFromRecoveryPercent,
+  recoveryPercentFromLossFactor,
   validateRevenueRiskDraft,
 } from './calc';
 
@@ -39,7 +40,7 @@ const HELP = {
   preset:
     'Подставляет типичную конверсию и долю потерь для этой сферы. Цифры можно сразу поправить.',
   loss:
-    'Какая часть опоздавших обращений уходит к конкурентам.\n\nОтвет за 1–5 минут — потери около 20–30%. Ответ через час и позже — до 70–80%. Это оценка, не замер вашего бизнеса.',
+    'Какую часть выручки из зоны риска вы считаете возвратной, если отвечать сразу. 70% значит: из 10 таких продаж рассчитываете вернуть 7. Это ваше допущение.',
   check:
     'Средняя сумма одной покупки. Если чек скачет, возьмите самый частый.',
 } as const;
@@ -115,7 +116,7 @@ export function buildRevenueRiskShareText(params: {
     `• Обращений в месяц: ${formatIntegerGrouping(params.leadsPerMonth)}`,
     `• Доля поздних или пропущенных ответов: ${formatPercent(params.lateSharePercent, { decimals: 1 })}`,
     `• Конверсия в покупку: ${formatPercent(params.conversionPercent, { decimals: 1 })} (${modeNote})`,
-    `• Доля потерь при позднем ответе: ${formatPercent(params.lossFactorPercent, { decimals: 0 })}`,
+    `• Доля возврата быстрым ответом: ${formatPercent(100 - params.lossFactorPercent, { decimals: 0 })}`,
     `• Средний чек: ${formatRubles(params.avgCheck)}`,
     '',
     'Результаты:',
@@ -168,10 +169,13 @@ export function renderRevenueRiskTool(
         ? saved.inputs.conversionPercent
         : REVENUE_RISK_DEFAULTS.conversionPercent,
     );
-  let customLossFactorRaw =
+  const storedLossPercent =
     draft?.lossFactorPercent ??
     String(saved ? Math.round(saved.inputs.lossFactor * 100) : DEFAULT_LOSS_FACTOR_PERCENT);
-  let lossFactorRaw = customLossFactorRaw;
+  let customRecoveryRaw = String(
+    recoveryPercentFromLossFactor(Number(storedLossPercent) / 100),
+  );
+  let recoveryRaw = customRecoveryRaw;
   let avgCheckRaw = draft?.avgCheck ?? String(saved?.inputs.avgCheck ?? REVENUE_RISK_DEFAULTS.avgCheck);
   let lastErrors: RevenueRiskFieldErrors = {};
   const openedStep = resolveInitialStep(4, initialStep, draft?.step ?? null);
@@ -351,7 +355,7 @@ export function renderRevenueRiskTool(
         <span class="preset-card__conv">${preset.defaultConversionPercent}%</span>
       </span>
       <span class="preset-card__desc">${preset.description}</span>
-      <span class="preset-card__range">${preset.rangeLabel} · потери ${Math.round(preset.defaultLossFactor * 100)}%</span>
+      <span class="preset-card__range">${preset.rangeLabel} · возврат ${recoveryPercentFromLossFactor(preset.defaultLossFactor)}%</span>
     `;
 
     btn.addEventListener('click', () => {
@@ -360,7 +364,7 @@ export function renderRevenueRiskTool(
         b.setAttribute('aria-pressed', String(id === selectedPresetId));
       }
       syncConversionFieldWithMode();
-      applyPresetLossFactor();
+      applyPresetRecovery();
       recalculateAndRender();
     });
 
@@ -400,7 +404,7 @@ export function renderRevenueRiskTool(
   const lossHint = document.createElement('p');
   lossHint.className = 'field-hint';
   lossHint.id = 'rr-loss-hint';
-  lossHint.textContent = 'Какая доля опоздавших обращений уходит к конкурентам.';
+  lossHint.textContent = 'Какую часть денег из зоны риска можно вернуть, если отвечать сразу.';
 
   const lossSliderRow = document.createElement('div');
   lossSliderRow.className = 'slider-row';
@@ -412,11 +416,11 @@ export function renderRevenueRiskTool(
   lossSlider.min = '0';
   lossSlider.max = '100';
   lossSlider.step = '5';
-  lossSlider.value = lossFactorRaw;
+  lossSlider.value = recoveryRaw;
   lossSlider.setAttribute('aria-describedby', 'rr-loss-hint');
   lossSlider.setAttribute(
     'aria-label',
-    'Ползунок доли потерь при позднем ответе в процентах',
+    'Ползунок доли возврата быстрым ответом в процентах',
   );
 
   const lossInput = document.createElement('input');
@@ -427,14 +431,14 @@ export function renderRevenueRiskTool(
   lossInput.min = '0';
   lossInput.max = '100';
   lossInput.step = '1';
-  lossInput.value = lossFactorRaw;
+  lossInput.value = recoveryRaw;
   lossInput.setAttribute('aria-describedby', 'rr-loss-hint');
 
   lossSliderRow.append(lossSlider, lossInput);
 
   const lossHeading = fieldHeading(
     'rr-loss-input',
-    'Доля потерь при позднем ответе',
+    'Какую долю этих денег можно вернуть быстрым ответом',
     '0–100%',
     HELP.loss,
     () => lossSliderRow,
@@ -623,18 +627,21 @@ export function renderRevenueRiskTool(
     return customConversionRaw;
   }
 
-  function writeLossFactor(raw: string): void {
-    lossFactorRaw = raw;
+  function writeRecovery(raw: string): void {
+    recoveryRaw = raw;
     lossInput.value = raw;
-    const numeric = normalizeFiniteNumber(raw, DEFAULT_LOSS_FACTOR_PERCENT);
+    const numeric = normalizeFiniteNumber(
+      raw,
+      recoveryPercentFromLossFactor(DEFAULT_LOSS_FACTOR_PERCENT / 100),
+    );
     lossSlider.value = String(Math.min(100, Math.max(0, numeric)));
   }
 
-  function applyPresetLossFactor(): void {
-    const percent = Math.round(
-      getNichePresetById(selectedPresetId).defaultLossFactor * 100,
+  function applyPresetRecovery(): void {
+    const recovery = recoveryPercentFromLossFactor(
+      getNichePresetById(selectedPresetId).defaultLossFactor,
     );
-    writeLossFactor(String(percent));
+    writeRecovery(String(recovery));
   }
 
   function syncConversionFieldWithMode(): void {
@@ -655,12 +662,12 @@ export function renderRevenueRiskTool(
         unitSpan.textContent = preset.rangeLabel;
       }
       presetBadgeDisclaimer.innerHTML = `<strong>${MARKET_AVERAGE_BADGE_DISCLAIMER}</strong><span>Ниша: ${preset.title} (${preset.rangeLabel})</span>`;
-      applyPresetLossFactor();
+      applyPresetRecovery();
     } else {
       convInput.readOnly = false;
       convInput.removeAttribute('aria-readonly');
       convInput.value = customConversionRaw;
-      writeLossFactor(customLossFactorRaw);
+      writeRecovery(customRecoveryRaw);
       if (unitSpan) {
         unitSpan.textContent = '1–95%';
       }
@@ -696,7 +703,7 @@ export function renderRevenueRiskTool(
       lateSharePercentRaw: lateShareRaw,
       conversionPercentRaw: activeConvRaw,
       avgCheckRaw: avgCheckRaw,
-      lossFactorPercentRaw: lossFactorRaw,
+      lossFactorPercentRaw: recoveryRaw,
       mode,
     });
 
@@ -718,7 +725,7 @@ export function renderRevenueRiskTool(
       avgCheck: validation.errors.avgCheck ? 0 : Number(avgCheckRaw),
       lossFactor: validation.errors.lossFactorPercent
         ? 0
-        : lossFactorFromPercent(Number(lossFactorRaw)),
+        : lossFactorFromRecoveryPercent(Number(recoveryRaw)),
     });
 
     const { normalizedInput } = calcResult;
@@ -732,13 +739,13 @@ export function renderRevenueRiskTool(
     triggerBanner.innerHTML = `Каждый пропущенный диалог стоит вам <span class="trigger-banner__highlight">${formatRubles(calcResult.costPerMissedDialog)}</span>`;
 
     // Update collapsible "Как посчитано" with live substituted numbers
-    const lossPercent = Math.round(normalizedInput.lossFactor * 100);
+    const recoveryPercent = recoveryPercentFromLossFactor(normalizedInput.lossFactor);
     howBody.innerHTML = `
       <p>Шаги расчёта:</p>
       <ol class="formula-list">
         <li>Поздние обращения = ${formatIntegerGrouping(normalizedInput.leadsPerMonth)} × ${formatPercent(normalizedInput.lateSharePercent)} = <strong>${formatCountWithNoun(Math.round(calcResult.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес</strong></li>
         <li>Выручка под риском в месяц = ${Math.round(calcResult.lateLeads)} × ${formatPercent(normalizedInput.conversionPercent)} × ${formatRubles(normalizedInput.avgCheck)} = <strong>${formatRubles(calcResult.revenueAtRiskMax)}</strong></li>
-        <li>Потенциал возврата = ${formatRubles(calcResult.revenueAtRiskMax)} × (100% − ${formatPercent(lossPercent)}) = <strong>${formatRubles(calcResult.recoverableRevenue)}/мес</strong></li>
+        <li>Потенциал возврата = ${formatRubles(calcResult.revenueAtRiskMax)} × ${formatPercent(recoveryPercent)} = <strong>${formatRubles(calcResult.recoverableRevenue)}/мес</strong></li>
         <li>Выручка под риском в год = ${formatRubles(calcResult.revenueAtRiskMax)} × 12 = <strong>${formatRubles(calcResult.revenueAtRiskPerYear)}</strong></li>
         <li>Цена 1 пропущенного диалога = ${formatRubles(normalizedInput.avgCheck)} × ${formatPercent(normalizedInput.conversionPercent)} = <strong>${formatRubles(calcResult.costPerMissedDialog)}</strong></li>
       </ol>
@@ -801,20 +808,23 @@ export function renderRevenueRiskTool(
   });
 
   lossSlider.addEventListener('input', () => {
-    lossFactorRaw = lossSlider.value;
-    lossInput.value = lossFactorRaw;
+    recoveryRaw = lossSlider.value;
+    lossInput.value = recoveryRaw;
     if (mode === 'custom') {
-      customLossFactorRaw = lossFactorRaw;
+      customRecoveryRaw = recoveryRaw;
     }
     recalculateAndRender();
   });
 
   lossInput.addEventListener('input', () => {
-    lossFactorRaw = lossInput.value;
-    const num = normalizeFiniteNumber(lossFactorRaw, DEFAULT_LOSS_FACTOR_PERCENT);
+    recoveryRaw = lossInput.value;
+    const num = normalizeFiniteNumber(
+      recoveryRaw,
+      recoveryPercentFromLossFactor(DEFAULT_LOSS_FACTOR_PERCENT / 100),
+    );
     lossSlider.value = String(Math.min(100, Math.max(0, num)));
     if (mode === 'custom') {
-      customLossFactorRaw = lossFactorRaw;
+      customRecoveryRaw = recoveryRaw;
     }
     recalculateAndRender();
   });
@@ -835,10 +845,10 @@ export function renderRevenueRiskTool(
     field.addEventListener('change', () => {
       leadsRaw = leadsInput.value;
       lateShareRaw = lateInput.value;
-      lossFactorRaw = lossInput.value;
+      recoveryRaw = lossInput.value;
       if (mode === 'custom') {
         customConversionRaw = convInput.value;
-        customLossFactorRaw = lossInput.value;
+        customRecoveryRaw = lossInput.value;
       }
       avgCheckRaw = checkInput.value;
       recalculateAndRender();
@@ -895,7 +905,9 @@ export function renderRevenueRiskTool(
         lateSharePercent: lateShareRaw,
         conversionPercent: customConversionRaw,
         avgCheck: avgCheckRaw,
-        lossFactorPercent: lossFactorRaw,
+        lossFactorPercent: String(
+          Math.round(100 - Math.min(100, Math.max(0, Number(recoveryRaw) || 0))),
+        ),
         mode,
         presetId: mode === 'preset' ? selectedPresetId : null,
       },

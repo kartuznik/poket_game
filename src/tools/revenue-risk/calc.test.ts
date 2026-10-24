@@ -8,6 +8,8 @@ import {
   calculateRevenueRisk,
   getNichePresetById,
   lossFactorFromPercent,
+  lossFactorFromRecoveryPercent,
+  recoveryPercentFromLossFactor,
   validateRevenueRiskDraft,
 } from './calc';
 
@@ -92,6 +94,24 @@ describe('calculateRevenueRisk — core formulas & normal scenarios', () => {
     expect(resB2B.revenueAtRiskMax).toBeCloseTo(80000, 5);
     expect(resB2B.recoverableRevenue).toBeCloseTo(50400, 5);
     expect(resB2B.costPerMissedDialog).toBeCloseTo(4000, 5);
+  });
+
+  it('turns a 70% recovery share into the stored 30% loss and returns 70% of the money at risk', () => {
+    const lossFactor = lossFactorFromRecoveryPercent(70);
+    expect(lossFactor).toBeCloseTo(0.3, 5);
+    expect(recoveryPercentFromLossFactor(lossFactor)).toBe(70);
+    const res = calculateRevenueRisk({
+      leadsPerMonth: 100,
+      lateSharePercent: 35,
+      conversionPercent: 20,
+      avgCheck: 4500,
+      lossFactor,
+    });
+    expect(res.revenueAtRiskMax).toBeCloseTo(31500, 5);
+    expect(res.recoverableRevenue).toBeCloseTo(22050, 5);
+    expect(Number.isNaN(res.recoverableRevenue)).toBe(false);
+    expect(recoveryPercentFromLossFactor(0.3)).toBe(70);
+    expect(recoveryPercentFromLossFactor(Number.NaN)).toBe(70);
   });
 
   it('uses the visible 30% default as a 70% recovery and lets a preset value be overridden', () => {

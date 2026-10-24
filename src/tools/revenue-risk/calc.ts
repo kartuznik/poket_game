@@ -132,6 +132,29 @@ export function lossFactorFromPercent(percent: number): number {
   return clamp(safe, 0, 100) / 100;
 }
 
+/** What the visitor sees. 30% stored loss is a 70% recovery share. */
+export function recoveryPercentFromLossFactor(lossFactor: number): number {
+  const safe = clamp(
+    normalizeFiniteNumber(lossFactor, DEFAULT_LOSS_FACTOR),
+    0,
+    1,
+  );
+  return Math.round((1 - safe) * 100);
+}
+
+/** The slider is the share they can bring back. Storage keeps the loss complement. */
+export function lossFactorFromRecoveryPercent(recoveryPercent: number): number {
+  const shown = clamp(
+    normalizeFiniteNumber(
+      recoveryPercent,
+      recoveryPercentFromLossFactor(DEFAULT_LOSS_FACTOR),
+    ),
+    0,
+    100,
+  );
+  return (100 - shown) / 100;
+}
+
 function parseStrictFinite(raw: string): number | null {
   const trimmed = raw.trim();
   if (trimmed === '') {
@@ -187,11 +210,11 @@ export function validateRevenueRiskDraft(
     errors.avgCheck = 'Средний чек не может быть отрицательным.';
   }
 
-  const lossPercent = parseStrictFinite(draft.lossFactorPercentRaw);
-  if (lossPercent === null) {
-    errors.lossFactorPercent = 'Укажите долю потерь при позднем ответе (0–100%).';
-  } else if (lossPercent < 0 || lossPercent > 100) {
-    errors.lossFactorPercent = 'Доля потерь должна быть в диапазоне от 0 до 100%.';
+  const recoveryPercent = parseStrictFinite(draft.lossFactorPercentRaw);
+  if (recoveryPercent === null) {
+    errors.lossFactorPercent = 'Укажите долю возврата быстрым ответом (0–100%).';
+  } else if (recoveryPercent < 0 || recoveryPercent > 100) {
+    errors.lossFactorPercent = 'Доля возврата должна быть в диапазоне от 0 до 100%.';
   }
 
   const isValid =
@@ -210,7 +233,8 @@ export function validateRevenueRiskDraft(
  * Math specification:
  * 1. lateLeads = leadsPerMonth * (lateSharePercent / 100)
  * 2. revenueAtRiskMax = lateLeads * (conversionPercent / 100) * avgCheck
- * 3. recoverableRevenue = revenueAtRiskMax * (1 - lossFactor)
+ * 3. recoverableRevenue = revenueAtRiskMax * recoveryShare
+ *    recoveryShare = 1 - lossFactor. The screen shows recoveryShare.
  * 4. revenueAtRiskPerYear = revenueAtRiskMax * 12
  * Trigger metric:
  * 5. costPerMissedDialog = avgCheck * (conversionPercent / 100)

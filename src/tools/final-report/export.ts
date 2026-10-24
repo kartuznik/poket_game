@@ -40,7 +40,11 @@ export function buildReportCsv(sources: ReportSources): string {
       row('Выручка', 'Доля поздних, %', formatCsvNumber(revenue.inputs.lateSharePercent)),
       row('Выручка', 'Конверсия, %', formatCsvNumber(revenue.inputs.conversionPercent)),
       row('Выручка', 'Средний чек, ₽', formatCsvNumber(revenue.inputs.avgCheck)),
-      row('Выручка', 'Доля потерь, %', formatCsvNumber(revenue.inputs.lossFactor * 100)),
+      row(
+        'Выручка',
+        'Доля возврата, %',
+        formatCsvNumber((1 - revenue.inputs.lossFactor) * 100),
+      ),
       row('Выручка', 'Режим', revenue.inputs.mode === 'preset' ? 'Средняя по нише' : 'Моя конверсия'),
       row('Выручка', 'Поздних обращений', formatCsvNumber(revenue.results.lateLeads)),
       row('Выручка', 'Риск в месяц, ₽', formatCsvNumber(revenue.results.revenueAtRiskMax)),
