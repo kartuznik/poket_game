@@ -59,7 +59,7 @@ function mountApp(root: HTMLElement): void {
 
   const authorBadge = document.createElement('a');
   authorBadge.className = 'brand-header__author';
-  authorBadge.href = 'https://www.threads.net/@_kartuzzz';
+  authorBadge.href = 'https://www.threads.com/@_kartuzzz';
   authorBadge.target = '_blank';
   authorBadge.rel = 'noopener noreferrer';
   authorBadge.textContent = '@_kartuzzz · Threads';

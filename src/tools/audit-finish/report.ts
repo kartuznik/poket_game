@@ -1,7 +1,7 @@
 import { formatRubles, formatWorkHours } from '../../lib/format';
 import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from '../final-report/summary';
 
-export const THREADS_PROFILE_URL = 'https://www.threads.net/@_kartuzzz';
+export const THREADS_PROFILE_URL = 'https://www.threads.com/@_kartuzzz';
 
 /** Two or three concrete next steps. Missing tools are simply absent. */
 export function buildRecommendations(sources: ReportSources): readonly string[] {
