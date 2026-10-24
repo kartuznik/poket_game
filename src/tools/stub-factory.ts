@@ -1,6 +1,7 @@
 import { createFieldHeading } from '../components/field-heading';
 import { releaseHelpTipsWithin } from '../components/tooltip';
 import type { ToolBridge } from '../lib/bridge';
+import { showStatusToast } from '../components/toast';
 import { copyTextToClipboard } from '../lib/clipboard';
 import {
   formatCountWithNoun,
@@ -213,9 +214,8 @@ export function renderToolStub(
   panel.append(inputCard, resultCard);
   container.appendChild(panel);
 
-  const showToast = (msg: string) => {
-    toastEl.textContent = msg;
-    toastEl.hidden = false;
+  const showToast = (msg: string): void => {
+    showStatusToast(toastEl, msg);
   };
 
   const updateView = () => {

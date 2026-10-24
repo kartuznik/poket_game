@@ -1,5 +1,6 @@
 import { createHelpTip, releaseHelpTipsWithin, setHelpTipText } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
+import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import type { RevenueRiskFieldErrors } from './calc';
 import { isRevenueStepValid, resolveInitialStep } from '../../lib/wizard';
@@ -685,8 +686,7 @@ export function renderRevenueRiskTool(
   }
 
   function showToast(message: string): void {
-    toastEl.textContent = message;
-    toastEl.hidden = false;
+    showStatusToast(toastEl, message);
   }
 
   function recalculateAndRender() {

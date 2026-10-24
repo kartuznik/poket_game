@@ -1,5 +1,6 @@
 import { releaseHelpTipsWithin } from '../../components/tooltip';
 import type { ToolBridge } from '../../lib/bridge';
+import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { downloadTextFile } from '../../lib/csv';
 import { TOOLS_CATALOG } from '../catalog';
@@ -117,8 +118,7 @@ export function renderFinalReportTool(
   copyBtn.addEventListener('click', async () => {
     const fresh = collectReportSources(ctx.bridge);
     const copied = await copyTextToClipboard(buildEfimReport(fresh), 'отчёт для Ефима');
-    toast.hidden = false;
-    toast.textContent = copied.ok ? 'Скопирован отчёт для Ефима' : copied.message;
+    showStatusToast(toast, copied.ok ? 'Скопирован отчёт для Ефима' : copied.message);
   });
   csvBtn.addEventListener('click', () => {
     downloadTextFile(
@@ -126,8 +126,7 @@ export function renderFinalReportTool(
       buildReportCsv(collectReportSources(ctx.bridge)),
       'text/csv;charset=utf-8',
     );
-    toast.hidden = false;
-    toast.textContent = 'Таблица скачана: business-game-report.csv.';
+    showStatusToast(toast, 'Таблица скачана: business-game-report.csv.');
   });
 
   card.append(actions, toast);

@@ -2,6 +2,7 @@ import { createFieldHeading } from '../../components/field-heading';
 import { appendPriorContext } from '../../components/prior-context';
 import { createHelpTip, releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
+import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { isRoutineStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
@@ -447,8 +448,7 @@ export function renderRoutineCalcTool(
 
   copyBtn.addEventListener('click', async () => {
     if (!latest) {
-      toast.hidden = false;
-      toast.textContent = 'Сначала исправьте поля — копировать пока нечего.';
+      showStatusToast(toast, 'Сначала исправьте поля — копировать пока нечего.');
       return;
     }
     const text = buildRoutineShareText({
@@ -456,8 +456,7 @@ export function renderRoutineCalcTool(
       result: latest,
     });
     const copied = await copyTextToClipboard(text, 'резюме рутины для Threads');
-    toast.hidden = false;
-    toast.textContent = copied.ok ? 'Скопировано резюме для Threads' : copied.message;
+    showStatusToast(toast, copied.ok ? 'Скопировано резюме для Threads' : copied.message);
   });
 
   saveBtn.addEventListener('click', () => {
@@ -469,10 +468,12 @@ export function renderRoutineCalcTool(
       formattedValue: formatted,
     });
     recalculate();
-    toast.hidden = false;
-    toast.textContent = savedScenario.persisted
-      ? `Сохранено локально («До»: ${formatted}).`
-      : `Сохранено на время сессии («До»: ${formatted}).`;
+    showStatusToast(
+      toast,
+      savedScenario.persisted
+        ? `Сохранено локально («До»: ${formatted}).`
+        : `Сохранено на время сессии («До»: ${formatted}).`,
+    );
   });
 
   function persistRoutineDraft(step: number): void {

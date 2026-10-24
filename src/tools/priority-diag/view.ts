@@ -2,6 +2,7 @@ import { createFieldHeading } from '../../components/field-heading';
 import { appendPriorContext } from '../../components/prior-context';
 import { releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
+import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { resolveInitialStep } from '../../lib/wizard';
 import type { PriorityProcessId, PriorityScoreInput } from '../../lib/types';
@@ -247,8 +248,7 @@ export function renderPriorityDiagTool(
       buildPriorityShareText(latest),
       'приоритет для Threads',
     );
-    toast.hidden = false;
-    toast.textContent = copied.ok ? 'Скопировано резюме для Threads' : copied.message;
+    showStatusToast(toast, copied.ok ? 'Скопировано резюме для Threads' : copied.message);
   });
 
   saveBtn.addEventListener('click', () => {
@@ -259,8 +259,7 @@ export function renderPriorityDiagTool(
       formattedValue: `${latest.top.title} (${formatScore(latest.top.score)})`,
     });
     recalculate();
-    toast.hidden = false;
-    toast.textContent = `Сохранено «До»: ${latest.top.title}.`;
+    showStatusToast(toast, `Сохранено «До»: ${latest.top.title}.`);
   });
 
   function persistPriorityDraft(step: number): void {

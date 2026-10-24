@@ -2,6 +2,7 @@ import { createFieldHeading } from '../../components/field-heading';
 import { appendPriorContext } from '../../components/prior-context';
 import { bindHelpTipHover, releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
+import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { resolveInitialStep } from '../../lib/wizard';
 import type { ReadinessItemId, ReadinessStatus } from '../../lib/types';
@@ -232,8 +233,7 @@ export function renderReadinessCheckTool(
       buildReadinessShareText(latest),
       'резюме готовности',
     );
-    toast.hidden = false;
-    toast.textContent = copied.ok ? 'Скопировано резюме готовности' : copied.message;
+    showStatusToast(toast, copied.ok ? 'Скопировано резюме готовности' : copied.message);
   });
 
   saveBtn.addEventListener('click', () => {
@@ -244,8 +244,7 @@ export function renderReadinessCheckTool(
       formattedValue: `${latest.bandLabel} (${formatScore(latest.score)} из 9)`,
     });
     recalculate();
-    toast.hidden = false;
-    toast.textContent = `Сохранено «До»: ${latest.bandLabel}.`;
+    showStatusToast(toast, `Сохранено «До»: ${latest.bandLabel}.`);
   });
 
   function persistReadinessDraft(step: number): void {
