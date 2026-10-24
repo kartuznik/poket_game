@@ -106,21 +106,21 @@ describe('buildFinalSummary', () => {
   it('keeps a single tool in the lead', () => {
     const summary = buildFinalSummary({ ...empty, revenue });
     expect(summary.hasData).toBe(true);
-    expect(summary.lead).toContain('31');
-    expect(summary.lead).toContain('Риск выручки');
+    expect(summary.lead).toContain('22');
+    expect(summary.lead).toContain('Потенциал возврата');
     expect(summary.blocks).toHaveLength(1);
   });
 
   it('joins priority, savings and revenue into one lead', () => {
     const summary = buildFinalSummary({ revenue, routine, priority, readiness });
     expect(summary.lead).toBe(
-      'Ваш главный приоритет: Приём обращений. Можно вернуть 12,1\u00A0часа в месяц. Риск выручки: 31\u00A0500\u00A0₽. Готовность: Рано.',
+      'Ваш главный приоритет: Приём обращений. Можно вернуть 12,1\u00A0часа в месяц. Потенциал возврата: 22\u00A0050\u00A0₽. Готовность: Рано.',
     );
     expect(summary.headline).toBe('Приём обращений');
     expect(summary.blocks.map((block) => block.title)).toEqual([
       'Что первым',
       'Рутина',
-      'Выручка под риском',
+      'Потенциал возврата',
       'Готовность',
     ]);
   });

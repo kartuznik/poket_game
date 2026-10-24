@@ -68,7 +68,7 @@ describe('audit handoff', () => {
     expect(text).not.toContain('Имя:');
     expect(text).not.toContain('Telegram:');
     expect(text).not.toContain('Телефон:');
-    expect(text).toContain('Выручка под риском');
+    expect(text).toContain('Потенциал возврата');
     expect(text).toContain('Что сделать дальше');
     expect(text).not.toContain('Готовность');
   });

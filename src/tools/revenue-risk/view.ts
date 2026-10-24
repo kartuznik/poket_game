@@ -119,10 +119,10 @@ export function buildRevenueRiskShareText(params: {
     `• Средний чек: ${formatRubles(params.avgCheck)}`,
     '',
     'Результаты:',
-    `• Поздних обращений: ${formatCountWithNoun(Math.round(params.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес`,
-    `• Выручка под риском в месяц: ${formatRubles(params.revenueAtRiskMax)}`,
-    `• Выручка под риском в год: ${formatRubles(params.revenueAtRiskPerYear)}`,
     `• Потенциал возврата: ${formatRubles(params.recoverableRevenue)}/мес`,
+    `• Выручка под риском в месяц: ${formatRubles(params.revenueAtRiskMax)}`,
+    `• Поздних обращений: ${formatCountWithNoun(Math.round(params.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес`,
+    `• Выручка под риском в год: ${formatRubles(params.revenueAtRiskPerYear)}`,
     `• Каждый пропущенный диалог стоит вам ${formatRubles(params.costPerMissedDialog)}`,
     '',
     '@_kartuzzz · Игра в бизнес',
@@ -256,6 +256,7 @@ export function renderRevenueRiskTool(
   lateSlider.max = '100';
   lateSlider.step = '1';
   lateSlider.value = lateShareRaw === '' ? '0' : lateShareRaw;
+  if (lateShareRaw.trim() === '') lateSlider.setAttribute('aria-valuetext', 'Не задано');
   lateSlider.setAttribute(
     'aria-label',
     'Ползунок доли поздних или пропущенных ответов в процентах',
@@ -512,9 +513,13 @@ export function renderRevenueRiskTool(
   resultCard.className = 'result-card';
   resultCard.setAttribute('aria-live', 'polite');
 
+  const riskLineEl = document.createElement('p');
+  riskLineEl.className = 'result-card__note';
+  riskLineEl.id = 'rr-result-risk';
+
   const eyebrow = document.createElement('div');
   eyebrow.className = 'result-card__eyebrow';
-  eyebrow.innerHTML = `<span>ВЫРУЧКА ПОД РИСКОМ В МЕСЯЦ</span><span>@_kartuzzz</span>`;
+  eyebrow.innerHTML = `<span>ПОТЕНЦИАЛ ВОЗВРАТА</span><span>@_kartuzzz</span>`;
 
   const mainValueEl = document.createElement('p');
   mainValueEl.className = 'result-card__value';
@@ -535,15 +540,7 @@ export function renderRevenueRiskTool(
   yearValEl.id = 'rr-result-year';
   yearBox.appendChild(yearValEl);
 
-  const recBox = document.createElement('div');
-  recBox.className = 'metric-box metric-box--recoverable';
-  recBox.innerHTML = `<span class="metric-box__label">Потенциал возврата в месяц</span>`;
-  const recValEl = document.createElement('span');
-  recValEl.className = 'metric-box__value';
-  recValEl.id = 'rr-result-recoverable';
-  recBox.appendChild(recValEl);
-
-  metricsGrid.append(yearBox, recBox);
+  metricsGrid.append(yearBox);
 
   const triggerBanner = document.createElement('div');
   triggerBanner.className = 'trigger-banner';
@@ -583,6 +580,7 @@ export function renderRevenueRiskTool(
   toastEl.hidden = true;
 
   resultCard.append(
+    riskLineEl,
     eyebrow,
     mainValueEl,
     subNoteEl,
@@ -655,9 +653,11 @@ export function renderRevenueRiskTool(
     lossInput.value = raw;
     if (raw.trim() === '' || !Number.isFinite(Number(raw))) {
       lossSlider.value = '0';
+      lossSlider.setAttribute('aria-valuetext', 'Не задано');
       return;
     }
     lossSlider.value = String(Math.min(100, Math.max(0, Number(raw))));
+    lossSlider.removeAttribute('aria-valuetext');
   }
 
   function applyPresetRecovery(): void {
@@ -753,11 +753,11 @@ export function renderRevenueRiskTool(
 
     const { normalizedInput } = calcResult;
 
-    mainValueEl.textContent = formatRubles(calcResult.revenueAtRiskMax);
+    riskLineEl.textContent = `Выручка под риском: ${formatRubles(calcResult.revenueAtRiskMax)}/мес`;
+    mainValueEl.textContent = `${formatRubles(calcResult.recoverableRevenue)}/мес`;
     subNoteEl.textContent = `В зоне риска ${formatCountWithNoun(Math.round(calcResult.lateLeads), ['позднее обращение', 'поздних обращения', 'поздних обращений'])} из ${formatIntegerGrouping(normalizedInput.leadsPerMonth)} в месяц.`;
 
     yearValEl.textContent = formatRubles(calcResult.revenueAtRiskPerYear);
-    recValEl.textContent = formatRubles(calcResult.recoverableRevenue);
 
     triggerBanner.innerHTML = `Каждый пропущенный диалог стоит вам <span class="trigger-banner__highlight">${formatRubles(calcResult.costPerMissedDialog)}</span>`;
 
@@ -820,6 +820,7 @@ export function renderRevenueRiskTool(
   lateSlider.addEventListener('input', () => {
     lateShareRaw = lateSlider.value;
     lateInput.value = lateShareRaw;
+    lateSlider.removeAttribute('aria-valuetext');
     recalculateAndRender();
   });
 
@@ -827,12 +828,18 @@ export function renderRevenueRiskTool(
     lateShareRaw = lateInput.value;
     const num = normalizeFiniteNumber(lateShareRaw, 0);
     lateSlider.value = String(Math.min(100, Math.max(0, num)));
+    if (lateShareRaw.trim() === '') {
+      lateSlider.setAttribute('aria-valuetext', 'Не задано');
+    } else {
+      lateSlider.removeAttribute('aria-valuetext');
+    }
     recalculateAndRender();
   });
 
   lossSlider.addEventListener('input', () => {
     recoveryRaw = lossSlider.value;
     lossInput.value = recoveryRaw;
+    lossSlider.removeAttribute('aria-valuetext');
     if (mode === 'custom') {
       customRecoveryRaw = recoveryRaw;
     }
@@ -843,8 +850,10 @@ export function renderRevenueRiskTool(
     recoveryRaw = lossInput.value;
     if (recoveryRaw.trim() === '' || !Number.isFinite(Number(recoveryRaw))) {
       lossSlider.value = '0';
+      lossSlider.setAttribute('aria-valuetext', 'Не задано');
     } else {
       lossSlider.value = String(Math.min(100, Math.max(0, Number(recoveryRaw))));
+      lossSlider.removeAttribute('aria-valuetext');
     }
     if (mode === 'custom') {
       customRecoveryRaw = recoveryRaw;

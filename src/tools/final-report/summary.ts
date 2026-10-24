@@ -53,7 +53,7 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
     );
   }
   if (revenue) {
-    parts.push(`Риск выручки: ${formatRubles(revenue.results.revenueAtRiskMax)}.`);
+    parts.push(`Потенциал возврата: ${formatRubles(revenue.results.recoverableRevenue)}.`);
   }
   if (readiness) {
     parts.push(`Готовность: ${readiness.results.bandLabel}.`);
@@ -84,8 +84,8 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
   }
   if (revenue) {
     blocks.push({
-      title: 'Выручка под риском',
-      text: `${formatRubles(revenue.results.revenueAtRiskMax)} в месяц. Если отвечать вовремя, можно удержать около ${formatRubles(revenue.results.recoverableRevenue)}.`,
+      title: 'Потенциал возврата',
+      text: `${formatRubles(revenue.results.recoverableRevenue)} в месяц. Выручка под риском: ${formatRubles(revenue.results.revenueAtRiskMax)}.`,
       sourceToolId: 'revenue-risk',
       editStep: editStepFor('revenue-risk'),
     });
@@ -114,7 +114,7 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
   const headline = priority
     ? priority.results.topTitle
     : revenue
-      ? formatRubles(revenue.results.revenueAtRiskMax)
+      ? formatRubles(revenue.results.recoverableRevenue)
       : routine
         ? formatWorkHours(routine.results.savedHoursPerMonth)
         : (readiness?.results.bandLabel ?? '');
