@@ -1,3 +1,4 @@
+import { celebrate } from './confetti';
 import {
   JOURNEY_LENGTH,
   globalProgressPercent,
@@ -70,6 +71,12 @@ export function createWizard(options: {
   stepRow.append(stepLabel, stepTrack);
   progress.append(toolRow, stepRow);
 
+  const backTop = document.createElement('button');
+  backTop.type = 'button';
+  backTop.className = 'action-btn action-btn--secondary wizard-nav__back wizard-nav__back--top';
+  backTop.textContent = '← Назад';
+  progress.append(backTop);
+
   const nav = document.createElement('div');
   nav.className = 'wizard-nav';
   nav.setAttribute('role', 'group');
@@ -114,6 +121,7 @@ export function createWizard(options: {
     stepTrack.setAttribute('aria-valuetext', `Шаг ${step} из ${count}`);
     stepFill.style.width = `${localProgressPercent(step, count)}%`;
     back.hidden = step === 1;
+    backTop.hidden = step === 1;
     const valid = options.isStepValid(step);
     next.disabled = !valid;
     next.textContent = step === count ? options.finishLabel : 'Дальше →';
@@ -127,11 +135,13 @@ export function createWizard(options: {
     target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
-  back.addEventListener('click', () => {
+  const goBack = (): void => {
     if (step === 1) return;
     step -= 1;
     paint(true);
-  });
+  };
+  back.addEventListener('click', goBack);
+  backTop.addEventListener('click', goBack);
 
   next.addEventListener('click', () => {
     const move = nextMove(step, count, options.isStepValid(step));
@@ -145,6 +155,7 @@ export function createWizard(options: {
     }
     step += 1;
     paint(true);
+    if (step === count) celebrate();
   });
 
   paint(false);
