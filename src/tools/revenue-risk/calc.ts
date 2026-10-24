@@ -19,10 +19,10 @@ export interface NichePreset {
 }
 
 export const MARKET_AVERAGE_BADGE_DISCLAIMER =
-  'Оценка по рынку РФ, не ваши цифры';
+  'Условный сценарий. Это не статистика по России и не ваши цифры.';
 
 export const MARKET_AVERAGE_RESULT_DISCLAIMER =
-  'Это оценка по рынку РФ, не ваши цифры. Даже при погрешности ±30% виден порядок потерь.';
+  'Сценарное допущение, не замер вашего бизнеса. Даже если цифра грубая, виден порядок потерь.';
 
 export const DEFAULT_LOSS_FACTOR = 0.3;
 export const DEFAULT_LOSS_FACTOR_PERCENT = 30;
@@ -43,7 +43,7 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Запись на приём или визит',
     defaultConversionPercent: 30,
     defaultLossFactor: 0.5,
-    rangeLabel: 'Обычно 25–40%, в расчёте 30%',
+    rangeLabel: 'Допустим, конверсия 30%. Это сценарий, не замер рынка.',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
@@ -52,7 +52,7 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Одежда, подарки, декор, цветы',
     defaultConversionPercent: 20,
     defaultLossFactor: 0.5,
-    rangeLabel: 'Обычно 15–25%, в расчёте 20%',
+    rangeLabel: 'Допустим, конверсия 20%. Это сценарий, не замер рынка.',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
@@ -61,7 +61,7 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Фриланс, агентства, наставничество',
     defaultConversionPercent: 12,
     defaultLossFactor: 0.42,
-    rangeLabel: 'Обычно 8–18%, в расчёте 12%',
+    rangeLabel: 'Допустим, конверсия 12%. Это сценарий, не замер рынка.',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
@@ -70,7 +70,7 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Ремонт, производство, разработка',
     defaultConversionPercent: 8,
     defaultLossFactor: 0.37,
-    rangeLabel: 'Обычно 5–12%, в расчёте 8%',
+    rangeLabel: 'Допустим, конверсия 8%. Это сценарий, не замер рынка.',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
 ] as const;

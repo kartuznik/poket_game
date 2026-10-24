@@ -45,7 +45,7 @@ export function buildReportCsv(sources: ReportSources): string {
         'Доля возврата, %',
         formatCsvNumber((1 - revenue.inputs.lossFactor) * 100),
       ),
-      row('Выручка', 'Режим', revenue.inputs.mode === 'preset' ? 'Средняя по нише' : 'Моя конверсия'),
+      row('Выручка', 'Режим', revenue.inputs.mode === 'preset' ? 'Сценарное допущение' : 'Моя конверсия'),
       row('Выручка', 'Поздних обращений', formatCsvNumber(revenue.results.lateLeads)),
       row('Выручка', 'Риск в месяц, ₽', formatCsvNumber(revenue.results.revenueAtRiskMax)),
       row('Выручка', 'Риск в год, ₽', formatCsvNumber(revenue.results.revenueAtRiskPerYear)),
