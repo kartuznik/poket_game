@@ -1,6 +1,9 @@
+import { celebrate } from '../../components/confetti';
+import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { downloadTextFile } from '../../lib/csv';
 import { validateContacts } from '../../lib/dossier';
+import { resetVisitorProgress } from '../../lib/reset-progress';
 import { JOURNEY_LENGTH, globalProgressPercent } from '../../lib/wizard';
 import { TOOLS_CATALOG } from '../catalog';
 import { REPORT_CSV_FILENAME, buildReportCsv } from '../final-report/export';
@@ -14,7 +17,7 @@ export function renderAuditFinish(
   ctx: Omit<ToolStubRenderContext, 'meta'>,
 ): void {
   const meta = TOOLS_CATALOG['audit-finish'];
-  const { bridge, dossier, onNavigateTool } = ctx;
+  const { bridge, dossier, store, onNavigateTool } = ctx;
   const sources = collectReportSources(bridge);
   const summary = buildFinalSummary(sources);
   const recommendations = buildRecommendations(sources);
@@ -272,8 +275,7 @@ export function renderAuditFinish(
       buildReportCsv(collectReportSources(bridge), contacts),
       'text/csv;charset=utf-8',
     );
-    toast.hidden = false;
-    toast.textContent = 'Таблица скачана: business-game-report.csv.';
+    showStatusToast(toast, 'Таблица скачана: business-game-report.csv.');
   });
 
   copyBtn.addEventListener('click', async () => {
@@ -282,8 +284,7 @@ export function renderAuditFinish(
     showErrors();
     const result = validateContacts(contacts);
     if (!result.ok) {
-      toast.hidden = false;
-      toast.textContent = 'Заполните имя и Telegram или телефон.';
+      showStatusToast(toast, 'Заполните имя и Telegram или телефон.');
       if (result.errors.name) nameInput.focus();
       else telegramInput.focus();
       return;
@@ -292,14 +293,59 @@ export function renderAuditFinish(
       buildAuditHandoff(collectReportSources(bridge), contacts),
       'отчёт для Ефима',
     );
-    toast.hidden = false;
-    toast.textContent = copied.ok
-      ? 'Отчёт скопирован. Откройте Threads и вставьте его в сообщение.'
-      : copied.message;
+    showStatusToast(
+      toast,
+      copied.ok
+        ? 'Отчёт скопирован. Откройте Threads и вставьте его в сообщение.'
+        : copied.message,
+    );
   });
 
   form.append(actions, toast);
   card.append(formTitle, formNote, form);
-  panel.append(card);
+
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'action-btn action-btn--danger audit-reset';
+  resetBtn.textContent = 'Начать заново';
+
+  const dialog = document.createElement('dialog');
+  dialog.className = 'confirm-dialog';
+  dialog.setAttribute('aria-labelledby', 'reset-confirm-text');
+  const dialogText = document.createElement('p');
+  dialogText.className = 'confirm-dialog__text';
+  dialogText.id = 'reset-confirm-text';
+  dialogText.textContent =
+    'Вы уверены, что хотите очистить все введённые данные? Это действие нельзя отменить.';
+  const dialogActions = document.createElement('div');
+  dialogActions.className = 'confirm-dialog__actions';
+  const keepBtn = document.createElement('button');
+  keepBtn.type = 'button';
+  keepBtn.className = 'action-btn action-btn--secondary';
+  keepBtn.textContent = 'Оставить как есть';
+  const confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.className = 'action-btn action-btn--danger';
+  confirmBtn.textContent = 'Очистить данные';
+  dialogActions.append(keepBtn, confirmBtn);
+  dialog.append(dialogText, dialogActions);
+
+  resetBtn.addEventListener('click', () => {
+    dialog.showModal();
+  });
+  keepBtn.addEventListener('click', () => {
+    dialog.close();
+  });
+  confirmBtn.addEventListener('click', () => {
+    dialog.close();
+    resetVisitorProgress(dossier, bridge, store);
+    onNavigateTool('revenue-risk', 1);
+  });
+
+  panel.append(card, resetBtn, dialog);
   container.append(panel);
+
+  if (sources.revenue && sources.routine && sources.priority && sources.readiness) {
+    celebrate();
+  }
 }
