@@ -67,7 +67,7 @@ export function createWizard(options: {
   toolRow.className = 'journey-progress__row';
   toolRow.append(toolLabel, toolTrack);
   const stepRow = document.createElement('div');
-  stepRow.className = 'journey-progress__row';
+  stepRow.className = 'journey-progress__row journey-progress__step';
   stepRow.append(stepLabel, stepTrack);
   progress.append(toolRow, stepRow);
 
@@ -127,12 +127,16 @@ export function createWizard(options: {
     next.textContent = step === count ? options.finishLabel : 'Дальше →';
     options.onStep(step);
     if (!moveFocus) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    stepRow.scrollIntoView({
+      block: 'start',
+      behavior: reduceMotion ? 'auto' : 'smooth',
+    });
     const panel = options.panels[step - 1];
     if (!panel || panel.contains(document.activeElement)) return;
     const target = stepFocusTarget(panel);
     if (!target) return;
     target.focus({ preventScroll: true });
-    target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   const goBack = (): void => {

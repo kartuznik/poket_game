@@ -152,6 +152,16 @@ function mountApp(root: HTMLElement): void {
       syncUrlHash();
     }
     renderActiveTool();
+    const target =
+      mainStage.querySelector<HTMLElement>('.journey-progress__step') ??
+      mainStage.querySelector<HTMLElement>('.tool-card__title');
+    if (target) {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({
+        block: 'start',
+        behavior: reduceMotion ? 'auto' : 'smooth',
+      });
+    }
   }
 
   window.addEventListener('hashchange', () => {
