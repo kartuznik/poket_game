@@ -1089,6 +1089,42 @@ a:focus-visible {
   font-weight: 800;
 }
 
+.scenario-disclaimer {
+  margin: 0;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--disclaimer-bg);
+  border: var(--border-width) solid var(--disclaimer-border);
+  border-left: 4px solid var(--text-danger);
+  border-radius: var(--radius-sm);
+}
+
+.scenario-disclaimer__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  color: var(--text-danger);
+}
+
+.scenario-disclaimer__label svg {
+  flex: none;
+}
+
+.scenario-disclaimer__text {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
 .preset-disclaimer-badge {
   padding: 8px 10px;
   background: var(--bg-warning);

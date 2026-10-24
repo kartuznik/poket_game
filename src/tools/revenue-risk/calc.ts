@@ -14,12 +14,11 @@ export interface NichePreset {
   readonly description: string;
   readonly defaultConversionPercent: number;
   readonly defaultLossFactor: number;
-  readonly rangeLabel: string;
   readonly badgeDisclaimer: string;
 }
 
 export const MARKET_AVERAGE_BADGE_DISCLAIMER =
-  'Условный сценарий. Это не статистика по России и не ваши цифры.';
+  'Условный сценарий. Это не статистика по России и не ваши цифры. Значение можно заменить на своё.';
 
 export const MARKET_AVERAGE_RESULT_DISCLAIMER =
   'Сценарное допущение, не замер вашего бизнеса. Даже если цифра грубая, виден порядок потерь.';
@@ -43,7 +42,6 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Запись на приём или визит',
     defaultConversionPercent: 30,
     defaultLossFactor: 0.5,
-    rangeLabel: 'Допустим, конверсия 30%. Это сценарий, не замер рынка.',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
@@ -52,7 +50,6 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Одежда, подарки, декор, цветы',
     defaultConversionPercent: 20,
     defaultLossFactor: 0.5,
-    rangeLabel: 'Допустим, конверсия 20%. Это сценарий, не замер рынка.',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
@@ -61,7 +58,6 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Фриланс, агентства, наставничество',
     defaultConversionPercent: 12,
     defaultLossFactor: 0.42,
-    rangeLabel: 'Допустим, конверсия 12%. Это сценарий, не замер рынка.',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
   {
@@ -70,7 +66,6 @@ export const NICHE_PRESETS: readonly NichePreset[] = [
     description: 'Ремонт, производство, разработка',
     defaultConversionPercent: 8,
     defaultLossFactor: 0.37,
-    rangeLabel: 'Допустим, конверсия 8%. Это сценарий, не замер рынка.',
     badgeDisclaimer: MARKET_AVERAGE_BADGE_DISCLAIMER,
   },
 ] as const;

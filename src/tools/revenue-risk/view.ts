@@ -331,6 +331,30 @@ export function renderRevenueRiskTool(
   presetsWrap.className = 'field-group';
   presetsWrap.hidden = true;
 
+  const scenarioNote = document.createElement('aside');
+  scenarioNote.className = 'scenario-disclaimer';
+  scenarioNote.setAttribute('role', 'note');
+  const scenarioLabel = document.createElement('p');
+  scenarioLabel.className = 'scenario-disclaimer__label';
+  const scenarioIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  scenarioIcon.setAttribute('viewBox', '0 0 24 24');
+  scenarioIcon.setAttribute('width', '18');
+  scenarioIcon.setAttribute('height', '18');
+  scenarioIcon.setAttribute('aria-hidden', 'true');
+  scenarioIcon.setAttribute('focusable', 'false');
+  const scenarioPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  scenarioPath.setAttribute('fill', 'currentColor');
+  scenarioPath.setAttribute(
+    'd',
+    'M12 3.2 2.4 20.2h19.2L12 3.2zm0 5.3c.5 0 .9.4.9.9v4.6a.9.9 0 0 1-1.8 0V9.4c0-.5.4-.9.9-.9zm0 8.2a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3z',
+  );
+  scenarioIcon.append(scenarioPath);
+  scenarioLabel.append(scenarioIcon, document.createTextNode('ДИСКЛЕЙМЕР'));
+  const scenarioText = document.createElement('p');
+  scenarioText.className = 'scenario-disclaimer__text';
+  scenarioText.textContent = MARKET_AVERAGE_BADGE_DISCLAIMER;
+  scenarioNote.append(scenarioLabel, scenarioText);
+
   const presetsGrid = document.createElement('div');
   presetsGrid.className = 'presets-grid';
 
@@ -349,7 +373,7 @@ export function renderRevenueRiskTool(
         <span class="preset-card__conv">${preset.defaultConversionPercent}%</span>
       </span>
       <span class="preset-card__desc">${preset.description}</span>
-      <span class="preset-card__range">${preset.rangeLabel} · возврат ${recoveryPercentFromLossFactor(preset.defaultLossFactor)}%</span>
+      <span class="preset-card__range">возврат ${recoveryPercentFromLossFactor(preset.defaultLossFactor)}%</span>
     `;
 
     btn.addEventListener('click', () => {
@@ -368,11 +392,7 @@ export function renderRevenueRiskTool(
     );
   }
 
-  const presetBadgeDisclaimer = document.createElement('div');
-  presetBadgeDisclaimer.className = 'preset-disclaimer-badge';
-  presetBadgeDisclaimer.id = 'rr-preset-badge';
-
-  presetsWrap.append(presetsGrid, presetBadgeDisclaimer);
+  presetsWrap.append(scenarioNote, presetsGrid);
 
   const convInput = document.createElement('input');
   convInput.className = 'field-input';
@@ -647,24 +667,18 @@ export function renderRevenueRiskTool(
     resultDisclaimerEl.hidden = !isPreset;
 
     const unitSpan = convLabel.querySelector('#rr-conv-unit');
+    if (unitSpan) unitSpan.textContent = '1–95%';
     if (isPreset) {
       const preset = getNichePresetById(selectedPresetId);
       convInput.value = String(preset.defaultConversionPercent);
       convInput.readOnly = true;
       convInput.setAttribute('aria-readonly', 'true');
-      if (unitSpan) {
-        unitSpan.textContent = preset.rangeLabel;
-      }
-      presetBadgeDisclaimer.innerHTML = `<strong>${MARKET_AVERAGE_BADGE_DISCLAIMER}</strong><span>Ниша: ${preset.title} (${preset.rangeLabel})</span>`;
       applyPresetRecovery();
     } else {
       convInput.readOnly = false;
       convInput.removeAttribute('aria-readonly');
       convInput.value = customConversionRaw;
       writeRecovery(customRecoveryRaw);
-      if (unitSpan) {
-        unitSpan.textContent = '1–95%';
-      }
     }
   }
 
