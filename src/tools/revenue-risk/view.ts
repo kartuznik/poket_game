@@ -225,7 +225,6 @@ export function renderRevenueRiskTool(
   leadsInput.max = '1000000';
   leadsInput.step = '10';
   leadsInput.value = leadsRaw;
-  leadsInput.placeholder = 'например, 100';
 
   const leadsHeading = fieldHeading(
     'rr-leads-input',
@@ -271,7 +270,6 @@ export function renderRevenueRiskTool(
   lateInput.max = '100';
   lateInput.step = '1';
   lateInput.value = lateShareRaw;
-  lateInput.placeholder = 'например, 35';
 
   lateSliderRow.append(lateSlider, lateInput);
 
@@ -385,7 +383,6 @@ export function renderRevenueRiskTool(
   convInput.max = '95';
   convInput.step = '1';
   convInput.value = customConversionRaw;
-  convInput.placeholder = 'например, 20';
 
   const convError = document.createElement('p');
   convError.className = 'field-error';
@@ -429,7 +426,6 @@ export function renderRevenueRiskTool(
   lossInput.max = '100';
   lossInput.step = '1';
   lossInput.value = recoveryRaw;
-  lossInput.placeholder = 'например, 70';
   lossInput.setAttribute('aria-describedby', 'rr-loss-hint');
 
   lossSliderRow.append(lossSlider, lossInput);
@@ -462,7 +458,6 @@ export function renderRevenueRiskTool(
   checkInput.max = '100000000';
   checkInput.step = '500';
   checkInput.value = avgCheckRaw;
-  checkInput.placeholder = 'например, 4500';
 
   const checkHeading = fieldHeading(
     'rr-check-input',

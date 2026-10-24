@@ -134,7 +134,6 @@ export function renderRoutineCalcTool(
   operationsInput.max = '10000';
   operationsInput.step = '1';
   operationsInput.value = operationsRaw;
-  operationsInput.placeholder = 'например, 40';
 
   const minutesInput = document.createElement('input');
   minutesInput.className = 'field-input';
@@ -145,7 +144,6 @@ export function renderRoutineCalcTool(
   minutesInput.max = '480';
   minutesInput.step = '1';
   minutesInput.value = minutesRaw;
-  minutesInput.placeholder = 'например, 6';
 
   const rateInput = document.createElement('input');
   rateInput.className = 'field-input';
@@ -155,7 +153,6 @@ export function renderRoutineCalcTool(
   rateInput.min = '0';
   rateInput.max = '100000';
   rateInput.step = '100';
-  rateInput.placeholder = 'не обязательно';
   rateInput.value = rateRaw;
 
   const shareRow = document.createElement('div');
@@ -177,7 +174,6 @@ export function renderRoutineCalcTool(
   shareInput.max = '100';
   shareInput.step = '1';
   shareInput.value = shareRaw;
-  shareInput.placeholder = 'например, 70';
   shareRow.append(shareSlider, shareInput);
 
   let ownNumbersBtn: HTMLButtonElement | null = null;
