@@ -130,18 +130,12 @@ export function renderAuditFinish(
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
   copyBtn.className = 'action-btn action-btn--primary';
-  copyBtn.textContent = 'Скопировать отчёт для Ефима';
+  copyBtn.textContent = 'Обсудить эти цифры с Ефимом';
   const csvBtn = document.createElement('button');
   csvBtn.type = 'button';
   csvBtn.className = 'action-btn action-btn--secondary';
   csvBtn.textContent = 'Скачать таблицу (.csv)';
-  const threads = document.createElement('a');
-  threads.className = 'action-btn action-btn--quiet';
-  threads.href = THREADS_PROFILE_URL;
-  threads.target = '_blank';
-  threads.rel = 'noopener noreferrer';
-  threads.textContent = 'Открыть Threads';
-  actions.append(copyBtn, csvBtn, threads);
+  actions.append(copyBtn, csvBtn);
 
   csvBtn.disabled = !summary.hasData;
 
@@ -165,10 +159,11 @@ export function renderAuditFinish(
       buildAuditHandoff(collectReportSources(bridge)),
       'отчёт для Ефима',
     );
+    window.open(THREADS_PROFILE_URL, '_blank', 'noopener,noreferrer');
     showStatusToast(
       toast,
       copied.ok
-        ? 'Отчёт скопирован. Откройте Threads и вставьте его в сообщение.'
+        ? 'Отчёт скопирован. Вставьте его в сообщение Ефиму.'
         : copied.message,
     );
   });

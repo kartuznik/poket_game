@@ -123,8 +123,9 @@ export function buildRevenueRiskShareText(params: {
     `• Выручка под риском в месяц: ${formatRubles(params.revenueAtRiskMax)}`,
     `• Поздних обращений: ${formatCountWithNoun(Math.round(params.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес`,
     `• Выручка под риском в год: ${formatRubles(params.revenueAtRiskPerYear)}`,
-    `• Каждый пропущенный диалог стоит вам ${formatRubles(params.costPerMissedDialog)}`,
+    `• Один вовремя отвеченный диалог может принести ${formatRubles(params.costPerMissedDialog)}`,
     '',
+    'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/#revenue-risk',
     '@_kartuzzz · Игра в бизнес',
   ].join('\n');
 }
@@ -759,7 +760,7 @@ export function renderRevenueRiskTool(
 
     yearValEl.textContent = formatRubles(calcResult.revenueAtRiskPerYear);
 
-    triggerBanner.innerHTML = `Каждый пропущенный диалог стоит вам <span class="trigger-banner__highlight">${formatRubles(calcResult.costPerMissedDialog)}</span>`;
+    triggerBanner.innerHTML = `Один вовремя отвеченный диалог может принести <span class="trigger-banner__highlight">${formatRubles(calcResult.costPerMissedDialog)}</span>`;
 
     // Update collapsible "Как посчитано" with live substituted numbers
     const recoveryPercent = recoveryPercentFromLossFactor(normalizedInput.lossFactor);
@@ -770,7 +771,7 @@ export function renderRevenueRiskTool(
         <li>Выручка под риском в месяц = ${Math.round(calcResult.lateLeads)} × ${formatPercent(normalizedInput.conversionPercent)} × ${formatRubles(normalizedInput.avgCheck)} = <strong>${formatRubles(calcResult.revenueAtRiskMax)}</strong></li>
         <li>Потенциал возврата = ${formatRubles(calcResult.revenueAtRiskMax)} × ${formatPercent(recoveryPercent)} = <strong>${formatRubles(calcResult.recoverableRevenue)}/мес</strong></li>
         <li>Выручка под риском в год = ${formatRubles(calcResult.revenueAtRiskMax)} × 12 = <strong>${formatRubles(calcResult.revenueAtRiskPerYear)}</strong></li>
-        <li>Цена 1 пропущенного диалога = ${formatRubles(normalizedInput.avgCheck)} × ${formatPercent(normalizedInput.conversionPercent)} = <strong>${formatRubles(calcResult.costPerMissedDialog)}</strong></li>
+        <li>Один вовремя отвеченный диалог = ${formatRubles(normalizedInput.avgCheck)} × ${formatPercent(normalizedInput.conversionPercent)} = <strong>${formatRubles(calcResult.costPerMissedDialog)}</strong></li>
       </ol>
     `;
 

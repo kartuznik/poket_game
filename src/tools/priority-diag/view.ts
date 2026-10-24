@@ -44,6 +44,7 @@ export function buildPriorityShareText(result: PriorityResult): string {
     '',
     lines,
     '',
+    'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/#priority-diag',
     '@_kartuzzz · Игра в бизнес',
   ].join('\n');
 }

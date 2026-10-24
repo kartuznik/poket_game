@@ -38,7 +38,12 @@ export function buildAuditHandoff(sources: ReportSources): string {
   const lines = ['Игра в бизнес — отчёт для Ефима', ''];
 
   if (!summary.hasData) {
-    lines.push(EMPTY_REPORT_TEXT, '', '@_kartuzzz');
+    lines.push(
+      EMPTY_REPORT_TEXT,
+      '',
+      'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/',
+      '@_kartuzzz',
+    );
     return lines.join('\n');
   }
 
@@ -58,6 +63,9 @@ export function buildAuditHandoff(sources: ReportSources): string {
     for (const item of recommendations) lines.push(`• ${item}`);
     lines.push('');
   }
-  lines.push('@_kartuzzz');
+  lines.push(
+    'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/',
+    '@_kartuzzz',
+  );
   return lines.join('\n');
 }

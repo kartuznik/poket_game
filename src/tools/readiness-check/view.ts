@@ -35,6 +35,7 @@ export function buildReadinessShareText(result: ReadinessResult): string {
     '',
     gaps,
     '',
+    'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/#readiness-check',
     '@_kartuzzz · Игра в бизнес',
   ].join('\n');
 }

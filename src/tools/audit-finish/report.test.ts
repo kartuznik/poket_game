@@ -70,6 +70,7 @@ describe('audit handoff', () => {
     expect(text).not.toContain('Телефон:');
     expect(text).toContain('Потенциал возврата');
     expect(text).toContain('Что сделать дальше');
+    expect(text).toContain('https://kartuznik.github.io/poket_game/');
     expect(text).not.toContain('Готовность');
   });
 

@@ -56,6 +56,7 @@ describe('report export', () => {
     expect(text).toContain('• Один сценарий');
     expect(text).toContain(buildFinalSummary(sources).lead);
     expect(text).toContain('Рано');
+    expect(text).toContain('https://kartuznik.github.io/poket_game/');
     expect(buildEfimReport({ revenue: null, routine: null, priority: null, readiness: null })).toContain(
       'Заполните хотя бы один инструмент',
     );

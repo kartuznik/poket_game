@@ -21,7 +21,10 @@ export function buildEfimReport(sources: ReportSources): string {
     }
     lines.push('');
   }
-  lines.push('@_kartuzzz');
+  lines.push(
+    'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/',
+    '@_kartuzzz',
+  );
   return lines.join('\n');
 }
 
@@ -50,7 +53,7 @@ export function buildReportCsv(sources: ReportSources): string {
       row('Выручка', 'Риск в месяц, ₽', formatCsvNumber(revenue.results.revenueAtRiskMax)),
       row('Выручка', 'Риск в год, ₽', formatCsvNumber(revenue.results.revenueAtRiskPerYear)),
       row('Выручка', 'Потенциал возврата, ₽', formatCsvNumber(revenue.results.recoverableRevenue)),
-      row('Выручка', 'Цена пропущенного диалога, ₽', formatCsvNumber(revenue.results.costPerMissedDialog)),
+      row('Выручка', 'Один вовремя отвеченный диалог, ₽', formatCsvNumber(revenue.results.costPerMissedDialog)),
     );
   }
 

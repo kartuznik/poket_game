@@ -56,6 +56,7 @@ export function buildRoutineShareText(params: {
     `${formatWorkHours(params.result.hoursPerMonth)} в месяц, ${formatWorkDays(params.result.workDaysPerYear)} в год.`,
     `Можно вернуть ${formatWorkHours(params.result.savedHoursPerMonth)}/мес. ${money}`,
     '',
+    'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/#routine-calc',
     '@_kartuzzz · Игра в бизнес',
   ].join('\n');
 }
