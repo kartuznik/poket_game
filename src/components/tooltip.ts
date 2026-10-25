@@ -328,7 +328,7 @@ export function createHelpTip(
   button.type = 'button';
   button.className = 'help-tip';
   button.dataset.helpId = ownerId;
-  button.setAttribute('aria-label', 'Пояснение');
+  button.setAttribute('aria-label', 'Подсказка');
   button.setAttribute('aria-expanded', 'false');
 
   boundTips.set(ownerId, {

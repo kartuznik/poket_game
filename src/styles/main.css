@@ -800,7 +800,7 @@ a.action-btn.action-btn--quiet {
   z-index: 40;
 }
 
-/* Help tips: 18px mark inside a 44px hit target */
+/* Help tips: cobalt 22px mark inside a 44px hit target */
 .help-tip {
   flex: none;
   width: 44px;
@@ -815,7 +815,7 @@ a.action-btn.action-btn--quiet {
   font-size: 0.75rem;
   font-weight: 800;
   line-height: 1;
-  color: var(--text-muted);
+  color: var(--text-on-accent);
   background: transparent;
   border: 0;
   border-radius: var(--radius-pill);
@@ -824,14 +824,15 @@ a.action-btn.action-btn--quiet {
 
 .help-tip::before {
   content: "?";
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid currentColor;
+  border: 1.5px solid var(--accent-primary);
   border-radius: var(--radius-pill);
-  background: var(--bg-surface);
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
 }
 
 .help-popup {
