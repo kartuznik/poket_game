@@ -117,6 +117,9 @@ export function createWizard(options: {
   let holdFields = false;
   /** One paint after «К расчёту»: hide the fields even if a control still has focus. */
   let revealResult = false;
+  /** Confetti follows the result card turning visible, and skips the first paint. */
+  let resultWasShown = false;
+  let celebrateArmed = false;
 
   const editBtn = document.createElement('button');
   editBtn.type = 'button';
@@ -202,6 +205,9 @@ export function createWizard(options: {
     next.textContent = step === count ? options.finishLabel : 'Дальше →';
     options.onStep(step);
     const collapsed = applyResultMode();
+    if (celebrateArmed && collapsed && !resultWasShown) celebrate();
+    resultWasShown = collapsed;
+    celebrateArmed = true;
     if (!moveFocus) return;
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 'auto'
@@ -262,7 +268,6 @@ export function createWizard(options: {
     const landed = options.panels[step - 1];
     if (step === count && landed?.querySelector('input, textarea')) holdFields = true;
     paint(true);
-    if (step === count) celebrate();
   });
 
   paint(false);
