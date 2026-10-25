@@ -41,6 +41,7 @@
   --shadow-inset: inset 0 1px 2px rgba(22, 24, 29, 0.06);
   --disclaimer-bg: rgba(185, 28, 28, 0.08);
   --disclaimer-border: rgba(185, 28, 28, 0.45);
+  --prior-bg: rgba(29, 78, 216, 0.08);
 }
 
 /* Dark gray surfaces, muted cobalt, light contour. Offset uses the same ink as the border. */
@@ -75,4 +76,5 @@
   --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.35);
   --disclaimer-bg: rgba(243, 180, 180, 0.12);
   --disclaimer-border: rgba(243, 180, 180, 0.55);
+  --prior-bg: rgba(183, 201, 247, 0.14);
 }
