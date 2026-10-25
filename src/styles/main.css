@@ -567,6 +567,28 @@ a.action-btn {
   gap: 12px;
 }
 
+.result-card:has(.result-banner) {
+  border-top: 4px solid var(--accent-primary);
+}
+
+.result-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-primary);
+}
+
+.result-banner__icon {
+  flex: none;
+}
+
+.result-banner__label {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .result-card__eyebrow {
   display: flex;
   justify-content: space-between;

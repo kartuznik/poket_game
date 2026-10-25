@@ -1,4 +1,5 @@
 import { createFieldHeading } from '../../components/field-heading';
+import { createResultBanner } from '../../components/result-banner';
 import { appendPriorContext } from '../../components/prior-context';
 import { releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
@@ -211,7 +212,7 @@ export function renderPriorityDiagTool(
     'Балл = частота × 0,4 + время × 0,3 + цена ошибки × 0,3. При равном балле выше тот, где дороже ошибка, затем тот, где выше частота.';
   how.append(howSummary, howBody);
 
-  resultCard.append(eyebrow, valueEl, noteEl, list, diffBox, actions, toast, how);
+  resultCard.append(createResultBanner(), eyebrow, valueEl, noteEl, list, diffBox, actions, toast, how);
   panel.append(inputCard);
   container.append(panel);
 

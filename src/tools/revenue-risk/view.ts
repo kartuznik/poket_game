@@ -1,3 +1,4 @@
+import { createResultBanner } from '../../components/result-banner';
 import { createHelpTip, releaseHelpTipsWithin, setHelpTipText } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
@@ -581,6 +582,7 @@ export function renderRevenueRiskTool(
   toastEl.hidden = true;
 
   resultCard.append(
+    createResultBanner(),
     riskLineEl,
     eyebrow,
     mainValueEl,

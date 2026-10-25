@@ -1,4 +1,5 @@
 import { createFieldHeading } from '../../components/field-heading';
+import { createResultBanner } from '../../components/result-banner';
 import { appendPriorContext } from '../../components/prior-context';
 import { createHelpTip, releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
@@ -333,7 +334,7 @@ export function renderRoutineCalcTool(
   howBody.className = 'info-details__body';
   how.append(howSummary, howBody);
 
-  resultCard.append(eyebrow, valueEl, noteEl, metrics, diffBox, actions, toast, how);
+  resultCard.append(createResultBanner(), eyebrow, valueEl, noteEl, metrics, diffBox, actions, toast, how);
   panel.append(inputCard);
   container.append(panel);
 
