@@ -111,11 +111,11 @@ export function createWizard(options: {
 
   let inputsOpen = false;
   /**
-   * Text entry on the last step stays put until «К расчёту».
+   * Text entry on the last step stays put until «Показать расчёт».
    * Choice scales do not set this, so their last click still reveals the result.
    */
   let holdFields = false;
-  /** One paint after «К расчёту»: hide the fields even if a control still has focus. */
+  /** One paint after «Показать расчёт»: hide the fields even if a control still has focus. */
   let revealResult = false;
   /** Confetti follows the result card turning visible, and skips the first paint. */
   let resultWasShown = false;
@@ -125,11 +125,6 @@ export function createWizard(options: {
   editBtn.type = 'button';
   editBtn.className = 'wizard-edit';
   editBtn.textContent = '← Изменить данные';
-
-  const returnBtn = document.createElement('button');
-  returnBtn.type = 'button';
-  returnBtn.className = 'wizard-return';
-  returnBtn.textContent = 'К расчёту';
 
   function answerCard(): HTMLElement | null {
     for (const extra of options.extras ?? []) {
@@ -150,7 +145,7 @@ export function createWizard(options: {
   /**
    * A saved last step that is already valid opens on the result.
    * Typing, or «Дальше» onto a step that has text fields, keeps those fields
-   * up and offers «К расчёту» once the result exists.
+   * up. The primary button then says «Показать расчёт» and only reveals the card.
    * «Изменить данные» brings the fields back. Choice scales still collapse
    * on the click that completes the step.
    */
@@ -171,14 +166,10 @@ export function createWizard(options: {
       panel.hidden = false;
       if (answerVisible) {
         for (const extra of options.extras ?? []) extra.hidden = true;
-        if (returnBtn.parentElement !== panel) panel.append(returnBtn);
-      } else if (returnBtn.parentElement) {
-        returnBtn.remove();
       }
       return false;
     }
 
-    if (returnBtn.parentElement) returnBtn.remove();
     if (answerVisible && panel && answer) {
       panel.hidden = true;
       if (editBtn.parentElement !== answer) answer.prepend(editBtn);
@@ -202,9 +193,10 @@ export function createWizard(options: {
     backTop.hidden = step === 1;
     const valid = options.isStepValid(step);
     next.disabled = !valid;
-    next.textContent = step === count ? options.finishLabel : 'Дальше →';
     options.onStep(step);
     const collapsed = applyResultMode();
+    next.textContent =
+      step === count ? (collapsed ? options.finishLabel : 'Показать расчёт') : 'Дальше →';
     if (celebrateArmed && collapsed && !resultWasShown) celebrate();
     resultWasShown = collapsed;
     celebrateArmed = true;
@@ -238,13 +230,14 @@ export function createWizard(options: {
     revealResult = false;
     paint(true);
   });
-  returnBtn.addEventListener('click', () => {
+
+  function showResult(): void {
     inputsOpen = false;
     holdFields = false;
     revealResult = true;
     paint(true);
     revealResult = false;
-  });
+  }
 
   const goBack = (): void => {
     if (step === 1) return;
@@ -261,6 +254,10 @@ export function createWizard(options: {
       return;
     }
     if (move === 'finish') {
+      if (!resultWasShown) {
+        showResult();
+        return;
+      }
       options.onFinish();
       return;
     }

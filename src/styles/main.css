@@ -326,24 +326,6 @@ body {
   cursor: pointer;
 }
 
-.wizard-return {
-  display: block;
-  width: fit-content;
-  margin: 12px auto 0;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-secondary);
-  font-family: var(--font-sans);
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
 .wizard-nav__back--top {
   justify-self: start;
   width: auto;
