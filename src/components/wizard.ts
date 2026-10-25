@@ -109,6 +109,51 @@ export function createWizard(options: {
     );
   }
 
+  let inputsOpen = false;
+
+  const editBtn = document.createElement('button');
+  editBtn.type = 'button';
+  editBtn.className = 'wizard-edit';
+  editBtn.textContent = '← Изменить данные';
+
+  const returnBtn = document.createElement('button');
+  returnBtn.type = 'button';
+  returnBtn.className = 'wizard-return';
+  returnBtn.textContent = 'К расчёту';
+
+  function answerCard(): HTMLElement | null {
+    for (const extra of options.extras ?? []) {
+      if (extra.querySelector('.result-banner')) return extra;
+    }
+    return null;
+  }
+
+  /**
+   * The last step keeps its fields until the result card is actually on screen.
+   * «Изменить данные» brings those fields back; «К расчёту» hides them again.
+   */
+  function applyResultMode(): boolean {
+    if (step !== count) inputsOpen = false;
+    const panel = options.panels[step - 1];
+    const answer = answerCard();
+    const answerVisible = answer !== null && !answer.hidden && step === count;
+
+    if (inputsOpen && step === count && panel) {
+      panel.hidden = false;
+      for (const extra of options.extras ?? []) extra.hidden = true;
+      if (returnBtn.parentElement !== panel) panel.append(returnBtn);
+      return false;
+    }
+
+    if (returnBtn.parentElement) returnBtn.remove();
+    if (answerVisible && panel && answer) {
+      panel.hidden = true;
+      if (editBtn.parentElement !== answer) answer.prepend(editBtn);
+      return true;
+    }
+    return false;
+  }
+
   function paint(moveFocus: boolean): void {
     options.panels.forEach((panel, index) => {
       panel.hidden = index !== step - 1;
@@ -126,6 +171,7 @@ export function createWizard(options: {
     next.disabled = !valid;
     next.textContent = step === count ? options.finishLabel : 'Дальше →';
     options.onStep(step);
+    const collapsed = applyResultMode();
     if (!moveFocus) return;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     stepRow.scrollIntoView({
@@ -133,11 +179,20 @@ export function createWizard(options: {
       behavior: reduceMotion ? 'auto' : 'smooth',
     });
     const panel = options.panels[step - 1];
-    if (!panel || panel.contains(document.activeElement)) return;
+    if (!panel || collapsed || panel.hidden || panel.contains(document.activeElement)) return;
     const target = stepFocusTarget(panel);
     if (!target) return;
     target.focus({ preventScroll: true });
   }
+
+  editBtn.addEventListener('click', () => {
+    inputsOpen = true;
+    paint(true);
+  });
+  returnBtn.addEventListener('click', () => {
+    inputsOpen = false;
+    paint(true);
+  });
 
   const goBack = (): void => {
     if (step === 1) return;
