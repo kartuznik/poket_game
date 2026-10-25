@@ -173,13 +173,24 @@ export function createWizard(options: {
     options.onStep(step);
     const collapsed = applyResultMode();
     if (!moveFocus) return;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    stepRow.scrollIntoView({
-      block: 'start',
-      behavior: reduceMotion ? 'auto' : 'smooth',
-    });
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth';
     const panel = options.panels[step - 1];
-    if (!panel || collapsed || panel.hidden || panel.contains(document.activeElement)) return;
+    if (collapsed) {
+      const card = answerCard();
+      if (card && !card.hidden) card.scrollIntoView({ block: 'start', behavior });
+      return;
+    }
+    if (inputsOpen && panel) {
+      panel.scrollIntoView({ block: 'start', behavior });
+      if (!panel.contains(document.activeElement)) {
+        stepFocusTarget(panel)?.focus({ preventScroll: true });
+      }
+      return;
+    }
+    stepRow.scrollIntoView({ block: 'start', behavior });
+    if (!panel || panel.hidden || panel.contains(document.activeElement)) return;
     const target = stepFocusTarget(panel);
     if (!target) return;
     target.focus({ preventScroll: true });

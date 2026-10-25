@@ -350,6 +350,10 @@ body {
   min-width: 44px;
 }
 
+.step-panel {
+  scroll-margin-top: 24px;
+}
+
 .step-panel:not([hidden]) {
   animation: step-in 160ms ease;
 }
@@ -592,6 +596,7 @@ a.action-btn {
 
 /* Result Card (Screenshot & Share friendly) */
 .result-card {
+  scroll-margin-top: 24px;
   padding: 16px;
   background: var(--bg-result);
   border: var(--border-width) solid var(--border-strong);

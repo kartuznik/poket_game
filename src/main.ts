@@ -152,7 +152,11 @@ function mountApp(root: HTMLElement): void {
       syncUrlHash();
     }
     renderActiveTool();
+    const result = [...mainStage.querySelectorAll<HTMLElement>('.result-card')].find(
+      (card) => !card.hidden && card.querySelector('.result-banner'),
+    );
     const target =
+      result ??
       mainStage.querySelector<HTMLElement>('.journey-progress__step') ??
       mainStage.querySelector<HTMLElement>('.tool-card__title');
     if (target) {
