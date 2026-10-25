@@ -667,9 +667,9 @@ a.action-btn {
 
 .action-btn--primary {
   grid-column: 1 / -1;
-  min-height: 52px;
-  padding: 14px 16px;
-  font-size: 1rem;
+  min-height: 44px;
+  padding: 12px;
+  font-size: 0.875rem;
   background: var(--accent-primary);
   color: var(--text-on-accent);
 }
