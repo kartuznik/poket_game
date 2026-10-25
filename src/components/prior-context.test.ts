@@ -4,7 +4,12 @@ import type {
   RevenueRiskBridgeSnapshot,
   RoutineBridgeSnapshot,
 } from '../lib/types';
-import { buildPriorContextLines, type PriorContextSources } from './prior-context';
+import {
+  PRIOR_CONTEXT_NOTE,
+  PRIOR_CONTEXT_TITLE,
+  buildPriorContextLines,
+  type PriorContextSources,
+} from './prior-context';
 
 const revenue: RevenueRiskBridgeSnapshot = {
   toolId: 'revenue-risk',
@@ -68,6 +73,11 @@ const priority: PriorityBridgeSnapshot = {
 const empty: PriorContextSources = { revenue: null, routine: null, priority: null };
 
 describe('buildPriorContextLines', () => {
+  it('names the block as figures carried over from the previous tool', () => {
+    expect(PRIOR_CONTEXT_TITLE).toBe('Данные из предыдущего шага');
+    expect(PRIOR_CONTEXT_NOTE).toContain('на прошлом шаге');
+  });
+
   it('shows only saved revenue on the routine step', () => {
     const lines = buildPriorContextLines({ ...empty, revenue, routine, priority }, 'routine-calc');
     expect(lines.map((line) => line.label)).toEqual(['Выручка']);
