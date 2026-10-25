@@ -110,6 +110,13 @@ export function createWizard(options: {
   }
 
   let inputsOpen = false;
+  /**
+   * Text entry on the last step stays put until «К расчёту».
+   * Choice scales do not set this, so their last click still reveals the result.
+   */
+  let holdFields = false;
+  /** One paint after «К расчёту»: hide the fields even if a control still has focus. */
+  let revealResult = false;
 
   const editBtn = document.createElement('button');
   editBtn.type = 'button';
@@ -128,20 +135,43 @@ export function createWizard(options: {
     return null;
   }
 
+  function fieldIsActive(panel: HTMLElement | undefined): boolean {
+    if (!panel) return false;
+    const active = document.activeElement;
+    return (
+      (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) &&
+      panel.contains(active)
+    );
+  }
+
   /**
-   * The last step keeps its fields until the result card is actually on screen.
-   * «Изменить данные» brings those fields back; «К расчёту» hides them again.
+   * A saved last step that is already valid opens on the result.
+   * Typing, or «Дальше» onto a step that has text fields, keeps those fields
+   * up and offers «К расчёту» once the result exists.
+   * «Изменить данные» brings the fields back. Choice scales still collapse
+   * on the click that completes the step.
    */
   function applyResultMode(): boolean {
-    if (step !== count) inputsOpen = false;
+    if (step !== count) {
+      inputsOpen = false;
+      holdFields = false;
+    }
     const panel = options.panels[step - 1];
     const answer = answerCard();
     const answerVisible = answer !== null && !answer.hidden && step === count;
+    if (step === count && fieldIsActive(panel) && !revealResult) holdFields = true;
 
-    if (inputsOpen && step === count && panel) {
+    const keepFields =
+      step === count && panel !== undefined && !revealResult && (inputsOpen || holdFields);
+
+    if (keepFields && panel) {
       panel.hidden = false;
-      for (const extra of options.extras ?? []) extra.hidden = true;
-      if (returnBtn.parentElement !== panel) panel.append(returnBtn);
+      if (answerVisible) {
+        for (const extra of options.extras ?? []) extra.hidden = true;
+        if (returnBtn.parentElement !== panel) panel.append(returnBtn);
+      } else if (returnBtn.parentElement) {
+        returnBtn.remove();
+      }
       return false;
     }
 
@@ -198,11 +228,16 @@ export function createWizard(options: {
 
   editBtn.addEventListener('click', () => {
     inputsOpen = true;
+    holdFields = true;
+    revealResult = false;
     paint(true);
   });
   returnBtn.addEventListener('click', () => {
     inputsOpen = false;
+    holdFields = false;
+    revealResult = true;
     paint(true);
+    revealResult = false;
   });
 
   const goBack = (): void => {
@@ -224,6 +259,8 @@ export function createWizard(options: {
       return;
     }
     step += 1;
+    const landed = options.panels[step - 1];
+    if (step === count && landed?.querySelector('input, textarea')) holdFields = true;
     paint(true);
     if (step === count) celebrate();
   });
