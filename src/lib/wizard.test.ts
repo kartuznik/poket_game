@@ -17,7 +17,7 @@ describe('wizard steps', () => {
   it('uses a different step count for each tool', () => {
     expect(stepCountFor('revenue-risk')).toBe(4);
     expect(stepCountFor('routine-calc')).toBe(4);
-    expect(stepCountFor('priority-diag')).toBe(6);
+    expect(stepCountFor('priority-diag')).toBe(1);
     expect(stepCountFor('readiness-check')).toBe(3);
     expect(stepCountFor('final-report')).toBeNull();
     expect(journeyIndex('readiness-check')).toBe(4);
@@ -36,7 +36,7 @@ describe('wizard steps', () => {
     expect(resolveInitialStep(4, 3, 1)).toBe(3);
     expect(resolveInitialStep(4, null, 2)).toBe(2);
     expect(resolveInitialStep(6, null, null)).toBe(1);
-    expect(editStepFor('priority-diag')).toBe(6);
+    expect(editStepFor('priority-diag')).toBe(1);
     expect(editStepFor('readiness-check')).toBe(3);
   });
 

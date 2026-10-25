@@ -5,6 +5,7 @@ import {
   defaultPriorityInputs,
   rankProcesses,
   scoreProcess,
+  scoresFromPain,
 } from './calc';
 
 describe('priority score', () => {
@@ -12,6 +13,12 @@ describe('priority score', () => {
     expect(scoreProcess({ frequency: 5, time: 4, errorCost: 5 })).toBe(4.7);
     expect(scoreProcess({ frequency: 1, time: 1, errorCost: 1 })).toBe(1);
     expect(scoreProcess({ frequency: 5, time: 5, errorCost: 5 })).toBe(5);
+  });
+
+  it('writes one pain mark into frequency, time and error cost', () => {
+    expect(scoresFromPain(4)).toEqual({ frequency: 4, time: 4, errorCost: 4 });
+    expect(scoreProcess(scoresFromPain(2))).toBe(2);
+    expect(scoresFromPain(0).frequency).toBe(1);
   });
 
   it('pulls scores outside 1–5 back onto the scale', () => {

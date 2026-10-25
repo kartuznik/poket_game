@@ -91,6 +91,12 @@ export function clampScore(value: number): number {
   return Math.min(5, Math.max(1, Math.round(safe)));
 }
 
+/** One pain mark stands in for frequency, time and error cost together. */
+export function scoresFromPain(pain: number): PriorityScoreInput {
+  const value = clampScore(pain);
+  return { frequency: value, time: value, errorCost: value };
+}
+
 export function scoreProcess(input: PriorityScoreInput): number {
   const frequency = clampScore(input.frequency);
   const time = clampScore(input.time);

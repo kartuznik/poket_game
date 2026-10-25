@@ -12,42 +12,51 @@ import type { ToolStubRenderContext } from '../stub-factory';
 import {
   PRIORITY_PROCESSES,
   rankProcesses,
+  scoresFromPain,
   type PriorityResult,
 } from './calc';
 import type { PriorityScoreDraft } from '../../lib/dossier';
 
-const HELP = {
-  frequency:
-    'Как часто это случается. 1 — реже раза в неделю, 5 — каждый день и по многу раз. У частоты самый большой вес в формуле, 40%.',
-  time:
-    'Сколько времени съедает один заход. 1 — пара минут, 5 — заметная часть дня. Вес в формуле 30%.',
-  errorCost:
-    'Что будет, если сделать это поздно или с ошибкой. 1 — почти ничего, 5 — потерянный клиент или деньги. Вес в формуле 30%.',
-} as const;
-
-const CRITERIA = [
-  { key: 'frequency', title: 'Частота', help: HELP.frequency },
-  { key: 'time', title: 'Время', help: HELP.time },
-  { key: 'errorCost', title: 'Цена ошибки', help: HELP.errorCost },
-] as const;
+const PAIN_HELP =
+  '1 — почти не болит, 5 — болит сильно. Эта цифра записывается сразу в частоту, время и цену ошибки.';
 
 function formatScore(score: number): string {
   return Number.isInteger(score) ? String(score) : score.toFixed(1).replace('.', ',');
 }
 
 export function buildPriorityShareText(result: PriorityResult): string {
+  const top = result.ranked
+    .slice(0, 3)
+    .map((item, index) => `${index + 1}. ${item.title} — ${formatScore(item.score)}`)
+    .join('\n');
   const lines = result.ranked
     .map((item, index) => `${index + 1}. ${item.title} — ${formatScore(item.score)}`)
     .join('\n');
   return [
-    `Что автоматизировать первым: ${result.top.title} (${formatScore(result.top.score)} из 5).`,
+    'Ваши приоритеты:',
+    top,
+    '',
     result.top.recommendation,
     '',
+    'Полный порядок:',
     lines,
     '',
     'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/#priority-diag',
     '@_kartuzzz · Игра в бизнес',
   ].join('\n');
+}
+
+function selectedPain(row: PriorityScoreDraft): number | null {
+  const { frequency, time, errorCost } = row;
+  if (frequency === null || time === null || errorCost === null) return null;
+  if (frequency === time && time === errorCost) return frequency;
+  return null;
+}
+
+function hasMixedScores(row: PriorityScoreDraft): boolean {
+  const { frequency, time, errorCost } = row;
+  if (frequency === null || time === null || errorCost === null) return false;
+  return frequency !== time || time !== errorCost;
 }
 
 export function renderPriorityDiagTool(
@@ -69,7 +78,7 @@ export function renderPriorityDiagTool(
     reminders: sourceScores ? { ...sourceScores.reminders } : { ...blank },
     reports: sourceScores ? { ...sourceScores.reports } : { ...blank },
   };
-  const openedStep = resolveInitialStep(6, initialStep, draft?.step ?? null);
+  const openedStep = resolveInitialStep(1, initialStep, draft?.step ?? null);
 
   releaseHelpTipsWithin(container);
   container.innerHTML = '';
@@ -104,11 +113,13 @@ export function renderPriorityDiagTool(
     'priority-diag',
   );
 
-  const processPanels: HTMLElement[] = [];
+  const stepPanel = document.createElement('div');
+  stepPanel.className = 'step-panel';
   const hint = document.createElement('p');
   hint.className = 'field-hint';
-  hint.textContent = 'Оцените каждый процесс от 1 до 5. Единица — почти не болит, пятёрка — болит сильно.';
-  inputCard.append(hint);
+  hint.textContent =
+    'Оцените, насколько каждый процесс болит, от 1 до 5. Единица — почти не болит, пятёрка — болит сильно.';
+  stepPanel.append(hint);
 
   for (const process of PRIORITY_PROCESSES) {
     const card = document.createElement('article');
@@ -116,52 +127,48 @@ export function renderPriorityDiagTool(
     const heading = document.createElement('h3');
     heading.className = 'process-card__title';
     heading.textContent = process.title;
-    card.append(heading);
+    const group = document.createElement('div');
+    group.className = 'field-group';
+    const scale = document.createElement('div');
+    scale.className = 'choice-scale';
+    scale.setAttribute('role', 'group');
+    scale.setAttribute('aria-label', `${process.title}: насколько это больно`);
+    const current = selectedPain(scores[process.id]);
 
-    for (const criterion of CRITERIA) {
-      const group = document.createElement('div');
-      group.className = 'field-group';
-      const scale = document.createElement('div');
-      scale.className = 'choice-scale';
-      scale.setAttribute('role', 'group');
-      scale.setAttribute('aria-label', `${process.title}: ${criterion.title}`);
-      const current = scores[process.id][criterion.key];
-
-      for (let value = 1; value <= 5; value += 1) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'choice-scale__btn';
-        button.textContent = String(value);
-        button.setAttribute('aria-pressed', String(current !== null && value === current));
-        button.setAttribute('aria-label', `${process.title}, ${criterion.title}: ${value}`);
-        button.addEventListener('click', () => {
-          scores[process.id] = { ...scores[process.id], [criterion.key]: value };
-          for (const child of scale.querySelectorAll('button')) {
-            child.setAttribute('aria-pressed', String(child === button));
-          }
-          recalculate();
-        });
-        scale.append(button);
-      }
-
-      const labelId = `pd-${process.id}-${criterion.key}`;
-      scale.id = labelId;
-      group.append(
-        createFieldHeading(
-          labelId,
-          criterion.title,
-          '1–5',
-          criterion.help,
-          () => scale,
-        ).row,
-        scale,
-      );
-      card.append(group);
+    for (let value = 1; value <= 5; value += 1) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'choice-scale__btn';
+      button.textContent = String(value);
+      button.setAttribute('aria-pressed', String(current === value));
+      button.setAttribute('aria-label', `${process.title}, насколько это больно: ${value}`);
+      button.addEventListener('click', () => {
+        scores[process.id] = scoresFromPain(value);
+        for (const child of scale.querySelectorAll('button')) {
+          child.setAttribute('aria-pressed', String(child === button));
+        }
+        const mixed = card.querySelector('.process-card__mixed');
+        if (mixed) mixed.remove();
+        recalculate();
+      });
+      scale.append(button);
     }
-    const stepPanel = document.createElement('div');
-    stepPanel.className = 'step-panel';
+
+    const labelId = `pd-${process.id}-pain`;
+    scale.id = labelId;
+    group.append(
+      createFieldHeading(labelId, 'Насколько это больно', '1–5', PAIN_HELP, () => scale).row,
+      scale,
+    );
+    card.append(heading, group);
+    if (hasMixedScores(scores[process.id])) {
+      const mixed = document.createElement('p');
+      mixed.className = 'field-hint process-card__mixed';
+      mixed.textContent =
+        'Сохранены разные оценки частоты, времени и цены ошибки. Новая цифра заменит все три.';
+      card.append(mixed);
+    }
     stepPanel.append(card);
-    processPanels.push(stepPanel);
   }
 
   const resultCard = document.createElement('div');
@@ -169,9 +176,9 @@ export function renderPriorityDiagTool(
   resultCard.setAttribute('aria-live', 'polite');
   const eyebrow = document.createElement('div');
   eyebrow.className = 'result-card__eyebrow';
-  eyebrow.innerHTML = '<span>АВТОМАТИЗИРОВАТЬ ПЕРВЫМ</span><span>@_kartuzzz</span>';
-  const valueEl = document.createElement('p');
-  valueEl.className = 'result-card__value';
+  eyebrow.innerHTML = '<span>ВАШИ ПРИОРИТЕТЫ</span><span>@_kartuzzz</span>';
+  const prioritiesEl = document.createElement('ol');
+  prioritiesEl.className = 'result-priorities';
   const noteEl = document.createElement('p');
   noteEl.className = 'result-card__note';
   const list = document.createElement('ol');
@@ -209,10 +216,20 @@ export function renderPriorityDiagTool(
   const howBody = document.createElement('p');
   howBody.className = 'info-details__body';
   howBody.textContent =
-    'Балл = частота × 0,4 + время × 0,3 + цена ошибки × 0,3. При равном балле выше тот, где дороже ошибка, затем тот, где выше частота.';
+    'Цифра «насколько это больно» записывается сразу в частоту, время и цену ошибки. Балл = частота × 0,4 + время × 0,3 + цена ошибки × 0,3. При равном балле выше тот, где дороже ошибка, затем тот, где выше частота.';
   how.append(howSummary, howBody);
 
-  resultCard.append(createResultBanner(), eyebrow, valueEl, noteEl, list, diffBox, actions, toast, how);
+  resultCard.append(
+    createResultBanner(),
+    eyebrow,
+    prioritiesEl,
+    noteEl,
+    list,
+    diffBox,
+    actions,
+    toast,
+    how,
+  );
   panel.append(inputCard);
   container.append(panel);
 
@@ -236,7 +253,7 @@ export function renderPriorityDiagTool(
     const ready = completedScores();
     if (!ready) {
       latest = null;
-      valueEl.textContent = '';
+      prioritiesEl.replaceChildren();
       noteEl.textContent = '';
       list.replaceChildren();
       diffBox.hidden = true;
@@ -245,17 +262,22 @@ export function renderPriorityDiagTool(
     }
     const result = rankProcesses(ready);
     latest = result;
-    valueEl.textContent = result.top.title;
+    prioritiesEl.replaceChildren();
+    for (const item of result.ranked.slice(0, 3)) {
+      const row = document.createElement('li');
+      row.textContent = item.title;
+      prioritiesEl.append(row);
+    }
     const tieNote = result.tied
       ? ' Такой же балл есть ещё у одного процесса: выше поставлен тот, где дороже ошибка.'
       : '';
-    noteEl.textContent = `Балл ${formatScore(result.top.score)} из 5. ${result.top.recommendation}${tieNote}`;
+    noteEl.textContent = `Балл лидера ${formatScore(result.top.score)} из 5. ${result.top.recommendation}${tieNote}`;
 
     list.replaceChildren();
-    for (const item of result.ranked) {
+    for (const [index, item] of result.ranked.entries()) {
       const row = document.createElement('li');
       row.textContent = `${item.title} — ${formatScore(item.score)}`;
-      if (item.id === result.top.id) row.className = 'rank-list__top';
+      if (index < 3) row.className = 'rank-list__top';
       list.append(row);
     }
 
@@ -333,24 +355,19 @@ export function renderPriorityDiagTool(
   const wizard = createWizard({
     toolId: 'priority-diag',
     initialStep: openedStep,
-    panels: processPanels,
+    panels: [stepPanel],
     extras: [resultCard],
-    isStepValid: (step) => {
-      const process = PRIORITY_PROCESSES[step - 1];
-      if (!process) return false;
-      const row = scores[process.id];
-      return row.frequency !== null && row.time !== null && row.errorCost !== null;
-    },
+    isStepValid: () => completedScores() !== null,
     finishLabel: meta.nextToolCta,
     onStep: (step) => {
       onWizardStep(step);
       persistPriorityDraft(step);
-      if (step === PRIORITY_PROCESSES.length && !latest) resultCard.hidden = true;
+      if (!latest) resultCard.hidden = true;
     },
     onFinish: finishPriority,
   });
   refreshSteps = () => wizard.refresh();
-  inputCard.append(wizard.progress, ...processPanels, resultCard, wizard.nav, earlyReportBtn);
+  inputCard.append(wizard.progress, stepPanel, resultCard, wizard.nav, earlyReportBtn);
 
   earlyReportBtn.addEventListener('click', () => {
     recalculate();

@@ -18,13 +18,13 @@ export const JOURNEY_LENGTH = JOURNEY_TOOL_IDS.length;
  * Step counts follow the fields, not a fixed four.
  * Revenue: leads, late share, conversion, check + loss.
  * Routine: preset, operations, minutes, automation + optional rate.
- * Priority: one process per step.
+ * Priority: one screen, one pain score per process.
  * Readiness: three groups of three items.
  */
 export const STEP_COUNTS: Readonly<Record<JourneyToolId, number>> = {
   'revenue-risk': 4,
   'routine-calc': 4,
-  'priority-diag': 6,
+  'priority-diag': 1,
   'readiness-check': 3,
 };
 
