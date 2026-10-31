@@ -41,7 +41,7 @@ function signed(value: number, suffix: string): string {
 
 function phrase(before: number, after: number, absoluteUnit: string): string {
   const delta = metricDelta(before, after);
-  if (delta.kind === 'same') return '0%';
+  if (delta.kind === 'same') return 'без изменений';
   if (delta.kind === 'absolute') return signed(Math.round(delta.value * 100) / 100, ` ${absoluteUnit}`);
   return signed(delta.value, '%');
 }

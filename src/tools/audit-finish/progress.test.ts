@@ -50,6 +50,15 @@ describe('buildProgress', () => {
     expect(view.line?.text.indexOf('₽/мес')).toBeLessThan(view.line?.text.indexOf('%') ?? -1);
   });
 
+  it('says a flat metric is unchanged', () => {
+    const now = 40 * DAY;
+    const view = buildProgress([point(now - 30 * DAY, 100, 10)], point(now, 100, 10), now);
+    expect(view.line?.label).toBe('За 30 дней');
+    expect(view.line?.text).toContain('риск выручки без изменений');
+    expect(view.line?.text).toContain('рутина без изменений');
+    expect(view.line?.text).not.toContain('0%');
+  });
+
   it('draws a line only from the third point of one metric', () => {
     const now = 10 * DAY;
     const two = buildProgress([point(now - 40 * DAY, 10)], point(now, 8), now);
