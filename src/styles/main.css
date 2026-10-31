@@ -483,6 +483,10 @@ body {
   gap: 16px;
 }
 
+.step-panel > .field-group + .field-group {
+  margin-top: 16px;
+}
+
 .field-input,
 .field-slider,
 .field-textarea {

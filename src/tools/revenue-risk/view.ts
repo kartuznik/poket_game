@@ -497,7 +497,7 @@ export function renderRevenueRiskTool(
 
   const lossHeading = fieldHeading(
     'rr-loss-input',
-    'Какую долю этих денег можно вернуть быстрым ответом',
+    'Вернуть быстрым ответом',
     '0–100%',
     HELP.loss,
     () => lossSliderRow,
