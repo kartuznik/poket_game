@@ -57,8 +57,6 @@ function metricCard(label: string, value: string, note: string): string {
   return `<article class="metric"><p>${esc(label)}</p><strong>${esc(value)}</strong><span>${esc(note)}</span></article>`;
 }
 
-const MARK = `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 21l6-8 5 4 6-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
-
 const STYLE = `
 :root {
   color-scheme: light;
@@ -103,7 +101,7 @@ main { width: min(600px, 100%); margin: 0 auto; padding: 20px 16px 36px; }
 a { color: var(--text-accent); }
 h1, h2, h3, p { margin: 0; }
 header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
-.mark { width: 32px; height: 32px; color: var(--accent-primary); }
+.mark { width: 32px; height: 32px; border: 2px solid var(--accent-primary); border-radius: 8px; background: var(--bg-result); }
 h1 { font-size: 1.35rem; line-height: 1.25; }
 .muted { color: var(--text-secondary); }
 .handle { font-weight: 800; }
@@ -237,7 +235,7 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
 <body>
 <main>
 <header>
-${MARK}
+<span class="mark" aria-hidden="true"></span>
 <h1>Игра в бизнес · Бизнес-аудит</h1>
 <p class="muted">${esc(stamp)}</p>
 <p class="handle">@_kartuzzz</p>

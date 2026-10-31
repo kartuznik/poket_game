@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { PriorityProcessId } from '../../lib/types';
+import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import type { ReportSources } from './summary';
 import { buildEfimReport, buildReportCsv } from './export';
 import { buildFinalSummary } from './summary';
@@ -133,5 +135,81 @@ describe('report export', () => {
     });
     expect(csv).toContain('Итого экономия, ₽/мес;');
     expect(csv).toContain('Итого часов в месяц;0');
+  });
+
+  it('prints the meta stamp in Moscow time and keeps each priority once', () => {
+    const stamp = Date.parse('2026-10-31T11:32:00Z');
+    const ranking = PRIORITY_PROCESSES.map((process, index) => ({
+      id: process.id,
+      title: process.title,
+      score: index === 0 ? 5 : 1,
+    }));
+    const inputs = Object.fromEntries(
+      PRIORITY_PROCESSES.map((process) => [process.id, { frequency: 5, time: 4, errorCost: 3 }]),
+    ) as Record<PriorityProcessId, { frequency: number; time: number; errorCost: number }>;
+    const full: ReportSources = {
+      ...sources,
+      routine: {
+        toolId: 'routine-calc',
+        inputs: {
+          presetId: null,
+          operationsPerWeek: 4,
+          minutesPerOperation: 15,
+          hourlyRate: 500,
+          automationSharePercent: 40,
+        },
+        results: {
+          hoursPerMonth: 1.08,
+          workDaysPerYear: 2,
+          savedHoursPerMonth: 0.4,
+          savedWorkDaysPerYear: 1,
+          savedMoneyPerMonth: 5400,
+        },
+        updatedAt: 1,
+      },
+      priority: {
+        toolId: 'priority-diag',
+        inputs,
+        results: {
+          topProcessId: 'inquiries',
+          topTitle: 'Приём обращений',
+          topScore: 5,
+          tied: false,
+          ranking,
+        },
+        updatedAt: 1,
+      },
+    };
+    const csv = buildReportCsv(full, [], stamp);
+    expect(csv).toContain('# Сгенерировано: 31 октября 2026, 14:32');
+    expect(csv).toContain('Итого риск, ₽;31500');
+    expect(csv).toContain('Итого часов в месяц;1,08');
+    expect(csv).toContain('Итого баллов;1,5');
+    expect(csv).not.toContain('---История изменений---');
+    const main = csv.split('Детализация процесса №1')[0] ?? '';
+    expect(main).toContain('Процесс №1;Приём обращений;балл 5');
+    expect(main.match(/Приём обращений/g)).toEqual(['Приём обращений']);
+    expect(main).not.toContain('Приём обращений;5');
+    expect(csv).toContain('Детализация процесса №1: Приём обращений');
+    expect(csv).toContain('Частота;5');
+    expect(csv).toContain('Время;4');
+    expect(csv).toContain('Цена ошибки;3');
+    const now = 40 * 86_400_000;
+    const compared = buildReportCsv(
+      full,
+      [
+        {
+          savedAt: now - 30 * 86_400_000,
+          revenueAtRiskPerMonth: 15000,
+          routineHoursPerMonth: 2,
+          readinessScore: 1,
+        },
+      ],
+      now,
+    );
+    const history = (compared.split('---История изменений---')[1] ?? '').trim().split('\r\n');
+    expect(history[0]).toBe('Раздел;Показатель;Значение;Предыдущее;Изменение');
+    expect(history.slice(1).every((row) => row.split(';').length === 5)).toBe(true);
+    expect(compared).toContain('Готовность;Баллы;1,5;1;+50%');
   });
 });
