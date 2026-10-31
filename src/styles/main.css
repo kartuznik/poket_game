@@ -719,6 +719,8 @@ a.action-btn {
 }
 
 .certainty-details {
+  /* Grow into the result-card padding so the 12px inset does not shrink «примерно». */
+  margin-inline: -12px;
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--bg-subtle);
@@ -735,7 +737,7 @@ a.action-btn {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 0 0 12px;
+  padding: 0 12px 12px;
 }
 
 .certainty-row {
