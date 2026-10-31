@@ -42,6 +42,12 @@
   --disclaimer-bg: rgba(185, 28, 28, 0.08);
   --disclaimer-border: rgba(185, 28, 28, 0.45);
   --prior-bg: rgba(29, 78, 216, 0.08);
+
+  /* Messenger marks, kept off the calculation accent. */
+  --brand-threads: #000000;
+  --brand-threads-ink: #ffffff;
+  --brand-telegram: #2aabee;
+  --brand-telegram-ink: #ffffff;
 }
 
 /* Dark gray surfaces, muted cobalt, light contour. Offset uses the same ink as the border. */
@@ -77,4 +83,10 @@
   --disclaimer-bg: rgba(243, 180, 180, 0.12);
   --disclaimer-border: rgba(243, 180, 180, 0.55);
   --prior-bg: rgba(183, 201, 247, 0.14);
+
+  /* White Threads sticker; Telegram stays the same blue. */
+  --brand-threads: #ffffff;
+  --brand-threads-ink: #000000;
+  --brand-telegram: #2aabee;
+  --brand-telegram-ink: #ffffff;
 }

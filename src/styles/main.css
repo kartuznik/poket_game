@@ -582,6 +582,57 @@ a.action-btn {
   width: 100%;
 }
 
+.share-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.share-brand__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.share-brand__btn {
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid transparent;
+  box-shadow: var(--shadow-button);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-wrap: balance;
+  cursor: pointer;
+}
+
+.share-brand__btn--threads {
+  background: var(--brand-threads);
+  color: var(--brand-threads-ink);
+  border-color: var(--brand-threads-ink);
+}
+
+.share-brand__btn--telegram {
+  background: var(--brand-telegram);
+  color: var(--brand-telegram-ink);
+  border-color: var(--brand-telegram);
+}
+
+.share-brand__icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
 .field-input--invalid {
   border-color: var(--text-danger);
   background: var(--bg-danger);
