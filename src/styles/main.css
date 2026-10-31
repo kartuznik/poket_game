@@ -674,7 +674,7 @@ a.action-btn {
   font-weight: 700;
 }
 
-.segmented-control--triple {
+.segmented-control.segmented-control--triple {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
