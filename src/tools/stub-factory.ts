@@ -196,7 +196,7 @@ export function renderToolStub(
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
-  saveBtn.textContent = 'Сохранить «До» для сравнения';
+  saveBtn.textContent = 'Запомнить «До»';
 
   const handoffBtn = document.createElement('button');
   handoffBtn.type = 'button';

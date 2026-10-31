@@ -730,13 +730,13 @@ export function renderRevenueRiskTool(
   copyBtn.type = 'button';
   copyBtn.className = 'action-btn action-btn--secondary';
   copyBtn.id = 'rr-copy-btn';
-  copyBtn.textContent = 'Скопировать резюме для Threads';
+  copyBtn.textContent = 'Скопировать в Threads';
 
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
   saveBtn.id = 'rr-save-btn';
-  saveBtn.textContent = 'Сохранить «До» для сравнения';
+  saveBtn.textContent = 'Запомнить «До»';
 
   actions.append(copyBtn, saveBtn);
 

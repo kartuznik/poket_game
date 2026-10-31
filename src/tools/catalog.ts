@@ -3,7 +3,7 @@ import type { ToolId, ToolMeta } from '../lib/types';
 export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
   'revenue-risk': {
     id: 'revenue-risk',
-    shortTitle: 'Выручка под риском',
+    shortTitle: 'Выручка',
     title: 'Калькулятор выручки под риском',
     subtitle:
       'Оценка потенциальных потерь от поздних или пропущенных ответов на обращения клиентов.',
@@ -19,7 +19,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
   },
   'routine-calc': {
     id: 'routine-calc',
-    shortTitle: 'Калькулятор рутины',
+    shortTitle: 'Рутина',
     title: 'Калькулятор рутины',
     subtitle:
       'Подсчёт часов, которые уходят на однотипные ответы, приём заказов, записи и перенос в таблицы.',
@@ -35,7 +35,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
   },
   'priority-diag': {
     id: 'priority-diag',
-    shortTitle: 'Что первым',
+    shortTitle: 'Приоритет',
     title: 'Диагностика «Что автоматизировать первым»',
     subtitle:
       'Шесть процессов на одном экране. Одна оценка: насколько это больно.',
@@ -51,7 +51,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
   },
   'readiness-check': {
     id: 'readiness-check',
-    shortTitle: 'Чек-лист готовности',
+    shortTitle: 'Готовность',
     title: 'Чек-лист готовности к автоматизации',
     subtitle:
       'Девять условий перед ботом. Вердикт: «Рано», «Закройте пробелы» или «Можно начинать».',

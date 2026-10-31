@@ -175,7 +175,7 @@ export function renderReadinessCheckTool(
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
-  saveBtn.textContent = 'Сохранить «До» для сравнения';
+  saveBtn.textContent = 'Запомнить «До»';
   actions.append(copyBtn, saveBtn);
   const toast = document.createElement('p');
   toast.className = 'status-toast';

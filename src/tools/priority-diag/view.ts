@@ -192,11 +192,11 @@ export function renderPriorityDiagTool(
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
   copyBtn.className = 'action-btn action-btn--secondary';
-  copyBtn.textContent = 'Скопировать резюме для Threads';
+  copyBtn.textContent = 'Скопировать в Threads';
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
-  saveBtn.textContent = 'Сохранить «До» для сравнения';
+  saveBtn.textContent = 'Запомнить «До»';
   const earlyReportBtn = document.createElement('button');
   earlyReportBtn.type = 'button';
   earlyReportBtn.className = 'early-report-link';
