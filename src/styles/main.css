@@ -795,10 +795,16 @@ a.action-btn {
   margin: 0;
 }
 
-.what-if__caption,
+.what-if__caption {
+  font-weight: 700;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
 .what-if__hint,
 .what-if__source {
   color: var(--text-secondary);
+  text-wrap: balance;
 }
 
 .what-if__table {

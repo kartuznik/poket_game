@@ -637,11 +637,11 @@ export function renderRevenueRiskTool(
   whatIfTitle.textContent = 'Что если первый ответ — бот';
   const whatIfCaption = document.createElement('p');
   whatIfCaption.className = 'what-if__caption';
-  whatIfCaption.textContent = 'ваше допущение';
+  whatIfCaption.textContent = 'Какую долю этих потерь закроет бот';
   const whatIfControl = document.createElement('div');
   whatIfControl.className = 'segmented-control segmented-control--triple';
   whatIfControl.setAttribute('role', 'group');
-  whatIfControl.setAttribute('aria-label', 'Доля, которую заберёт бот');
+  whatIfControl.setAttribute('aria-label', 'Какую долю этих потерь закроет бот');
   const coverageButtons = new Map<number, HTMLButtonElement>();
   for (const choice of BOT_COVERAGE_CHOICES) {
     const button = document.createElement('button');
@@ -671,7 +671,8 @@ export function renderRevenueRiskTool(
   });
   const whatIfHint = document.createElement('p');
   whatIfHint.className = 'what-if__hint';
-  whatIfHint.textContent = 'Выберите долю потерянной выручки. Цифры появятся после выбора.';
+  whatIfHint.textContent =
+    'Это ваша оценка, не замер. 70% значит: бот снимает семь из десяти таких потерь.';
   const whatIfSource = document.createElement('p');
   whatIfSource.className = 'what-if__source';
   whatIfSource.textContent = 'подставили из вашей рутины, можно менять';
@@ -998,7 +999,7 @@ export function renderRevenueRiskTool(
       button.setAttribute('aria-pressed', String(botCoverage === choice));
     }
     const chosen = botCoverage !== null;
-    whatIfHint.hidden = chosen;
+    whatIfHint.hidden = false;
     whatIfSource.hidden = !chosen || !botFromRoutine;
     whatIfTable.hidden = !chosen;
     if (!chosen || !latestResult || botCoverage === null) return;
