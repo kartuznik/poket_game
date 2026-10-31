@@ -334,6 +334,8 @@ body {
 
 .wizard-nav__next {
   text-wrap: balance;
+  font-size: 13px;
+  padding: 10px 8px;
 }
 
 .step-panel {
@@ -729,7 +731,7 @@ a.action-btn {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 0 12px 12px;
+  padding: 0 0 12px;
 }
 
 .certainty-row {
@@ -745,6 +747,8 @@ a.action-btn {
 
 .segmented-control.segmented-control--triple {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  padding: 2px;
 }
 
 .segmented-control--triple .segmented-control__btn {
