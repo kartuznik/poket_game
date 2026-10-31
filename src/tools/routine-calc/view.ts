@@ -5,6 +5,7 @@ import { createHelpTip, releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
+import { recordMetricSnapshot } from '../../lib/dossier';
 import { isRoutineStartChosen, isRoutineStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
   formatCountWithNoun,
@@ -540,7 +541,9 @@ export function renderRoutineCalcTool(
       },
       results: latest,
     });
-    dossier.update((current) => ({ ...current, routine: snapshot }));
+    dossier.update((current) =>
+      recordMetricSnapshot({ ...current, routine: snapshot }, Date.now()),
+    );
     window.location.hash = meta.nextToolId;
     onNavigateTool(meta.nextToolId);
   }

@@ -5,6 +5,7 @@ import { bindHelpTipHover, releaseHelpTipsWithin } from '../../components/toolti
 import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
+import { recordMetricSnapshot } from '../../lib/dossier';
 import { resolveInitialStep } from '../../lib/wizard';
 import type { ReadinessItemId, ReadinessStatus } from '../../lib/types';
 import { TOOLS_CATALOG } from '../catalog';
@@ -302,7 +303,9 @@ export function renderReadinessCheckTool(
         unclosedTitles: latest.unclosed.map((item) => item.title),
       },
     });
-    dossier.update((current) => ({ ...current, readiness: snapshot }));
+    dossier.update((current) =>
+      recordMetricSnapshot({ ...current, readiness: snapshot }, Date.now()),
+    );
     window.location.hash = meta.nextToolId;
     onNavigateTool(meta.nextToolId);
   }

@@ -8,6 +8,7 @@ import {
   emptyDossier,
   hydrateBridge,
   parseDossier,
+  recordMetricSnapshot,
   validateContacts,
   type BusinessDossier,
 } from './dossier';
@@ -31,7 +32,8 @@ function memoryStorage(initial = new Map<string, string>()): KeyValueStorage & {
 describe('business dossier', () => {
   it('starts empty, so default answers are not treated as a finished tool', () => {
     const dossier = emptyDossier(10);
-    expect(dossier.version).toBe(1);
+    expect(dossier.version).toBe(2);
+    expect(dossier.history).toEqual([]);
     expect(dossier.revenue).toBeNull();
     expect(dossier.readiness).toBeNull();
     expect(draftStepFor(dossier, 'revenue-risk')).toBeNull();
@@ -147,7 +149,7 @@ describe('business dossier', () => {
   });
 
   it('ignores a broken or outdated record', () => {
-    expect(parseDossier({ version: 2, updatedAt: 1 })).toBeNull();
+    expect(parseDossier({ version: 99, updatedAt: 1 })).toBeNull();
     expect(parseDossier('{bad')).toBeNull();
     const storage = memoryStorage(new Map([[DOSSIER_STORAGE_KEY, '{bad']]));
     const store = createDossierStore(() => storage, () => 4);
@@ -282,6 +284,121 @@ describe('business dossier', () => {
     });
     expect(withCoverage?.revenueDraft?.botCoverage).toBe(0.5);
     expect(withCoverage?.revenue?.botCoverage).toBeUndefined();
+  });
+
+  it('reads a version 1 dossier as the current visit with an empty history', () => {
+    const restored = parseDossier({
+      version: 1,
+      updatedAt: 9,
+      contacts: { name: 'Анна', telegram: '@anna', phone: '', business: 'салон' },
+      revenueDraft: {
+        step: 2,
+        leadsPerMonth: '80',
+        lateSharePercent: '10',
+        conversionPercent: '20',
+        avgCheck: '500',
+        lossFactorPercent: '30',
+        mode: 'custom',
+        presetId: null,
+      },
+      revenue: {
+        toolId: 'revenue-risk',
+        updatedAt: 9,
+        inputs: {
+          leadsPerMonth: 80,
+          lateSharePercent: 10,
+          conversionPercent: 20,
+          avgCheck: 500,
+          lossFactor: 0.3,
+          mode: 'custom',
+        },
+        results: {
+          lateLeads: 8,
+          revenueAtRiskMax: 800,
+          recoverableRevenue: 560,
+          revenueAtRiskPerYear: 9600,
+          costPerMissedDialog: 100,
+        },
+      },
+    });
+    expect(restored?.version).toBe(2);
+    expect(restored?.history).toEqual([]);
+    expect(restored?.contacts.name).toBe('Анна');
+    expect(restored?.revenueDraft?.leadsPerMonth).toBe('80');
+    expect(restored?.revenue?.results.revenueAtRiskMax).toBe(800);
+  });
+
+  it('drops a broken history entry and keeps the confirmed tools', () => {
+    const restored = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      history: [
+        { savedAt: 1, revenueAtRiskPerMonth: 100, routineHoursPerMonth: null, readinessScore: null },
+        { savedAt: 'вчера', revenueAtRiskPerMonth: 1 },
+        { revenueAtRiskPerMonth: 5 },
+      ],
+      contacts: { name: 'Илья', telegram: '', phone: '1', business: '' },
+    });
+    expect(restored?.contacts.name).toBe('Илья');
+    expect(restored?.history).toEqual([
+      { savedAt: 1, revenueAtRiskPerMonth: 100, routineHoursPerMonth: null, readinessScore: null },
+    ]);
+  });
+
+  it('does not overwrite a dossier whose version it does not know', () => {
+    const raw = JSON.stringify({ version: 99, updatedAt: 1, contacts: { name: 'Анна' } });
+    const storage = memoryStorage(new Map([[DOSSIER_STORAGE_KEY, raw]]));
+    const store = createDossierStore(() => storage, () => 6);
+    store.update((current) => ({ ...current, contacts: { ...current.contacts, name: 'Пётр' } }));
+    expect(storage.dump.get(DOSSIER_STORAGE_KEY)).toBe(raw);
+  });
+
+  it('records a metric snapshot, skips an unchanged one, and keeps the last ten', () => {
+    let dossier = emptyDossier(1);
+    dossier = {
+      ...dossier,
+      revenue: {
+        toolId: 'revenue-risk',
+        updatedAt: 1,
+        inputs: {
+          leadsPerMonth: 10,
+          lateSharePercent: 10,
+          conversionPercent: 10,
+          avgCheck: 100,
+          lossFactor: 0.5,
+          mode: 'custom',
+        },
+        results: {
+          lateLeads: 1,
+          revenueAtRiskMax: 100,
+          recoverableRevenue: 50,
+          revenueAtRiskPerYear: 1200,
+          costPerMissedDialog: 10,
+        },
+      },
+    };
+    dossier = recordMetricSnapshot(dossier, 10);
+    const again = recordMetricSnapshot(dossier, 11);
+    expect(again.history).toHaveLength(1);
+    expect(again.history[0]?.savedAt).toBe(10);
+    for (let index = 0; index < 12; index += 1) {
+      const revenue = dossier.revenue;
+      if (!revenue) break;
+      dossier = recordMetricSnapshot(
+        {
+          ...dossier,
+          revenue: {
+            ...revenue,
+            results: { ...revenue.results, revenueAtRiskMax: 200 + index },
+          },
+        },
+        20 + index,
+      );
+    }
+    expect(dossier.history).toHaveLength(10);
+    expect(dossier.history[0]?.revenueAtRiskPerMonth).toBe(202);
+    expect(dossier.history[9]?.revenueAtRiskPerMonth).toBe(211);
+    expect(recordMetricSnapshot(emptyDossier(1), 5).history).toEqual([]);
   });
 
   it('asks for a name and at least one way to reply', () => {

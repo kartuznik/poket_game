@@ -15,8 +15,10 @@ import type {
   RoutinePresetId,
   ToolId,
 } from './types';
-export const DOSSIER_VERSION = 1 as const;
+export const DOSSIER_VERSION = 2 as const;
 export const DOSSIER_STORAGE_KEY = 'poket_game:dossier:v1';
+const HISTORY_LIMIT = 10;
+const METRIC_EPSILON = 1e-6;
 
 export interface RevenueDraft {
   readonly step: number;
@@ -70,9 +72,17 @@ export interface ContactErrors {
   readonly contact: string | null;
 }
 
+export interface MetricSnapshot {
+  readonly savedAt: number;
+  readonly revenueAtRiskPerMonth: number | null;
+  readonly routineHoursPerMonth: number | null;
+  readonly readinessScore: number | null;
+}
+
 export interface BusinessDossier {
   readonly version: typeof DOSSIER_VERSION;
   readonly updatedAt: number;
+  readonly history: readonly MetricSnapshot[];
   readonly revenueDraft: RevenueDraft | null;
   readonly routineDraft: RoutineDraft | null;
   readonly priorityDraft: PriorityDraft | null;
@@ -126,6 +136,7 @@ export function emptyDossier(now = 0): BusinessDossier {
   return {
     version: DOSSIER_VERSION,
     updatedAt: now,
+    history: [],
     revenueDraft: null,
     routineDraft: null,
     priorityDraft: null,
@@ -588,13 +599,87 @@ function readReadiness(value: unknown): ReadinessBridgeSnapshot | null {
   };
 }
 
+function readOptionalMetric(value: unknown): number | null | undefined {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  return undefined;
+}
+
+function readMetricSnapshot(value: unknown): MetricSnapshot | null {
+  if (!isRecord(value)) return null;
+  const savedAt = finite(value.savedAt);
+  if (savedAt === null || savedAt < 0) return null;
+  const revenueAtRiskPerMonth = readOptionalMetric(value.revenueAtRiskPerMonth);
+  const routineHoursPerMonth = readOptionalMetric(value.routineHoursPerMonth);
+  const readinessScore = readOptionalMetric(value.readinessScore);
+  if (
+    revenueAtRiskPerMonth === undefined ||
+    routineHoursPerMonth === undefined ||
+    readinessScore === undefined
+  ) {
+    return null;
+  }
+  return { savedAt, revenueAtRiskPerMonth, routineHoursPerMonth, readinessScore };
+}
+
+function readHistory(value: unknown): readonly MetricSnapshot[] {
+  if (!Array.isArray(value)) return [];
+  const snapshots: MetricSnapshot[] = [];
+  for (const item of value) {
+    const snapshot = readMetricSnapshot(item);
+    if (snapshot) snapshots.push(snapshot);
+  }
+  return snapshots.slice(-HISTORY_LIMIT);
+}
+
+function sameMetric(left: number | null, right: number | null): boolean {
+  if (left === null || right === null) return left === right;
+  return Math.abs(left - right) < METRIC_EPSILON;
+}
+
+export function metricsFromDossier(
+  dossier: BusinessDossier,
+): Omit<MetricSnapshot, 'savedAt'> {
+  return {
+    revenueAtRiskPerMonth: dossier.revenue?.results.revenueAtRiskMax ?? null,
+    routineHoursPerMonth: dossier.routine?.results.hoursPerMonth ?? null,
+    readinessScore: dossier.readiness?.results.score ?? null,
+  };
+}
+
+/** Appends the confirmed metrics when one of them changed. Caps the log at 10. */
+export function recordMetricSnapshot(dossier: BusinessDossier, now: number): BusinessDossier {
+  const metrics = metricsFromDossier(dossier);
+  if (
+    metrics.revenueAtRiskPerMonth === null &&
+    metrics.routineHoursPerMonth === null &&
+    metrics.readinessScore === null
+  ) {
+    return dossier;
+  }
+  const last = dossier.history[dossier.history.length - 1];
+  if (
+    last &&
+    sameMetric(last.revenueAtRiskPerMonth, metrics.revenueAtRiskPerMonth) &&
+    sameMetric(last.routineHoursPerMonth, metrics.routineHoursPerMonth) &&
+    sameMetric(last.readinessScore, metrics.readinessScore)
+  ) {
+    return dossier;
+  }
+  return {
+    ...dossier,
+    history: [...dossier.history, { savedAt: now, ...metrics }].slice(-HISTORY_LIMIT),
+  };
+}
+
 export function parseDossier(value: unknown): BusinessDossier | null {
-  if (!isRecord(value) || value.version !== DOSSIER_VERSION) return null;
+  if (!isRecord(value) || (value.version !== 1 && value.version !== DOSSIER_VERSION)) return null;
   const updatedAt = finite(value.updatedAt);
   if (updatedAt === null) return null;
   return {
     version: DOSSIER_VERSION,
     updatedAt,
+    history: value.version === 1 ? [] : readHistory(value.history),
     revenueDraft: readRevenueDraft(value.revenueDraft),
     routineDraft: readRoutineDraft(value.routineDraft),
     priorityDraft: readPriorityDraft(value.priorityDraft),
@@ -616,9 +701,11 @@ export function createDossierStore(
   now: () => number = Date.now,
 ): DossierStore {
   let memory: BusinessDossier | null = null;
+  let preserveStoredRecord = false;
 
   const write = (dossier: BusinessDossier): DossierWriteResult => {
     memory = dossier;
+    if (preserveStoredRecord) return { dossier, persisted: false };
     const storage = resolveKeyValueStorage(storageProvider);
     if (!storage) return { dossier, persisted: false };
     try {
@@ -636,11 +723,15 @@ export function createDossierStore(
         try {
           const raw = storage.getItem(DOSSIER_STORAGE_KEY);
           if (raw) {
-            const parsed = parseDossier(JSON.parse(raw) as unknown);
+            const json: unknown = JSON.parse(raw);
+            const parsed = parseDossier(json);
             if (parsed) {
+              preserveStoredRecord = false;
               memory = parsed;
               return parsed;
             }
+            preserveStoredRecord =
+              isRecord(json) && json.version !== 1 && json.version !== DOSSIER_VERSION;
           }
         } catch {
           // Corrupted JSON or SecurityError — use the session copy.

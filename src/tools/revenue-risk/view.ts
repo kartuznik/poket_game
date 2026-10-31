@@ -3,6 +3,7 @@ import { createHelpTip, releaseHelpTipsWithin, setHelpTipText } from '../../comp
 import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
+import { recordMetricSnapshot } from '../../lib/dossier';
 import type { RevenueRiskFieldErrors } from './calc';
 import { isRevenueStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
@@ -1207,10 +1208,9 @@ export function renderRevenueRiskTool(
       uncertainty: tags,
       botCoverage,
     });
-    dossier.update((current) => ({
-      ...current,
-      revenue: bridgeSnapshot,
-    }));
+    dossier.update((current) =>
+      recordMetricSnapshot({ ...current, revenue: bridgeSnapshot }, Date.now()),
+    );
     bridge.send({
       fromTool: 'revenue-risk',
       toTool: meta.nextToolId,
