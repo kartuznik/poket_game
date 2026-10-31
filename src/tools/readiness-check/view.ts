@@ -108,7 +108,7 @@ export function renderReadinessCheckTool(
     let groupPanel = groupPanels.get(item.group);
     if (!groupPanel) {
       groupPanel = document.createElement('div');
-      groupPanel.className = 'step-panel';
+      groupPanel.className = 'step-panel step-panel--questions';
       const groupLabel = document.createElement('h3');
       groupLabel.className = 'check-group';
       groupLabel.textContent = item.group;

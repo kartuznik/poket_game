@@ -340,6 +340,12 @@ body {
   scroll-margin-top: 24px;
 }
 
+.step-panel--questions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .step-panel:not([hidden]) {
   animation: step-in 160ms ease;
 }
@@ -553,6 +559,14 @@ body {
   width: 100%;
 }
 
+.report-blocks .metric-box {
+  gap: 8px;
+}
+
+.tool-card > .rank-list {
+  margin-bottom: 2px;
+}
+
 a.action-btn {
   text-decoration: none;
 }
@@ -663,14 +677,14 @@ a.action-btn {
 .certainty-details__body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   padding: 0 12px 12px;
 }
 
 .certainty-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
 .certainty-row__label {
