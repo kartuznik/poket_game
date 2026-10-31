@@ -635,6 +635,66 @@ a.action-btn {
   color: var(--text-accent);
 }
 
+.result-card__corridor {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-accent);
+}
+
+.certainty-details {
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+
+.certainty-details__summary {
+  min-height: 44px;
+  padding: 10px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.certainty-details__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+
+.certainty-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.certainty-row__label {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.segmented-control--triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.measure-first {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.measure-first__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.measure-first__targets,
+.measure-first__note {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
 .result-card__value {
   margin: 0;
   font-family: var(--font-display);

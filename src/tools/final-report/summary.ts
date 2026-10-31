@@ -1,4 +1,10 @@
 import { formatCountWithNoun, formatRubles, formatWorkHours } from '../../lib/format';
+import {
+  computeCorridor,
+  defaultUncertainty,
+  formatCorridorLine,
+  formatUncertaintyProfile,
+} from '../revenue-risk/calc';
 import type {
   PriorityBridgeSnapshot,
   ReadinessBridgeSnapshot,
@@ -83,9 +89,11 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
     });
   }
   if (revenue) {
+    const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
+    const corridor = computeCorridor(revenue.inputs, tags);
     blocks.push({
       title: 'Потенциал возврата',
-      text: `${formatRubles(revenue.results.recoverableRevenue)} в месяц. Выручка под риском: ${formatRubles(revenue.results.revenueAtRiskMax)}.`,
+      text: `${formatRubles(revenue.results.recoverableRevenue)} в месяц. Выручка под риском: ${formatRubles(revenue.results.revenueAtRiskMax)}. ${formatCorridorLine(corridor, tags)}. Профиль точности: ${formatUncertaintyProfile(tags)}.`,
       sourceToolId: 'revenue-risk',
       editStep: editStepFor('revenue-risk'),
     });

@@ -24,6 +24,17 @@ export interface ToolMeta {
   readonly nextToolCta: string;
 }
 
+export type UncertaintyTag = 'precise' | 'rough' | 'guess';
+
+export type UncertaintyInputId =
+  | 'leads'
+  | 'lateShare'
+  | 'conversion'
+  | 'check'
+  | 'recoveryShare';
+
+export type UncertaintyProfile = Readonly<Record<UncertaintyInputId, UncertaintyTag>>;
+
 export interface RevenueRiskBridgeSnapshot {
   readonly toolId: 'revenue-risk';
   readonly inputs: {
@@ -42,6 +53,7 @@ export interface RevenueRiskBridgeSnapshot {
     readonly revenueAtRiskPerYear: number;
     readonly costPerMissedDialog: number;
   };
+  readonly uncertainty?: UncertaintyProfile;
   readonly updatedAt: number;
 }
 

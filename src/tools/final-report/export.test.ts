@@ -66,6 +66,9 @@ describe('report export', () => {
     const csv = buildReportCsv(sources);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv).toContain('Выручка;Риск в месяц, ₽;31500');
+    expect(csv).toContain('Выручка;Коридор от, ₽;');
+    expect(csv).toContain('Выручка;Профиль точности;');
+    expect(csv).toContain('доля возврата — наугад');
     expect(csv).toContain('Готовность;Вердикт;Рано');
     expect(csv).toContain('"Правила ответа; Один сценарий"');
     expect(csv).toContain('Понятно, что отвечать в типовых ситуациях;Частично');

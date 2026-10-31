@@ -7,8 +7,14 @@ import {
   REVENUE_RISK_DEFAULTS,
   calculateRevenueRisk,
   getNichePresetById,
+  computeCorridor,
+  defaultUncertainty,
+  formatCorridorLine,
+  isAllPrecise,
   lossFactorFromPercent,
   lossFactorFromRecoveryPercent,
+  shouldShowMeasureFirst,
+  uncertaintyAfterModeChange,
   recoveryPercentFromLossFactor,
   validateRevenueRiskDraft,
 } from './calc';
@@ -289,5 +295,125 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
     expect(outOfBounds.errors.conversionPercent).toContain('от 1% до 95%');
     expect(outOfBounds.errors.avgCheck).toContain('отрицательным');
     expect(outOfBounds.errors.lossFactorPercent).toContain('от 0 до 100%');
+  });
+
+  it('clamps a percent factor at 100 and keeps the corridor around the base', () => {
+    const tags = {
+      leads: 'precise' as const,
+      lateShare: 'precise' as const,
+      conversion: 'guess' as const,
+      check: 'precise' as const,
+      recoveryShare: 'precise' as const,
+    };
+    const corridor = computeCorridor(
+      {
+        leadsPerMonth: 100,
+        lateSharePercent: 35,
+        conversionPercent: 95,
+        avgCheck: 4500,
+        lossFactor: lossFactorFromRecoveryPercent(70),
+      },
+      tags,
+    );
+    expect(corridor.high).toBeCloseTo(110250, 5);
+    expect(corridor.low).toBeCloseTo(68079.375, 5);
+    expect(corridor.low).toBeLessThan(corridor.base);
+    expect(corridor.high).toBeGreaterThan(corridor.base);
+  });
+
+  it('widens the corridor as a tag gets less certain and never crosses the base', () => {
+    const input = {
+      leadsPerMonth: 100,
+      lateSharePercent: 35,
+      conversionPercent: 20,
+      avgCheck: 4500,
+      lossFactor: 0.3,
+    };
+    const preciseTags = {
+      leads: 'precise' as const,
+      lateShare: 'precise' as const,
+      conversion: 'precise' as const,
+      check: 'precise' as const,
+      recoveryShare: 'precise' as const,
+    };
+    const precise = computeCorridor(input, preciseTags);
+    const rough = computeCorridor(input, { ...preciseTags, leads: 'rough' });
+    const guess = computeCorridor(input, {
+      leads: 'guess',
+      lateShare: 'precise',
+      conversion: 'precise',
+      check: 'precise',
+      recoveryShare: 'precise',
+    });
+    expect(rough.low).toBeLessThanOrEqual(precise.low);
+    expect(rough.high).toBeGreaterThanOrEqual(precise.high);
+    expect(guess.low).toBeLessThanOrEqual(rough.low);
+    expect(guess.high).toBeGreaterThanOrEqual(rough.high);
+    expect(guess.low).toBeLessThanOrEqual(guess.base);
+    expect(guess.high).toBeGreaterThanOrEqual(guess.base);
+  });
+
+  it('collapses every precise tag into the same point as the recoverable revenue', () => {
+    const input = {
+      leadsPerMonth: 100,
+      lateSharePercent: 35,
+      conversionPercent: 20,
+      avgCheck: 4500,
+      lossFactor: 0.3,
+    };
+    const tags = {
+      leads: 'precise' as const,
+      lateShare: 'precise' as const,
+      conversion: 'precise' as const,
+      check: 'precise' as const,
+      recoveryShare: 'precise' as const,
+    };
+    const corridor = computeCorridor(input, tags);
+    const base = calculateRevenueRisk(input).recoverableRevenue;
+    expect(isAllPrecise(tags)).toBe(true);
+    expect(corridor.low).toBeCloseTo(base, 5);
+    expect(corridor.high).toBeCloseTo(base, 5);
+    expect(corridor.base).toBeCloseTo(22050, 5);
+    expect(formatCorridorLine(corridor, tags)).toBe(
+      'вы уверены во всех входах — коридор схлопнулся в точку',
+    );
+    expect(shouldShowMeasureFirst(corridor)).toBe(false);
+  });
+
+  it('returns a zero corridor and hides the measure block when there are no leads', () => {
+    const corridor = computeCorridor(
+      {
+        leadsPerMonth: 0,
+        lateSharePercent: 35,
+        conversionPercent: 20,
+        avgCheck: 4500,
+        lossFactor: 0.3,
+      },
+      defaultUncertainty('preset'),
+    );
+    expect(corridor.low).toBe(0);
+    expect(corridor.base).toBe(0);
+    expect(corridor.high).toBe(0);
+    expect(shouldShowMeasureFirst(corridor)).toBe(false);
+  });
+
+  it('keeps tags the visitor already chose when the conversion mode changes', () => {
+    const chosen = {
+      ...defaultUncertainty('preset'),
+      conversion: 'precise' as const,
+      leads: 'precise' as const,
+    };
+    const custom = uncertaintyAfterModeChange(chosen, 'preset', 'custom');
+    const back = uncertaintyAfterModeChange(custom, 'custom', 'preset');
+    expect(custom.conversion).toBe('precise');
+    expect(custom.leads).toBe('precise');
+    expect(back.conversion).toBe('precise');
+    expect(back.recoveryShare).toBe('guess');
+
+    const untouched = defaultUncertainty('preset');
+    const moved = uncertaintyAfterModeChange(untouched, 'preset', 'custom');
+    const restored = uncertaintyAfterModeChange(moved, 'custom', 'preset');
+    expect(moved.conversion).toBe('rough');
+    expect(restored.conversion).toBe('guess');
   });
 });

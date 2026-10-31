@@ -201,6 +201,50 @@ describe('business dossier', () => {
     expect(Number.isNaN(restored?.revenue?.results.recoverableRevenue)).toBe(false);
     expect(restored?.revenue?.results.recoverableRevenue).toBe(22050);
     expect(recoveryPercentFromLossFactor(restored?.revenue?.inputs.lossFactor ?? Number.NaN)).toBe(70);
+    expect(restored?.revenue?.uncertainty).toBeUndefined();
+  });
+
+  it('keeps an old revenue draft and ignores a broken certainty profile', () => {
+    const restored = parseDossier({
+      version: 1,
+      updatedAt: 3,
+      revenueDraft: {
+        step: 4,
+        leadsPerMonth: '10',
+        lateSharePercent: '20',
+        conversionPercent: '15',
+        avgCheck: '1000',
+        lossFactorPercent: '30',
+        mode: 'preset',
+        presetId: 'beauty-local',
+        uncertainty: { leads: 'nope' },
+      },
+    });
+    expect(restored?.revenueDraft?.leadsPerMonth).toBe('10');
+    expect(restored?.revenueDraft?.uncertainty).toBeUndefined();
+    const kept = parseDossier({
+      version: 1,
+      updatedAt: 3,
+      revenueDraft: {
+        step: 2,
+        leadsPerMonth: '10',
+        lateSharePercent: '20',
+        conversionPercent: '',
+        avgCheck: '',
+        lossFactorPercent: '',
+        mode: 'custom',
+        presetId: null,
+        uncertainty: {
+          leads: 'precise',
+          lateShare: 'rough',
+          conversion: 'guess',
+          check: 'rough',
+          recoveryShare: 'guess',
+        },
+      },
+    });
+    expect(kept?.revenueDraft?.uncertainty?.leads).toBe('precise');
+    expect(kept?.revenueDraft?.uncertainty?.conversion).toBe('guess');
   });
 
   it('asks for a name and at least one way to reply', () => {

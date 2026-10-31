@@ -1,4 +1,9 @@
 import { formatCsvNumber, toCsv } from '../../lib/csv';
+import {
+  computeCorridor,
+  defaultUncertainty,
+  formatUncertaintyProfile,
+} from '../revenue-risk/calc';
 import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import { READINESS_ITEMS } from '../readiness-check/calc';
 import { getRoutinePresetById } from '../routine-calc/calc';
@@ -54,6 +59,13 @@ export function buildReportCsv(sources: ReportSources): string {
       row('Выручка', 'Риск в год, ₽', formatCsvNumber(revenue.results.revenueAtRiskPerYear)),
       row('Выручка', 'Потенциал возврата, ₽', formatCsvNumber(revenue.results.recoverableRevenue)),
       row('Выручка', 'Один вовремя отвеченный диалог, ₽', formatCsvNumber(revenue.results.costPerMissedDialog)),
+    );
+    const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
+    const corridor = computeCorridor(revenue.inputs, tags);
+    rows.push(
+      row('Выручка', 'Коридор от, ₽', formatCsvNumber(corridor.low)),
+      row('Выручка', 'Коридор до, ₽', formatCsvNumber(corridor.high)),
+      row('Выручка', 'Профиль точности', formatUncertaintyProfile(tags)),
     );
   }
 

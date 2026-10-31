@@ -10,6 +10,8 @@ import type {
   ReadinessStatus,
   RevenueRiskBridgeSnapshot,
   RoutineBridgeSnapshot,
+  UncertaintyProfile,
+  UncertaintyTag,
   RoutinePresetId,
   ToolId,
 } from './types';
@@ -25,6 +27,7 @@ export interface RevenueDraft {
   readonly lossFactorPercent: string;
   readonly mode: 'custom' | 'preset';
   readonly presetId: string | null;
+  readonly uncertainty?: UncertaintyProfile;
 }
 
 export interface RoutineDraft {
@@ -244,6 +247,30 @@ function readContacts(value: unknown): ContactDraft {
   };
 }
 
+const UNCERTAINTY_IDS = [
+  'leads',
+  'lateShare',
+  'conversion',
+  'check',
+  'recoveryShare',
+] as const;
+
+function uncertaintyTag(value: unknown): UncertaintyTag | null {
+  if (value === 'precise' || value === 'rough' || value === 'guess') return value;
+  return null;
+}
+
+function readUncertainty(value: unknown): UncertaintyProfile | null {
+  if (!isRecord(value)) return null;
+  const tags = {} as Record<(typeof UNCERTAINTY_IDS)[number], UncertaintyTag>;
+  for (const id of UNCERTAINTY_IDS) {
+    const tag = uncertaintyTag(value[id]);
+    if (tag === null) return null;
+    tags[id] = tag;
+  }
+  return tags;
+}
+
 function readRevenueDraft(value: unknown): RevenueDraft | null {
   if (!isRecord(value)) return null;
   const step = stepIn(value.step, 4);
@@ -265,6 +292,7 @@ function readRevenueDraft(value: unknown): RevenueDraft | null {
     return null;
   }
   const presetId = text(value.presetId);
+  const uncertainty = readUncertainty(value.uncertainty);
   return {
     step,
     leadsPerMonth,
@@ -274,6 +302,7 @@ function readRevenueDraft(value: unknown): RevenueDraft | null {
     lossFactorPercent,
     mode,
     presetId,
+    ...(uncertainty ? { uncertainty } : {}),
   };
 }
 
@@ -382,9 +411,11 @@ function readRevenue(value: unknown): RevenueRiskBridgeSnapshot | null {
     return null;
   }
   const presetId = text(value.inputs.presetId);
+  const uncertainty = readUncertainty(value.uncertainty);
   return {
     toolId: 'revenue-risk',
     updatedAt,
+    ...(uncertainty ? { uncertainty } : {}),
     inputs: {
       leadsPerMonth,
       lateSharePercent,

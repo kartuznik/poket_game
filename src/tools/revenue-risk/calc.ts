@@ -1,4 +1,11 @@
-import { normalizeFiniteNumber } from '../../lib/format';
+import { formatRubles, normalizeFiniteNumber } from '../../lib/format';
+import type {
+  UncertaintyInputId,
+  UncertaintyProfile,
+  UncertaintyTag,
+} from '../../lib/types';
+
+export type { UncertaintyInputId, UncertaintyProfile, UncertaintyTag };
 
 export type NichePresetId =
   | 'beauty-local'
@@ -281,4 +288,141 @@ export function calculateRevenueRisk(
     revenueAtRiskPerYear,
     costPerMissedDialog,
   };
+}
+
+export interface RevenueCorridor {
+  readonly low: number;
+  readonly base: number;
+  readonly high: number;
+}
+
+export const UNCERTAINTY_SPREAD: Readonly<Record<UncertaintyTag, number>> = {
+  precise: 0,
+  rough: 0.15,
+  guess: 0.35,
+};
+
+export const CORRIDOR_POINT_LINE =
+  'вы уверены во всех входах — коридор схлопнулся в точку';
+
+export const CORRIDOR_WIDTH_NOTE =
+  'Ширина коридора показывает вашу неопределённость во всех входах. Чтобы сузить — уточните теги на самые важные для вас параметры';
+
+const UNCERTAINTY_INPUTS: readonly UncertaintyInputId[] = [
+  'leads',
+  'lateShare',
+  'conversion',
+  'check',
+  'recoveryShare',
+];
+
+const MEASURE_RANK: readonly UncertaintyInputId[] = [
+  'conversion',
+  'recoveryShare',
+  'lateShare',
+  'leads',
+  'check',
+];
+
+export const UNCERTAINTY_INPUT_LABELS: Readonly<Record<UncertaintyInputId, string>> = {
+  leads: 'обращения',
+  lateShare: 'доля поздних',
+  conversion: 'конверсия',
+  check: 'средний чек',
+  recoveryShare: 'доля возврата',
+};
+
+export const UNCERTAINTY_TAG_LABELS: Readonly<Record<UncertaintyTag, string>> = {
+  precise: 'точно',
+  rough: 'примерно',
+  guess: 'наугад',
+};
+
+export function defaultUncertainty(mode: ConversionInputMode): UncertaintyProfile {
+  return {
+    leads: 'rough',
+    lateShare: 'rough',
+    conversion: mode === 'preset' ? 'guess' : 'rough',
+    check: 'rough',
+    recoveryShare: 'guess',
+  };
+}
+
+/** A tag the visitor already chose stays. Only an untouched conversion follows the mode. */
+export function uncertaintyAfterModeChange(
+  tags: UncertaintyProfile,
+  previousMode: ConversionInputMode,
+  nextMode: ConversionInputMode,
+): UncertaintyProfile {
+  if (previousMode === nextMode) return tags;
+  if (tags.conversion !== defaultUncertainty(previousMode).conversion) return tags;
+  return { ...tags, conversion: defaultUncertainty(nextMode).conversion };
+}
+
+export function isAllPrecise(tags: UncertaintyProfile): boolean {
+  return UNCERTAINTY_INPUTS.every((id) => tags[id] === 'precise');
+}
+
+export function computeCorridor(
+  input: RevenueRiskInput,
+  tags: UncertaintyProfile,
+): RevenueCorridor {
+  const calculated = calculateRevenueRisk(input);
+  const normalized = calculated.normalizedInput;
+  const recoveryPercent = (1 - normalized.lossFactor) * 100;
+  const bound = (direction: -1 | 1): number => {
+    const leads = Math.max(
+      0,
+      normalized.leadsPerMonth * (1 + direction * UNCERTAINTY_SPREAD[tags.leads]),
+    );
+    const late = clamp(
+      normalized.lateSharePercent * (1 + direction * UNCERTAINTY_SPREAD[tags.lateShare]),
+      0,
+      100,
+    );
+    const conversion = clamp(
+      normalized.conversionPercent * (1 + direction * UNCERTAINTY_SPREAD[tags.conversion]),
+      0,
+      100,
+    );
+    const check = Math.max(
+      0,
+      normalized.avgCheck * (1 + direction * UNCERTAINTY_SPREAD[tags.check]),
+    );
+    const recovery = clamp(
+      recoveryPercent * (1 + direction * UNCERTAINTY_SPREAD[tags.recoveryShare]),
+      0,
+      100,
+    );
+    return leads * (late / 100) * (conversion / 100) * check * (recovery / 100);
+  };
+  return { low: bound(-1), base: calculated.recoverableRevenue, high: bound(1) };
+}
+
+export function shouldShowMeasureFirst(corridor: RevenueCorridor): boolean {
+  return Math.round(corridor.low) !== Math.round(corridor.high);
+}
+
+export function topUncertainInputs(
+  tags: UncertaintyProfile,
+  limit = 2,
+): readonly UncertaintyInputId[] {
+  return [...MEASURE_RANK]
+    .sort((left, right) => {
+      const bySpread = UNCERTAINTY_SPREAD[tags[right]] - UNCERTAINTY_SPREAD[tags[left]];
+      if (bySpread !== 0) return bySpread;
+      return MEASURE_RANK.indexOf(left) - MEASURE_RANK.indexOf(right);
+    })
+    .slice(0, limit);
+}
+
+export function formatUncertaintyProfile(tags: UncertaintyProfile): string {
+  return UNCERTAINTY_INPUTS.map(
+    (id) => `${UNCERTAINTY_INPUT_LABELS[id]} — ${UNCERTAINTY_TAG_LABELS[tags[id]]}`,
+  ).join(', ');
+}
+
+export function formatCorridorLine(corridor: RevenueCorridor, tags: UncertaintyProfile): string {
+  if (isAllPrecise(tags)) return CORRIDOR_POINT_LINE;
+  return `от ${formatRubles(corridor.low)} до ${formatRubles(corridor.high)}/мес`;
 }

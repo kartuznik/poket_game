@@ -21,12 +21,23 @@ import {
   NICHE_PRESETS,
   type NichePresetId,
   REVENUE_RISK_DEFAULTS,
+  CORRIDOR_WIDTH_NOTE,
+  UNCERTAINTY_INPUT_LABELS,
+  UNCERTAINTY_TAG_LABELS,
   calculateRevenueRisk,
+  computeCorridor,
+  defaultUncertainty,
+  formatCorridorLine,
+  formatUncertaintyProfile,
   getNichePresetById,
   lossFactorFromRecoveryPercent,
   recoveryPercentFromLossFactor,
+  shouldShowMeasureFirst,
+  topUncertainInputs,
+  uncertaintyAfterModeChange,
   validateRevenueRiskDraft,
 } from './calc';
+import type { UncertaintyInputId, UncertaintyProfile, UncertaintyTag } from '../../lib/types';
 
 const HELP = {
   leads:
@@ -103,6 +114,7 @@ export function buildRevenueRiskShareText(params: {
   readonly revenueAtRiskPerYear: number;
   readonly recoverableRevenue: number;
   readonly costPerMissedDialog: number;
+  readonly tags: UncertaintyProfile;
 }): string {
   const modeNote =
     params.mode === 'preset' && params.presetTitle
@@ -121,6 +133,20 @@ export function buildRevenueRiskShareText(params: {
     '',
     'Результаты:',
     `• Потенциал возврата: ${formatRubles(params.recoverableRevenue)}/мес`,
+    `• Коридор: ${formatCorridorLine(
+      computeCorridor(
+        {
+          leadsPerMonth: params.leadsPerMonth,
+          lateSharePercent: params.lateSharePercent,
+          conversionPercent: params.conversionPercent,
+          avgCheck: params.avgCheck,
+          lossFactor: params.lossFactorPercent / 100,
+        },
+        params.tags,
+      ),
+      params.tags,
+    )} при моём профиле точности`,
+    `• Профиль точности: ${formatUncertaintyProfile(params.tags)}`,
     `• Выручка под риском в месяц: ${formatRubles(params.revenueAtRiskMax)}`,
     `• Поздних обращений: ${formatCountWithNoun(Math.round(params.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес`,
     `• Выручка под риском в год: ${formatRubles(params.revenueAtRiskPerYear)}`,
@@ -151,6 +177,8 @@ export function renderRevenueRiskTool(
 
   let mode: ConversionInputMode = draft?.mode ?? saved?.inputs.mode ?? 'custom';
   let selectedPresetId: NichePresetId = restoredPreset;
+  let tags: UncertaintyProfile =
+    draft?.uncertainty ?? saved?.uncertainty ?? defaultUncertainty(mode);
 
   let leadsRaw =
     draft?.leadsPerMonth ??
@@ -527,6 +555,67 @@ export function renderRevenueRiskTool(
   mainValueEl.className = 'result-card__value';
   mainValueEl.id = 'rr-result-month';
 
+  const corridorEl = document.createElement('p');
+  corridorEl.className = 'result-card__note result-card__corridor';
+  corridorEl.id = 'rr-result-corridor';
+
+  const certaintyDetails = document.createElement('details');
+  certaintyDetails.className = 'certainty-details';
+  const certaintySummary = document.createElement('summary');
+  certaintySummary.className = 'certainty-details__summary';
+  certaintySummary.textContent = 'Точность входов';
+  const certaintyBody = document.createElement('div');
+  certaintyBody.className = 'certainty-details__body';
+  const tagButtons = new Map<UncertaintyInputId, Map<UncertaintyTag, HTMLButtonElement>>();
+  for (const inputId of [
+    'leads',
+    'lateShare',
+    'conversion',
+    'check',
+    'recoveryShare',
+  ] as const) {
+    const row = document.createElement('div');
+    row.className = 'certainty-row';
+    const label = document.createElement('span');
+    label.className = 'certainty-row__label';
+    label.textContent = UNCERTAINTY_INPUT_LABELS[inputId];
+    const control = document.createElement('div');
+    control.className = 'segmented-control segmented-control--triple';
+    control.setAttribute('role', 'group');
+    control.setAttribute('aria-label', UNCERTAINTY_INPUT_LABELS[inputId]);
+    const buttons = new Map<UncertaintyTag, HTMLButtonElement>();
+    for (const tag of ['precise', 'rough', 'guess'] as const) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'segmented-control__btn';
+      button.textContent = UNCERTAINTY_TAG_LABELS[tag];
+      button.setAttribute('aria-pressed', String(tags[inputId] === tag));
+      button.addEventListener('click', () => {
+        tags = { ...tags, [inputId]: tag };
+        paintCertainty();
+        persistRevenueDraft(wizard.currentStep());
+      });
+      buttons.set(tag, button);
+      control.append(button);
+    }
+    tagButtons.set(inputId, buttons);
+    row.append(label, control);
+    certaintyBody.append(row);
+  }
+  certaintyDetails.append(certaintySummary, certaintyBody);
+
+  const measureBlock = document.createElement('section');
+  measureBlock.className = 'measure-first';
+  const measureTitle = document.createElement('h3');
+  measureTitle.className = 'measure-first__title';
+  measureTitle.textContent = 'Что замерить первым';
+  const measureTargets = document.createElement('p');
+  measureTargets.className = 'measure-first__targets';
+  const measureNote = document.createElement('p');
+  measureNote.className = 'measure-first__note';
+  measureNote.textContent = CORRIDOR_WIDTH_NOTE;
+  measureBlock.append(measureTitle, measureTargets, measureNote);
+
   const subNoteEl = document.createElement('p');
   subNoteEl.className = 'result-card__note';
   subNoteEl.id = 'rr-result-late-leads';
@@ -586,6 +675,9 @@ export function renderRevenueRiskTool(
     riskLineEl,
     eyebrow,
     mainValueEl,
+    corridorEl,
+    certaintyDetails,
+    measureBlock,
     subNoteEl,
     metricsGrid,
     triggerBanner,
@@ -796,21 +888,45 @@ export function renderRevenueRiskTool(
       diffBox.hidden = true;
     }
 
+    latestResult = calcResult;
+    paintCertainty();
     refreshSteps();
     return { calcResult, validation };
+  }
+
+  let latestResult: ReturnType<typeof calculateRevenueRisk> | null = null;
+
+  function paintCertainty(): void {
+    if (!latestResult) return;
+    const corridor = computeCorridor(latestResult.normalizedInput, tags);
+    corridorEl.textContent = formatCorridorLine(corridor, tags);
+    for (const [inputId, buttons] of tagButtons) {
+      for (const [tag, button] of buttons) {
+        button.setAttribute('aria-pressed', String(tags[inputId] === tag));
+      }
+    }
+    const showMeasure = shouldShowMeasureFirst(corridor);
+    measureBlock.hidden = !showMeasure;
+    if (!showMeasure) return;
+    const names = topUncertainInputs(tags).map((id) => UNCERTAINTY_INPUT_LABELS[id]);
+    measureTargets.textContent = `Сначала уточните: ${names.join(' и ')}.`;
   }
 
   // Event listeners
   modeCustomBtn.addEventListener('click', () => {
     if (mode === 'custom') return;
+    const previous = mode;
     mode = 'custom';
+    tags = uncertaintyAfterModeChange(tags, previous, mode);
     syncConversionFieldWithMode();
     recalculateAndRender();
   });
 
   modePresetBtn.addEventListener('click', () => {
     if (mode === 'preset') return;
+    const previous = mode;
     mode = 'preset';
+    tags = uncertaintyAfterModeChange(tags, previous, mode);
     syncConversionFieldWithMode();
     recalculateAndRender();
   });
@@ -909,6 +1025,7 @@ export function renderRevenueRiskTool(
       revenueAtRiskPerYear: calcResult.revenueAtRiskPerYear,
       recoverableRevenue: calcResult.recoverableRevenue,
       costPerMissedDialog: calcResult.costPerMissedDialog,
+      tags,
     });
 
     const res = await copyTextToClipboard(text, 'резюме для Threads');
@@ -932,7 +1049,7 @@ export function renderRevenueRiskTool(
   });
 
   function persistRevenueDraft(step: number): void {
-    dossier.update((current) => ({
+    const written = dossier.update((current) => ({
       ...current,
       revenueDraft: {
         step,
@@ -946,8 +1063,13 @@ export function renderRevenueRiskTool(
             : String(Math.round(100 - Math.min(100, Math.max(0, Number(recoveryRaw))))),
         mode,
         presetId: mode === 'preset' ? selectedPresetId : null,
+        uncertainty: tags,
       },
+      ...(current.revenue ? { revenue: { ...current.revenue, uncertainty: tags } } : {}),
     }));
+    if (written.dossier.revenue) {
+      bridge.saveRevenueRiskResult(written.dossier.revenue);
+    }
   }
 
   function finishRevenue(): void {
@@ -970,6 +1092,7 @@ export function renderRevenueRiskTool(
         revenueAtRiskPerYear: calcResult.revenueAtRiskPerYear,
         costPerMissedDialog: calcResult.costPerMissedDialog,
       },
+      uncertainty: tags,
     });
     dossier.update((current) => ({
       ...current,

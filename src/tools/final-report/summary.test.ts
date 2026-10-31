@@ -109,6 +109,8 @@ describe('buildFinalSummary', () => {
     expect(summary.lead).toContain('22');
     expect(summary.lead).toContain('Потенциал возврата');
     expect(summary.blocks).toHaveLength(1);
+    expect(summary.blocks[0]?.text).toContain('Профиль точности');
+    expect(summary.blocks[0]?.text).toContain('от ');
   });
 
   it('joins priority, savings and revenue into one lead', () => {

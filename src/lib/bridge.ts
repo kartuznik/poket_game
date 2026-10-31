@@ -156,6 +156,7 @@ export class ToolBridge {
       inputs: snapshot.inputs,
       results: snapshot.results,
       updatedAt: snapshot.updatedAt ?? Date.now(),
+      ...(snapshot.uncertainty ? { uncertainty: snapshot.uncertainty } : {}),
     };
     this.latestRevenueRiskSnapshot = record;
     return record;
