@@ -132,12 +132,11 @@ describe('buildWeekPlan', () => {
     expect(open[0]?.text).toBe('Назначьте ответственного за Telegram-канал');
   });
 
-  it('uses the recommendation of the highest-scoring process', () => {
+  it('does not repeat a process recommendation that is already on the screen', () => {
     const plan = buildWeekPlan({ ...none, priority });
-    const expected = PRIORITY_PROCESSES.find((item) => item.id === 'answers');
-    expect(plan[0]?.id).toBe('priority-answers');
-    expect(plan[0]?.text).toBe(expected?.recommendation);
-    expect(plan[0]?.text).not.toContain('Автоматизируйте');
+    const recommendations = PRIORITY_PROCESSES.map((item) => item.recommendation);
+    expect(plan.map((step) => step.id)).toEqual(['filler-dialogs', 'filler-channel', 'filler-remeasure']);
+    for (const step of plan) expect(recommendations).not.toContain(step.text);
   });
 
   it('keeps three steps and fills the rest from the shared tail', () => {

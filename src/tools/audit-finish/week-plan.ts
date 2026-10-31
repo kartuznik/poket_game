@@ -1,5 +1,4 @@
 import type { ReportSources } from '../final-report/summary';
-import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import {
   computeCorridor,
   defaultUncertainty,
@@ -59,10 +58,6 @@ export function buildWeekPlan(sources: ReportSources): readonly WeekStep[] {
   }
   if (routine && routine.results.hoursPerMonth >= ROUTINE_HOURS_THRESHOLD) steps.push(ROUTINE_STEP);
   if (readiness && readiness.inputs.owner !== 'yes') steps.push(OWNER_STEP);
-  if (priority) {
-    const process = PRIORITY_PROCESSES.find((item) => item.id === priority.results.topProcessId);
-    if (process) steps.push({ id: `priority-${process.id}`, text: process.recommendation });
-  }
   for (const filler of FILLERS) {
     if (steps.length >= 3) break;
     steps.push(filler);
