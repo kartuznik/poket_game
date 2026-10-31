@@ -686,9 +686,9 @@ export function renderRevenueRiskTool(
   whatIf.append(
     whatIfTitle,
     whatIfCaption,
+    whatIfHint,
     whatIfControl,
     routineFill,
-    whatIfHint,
     whatIfSource,
     whatIfTable,
   );
