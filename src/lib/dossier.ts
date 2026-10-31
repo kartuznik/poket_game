@@ -15,7 +15,13 @@ import type {
   RoutinePresetId,
   ToolId,
 } from './types';
+/** Schema inside the record. A v1 record is read and the next save writes version 2. */
 export const DOSSIER_VERSION = 2 as const;
+/**
+ * localStorage key. It stays `v1` on purpose: renaming it to `v2` would hide
+ * every visit already saved in this browser. The version field inside the JSON
+ * is what moves forward.
+ */
 export const DOSSIER_STORAGE_KEY = 'poket_game:dossier:v1';
 const HISTORY_LIMIT = 10;
 const METRIC_EPSILON = 1e-6;

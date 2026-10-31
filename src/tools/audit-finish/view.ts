@@ -7,7 +7,7 @@ import { resetVisitorProgress } from '../../lib/reset-progress';
 import { JOURNEY_LENGTH, globalProgressPercent } from '../../lib/wizard';
 import { TOOLS_CATALOG } from '../catalog';
 import { REPORT_CSV_FILENAME, buildReportCsv } from '../final-report/export';
-import { REPORT_HTML_FILENAME, buildHtmlReport } from '../final-report/html-report';
+import { buildHtmlReport, reportHtmlFilename } from '../final-report/html-report';
 import { collectReportSources } from '../final-report/view';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from '../final-report/summary';
 import type { ToolStubRenderContext } from '../stub-factory';
@@ -277,12 +277,10 @@ export function renderAuditFinish(
 
   htmlBtn.addEventListener('click', () => {
     if (htmlBtn.disabled) return;
-    downloadTextFile(
-      REPORT_HTML_FILENAME,
-      buildHtmlReport(dossier.read(), Date.now()),
-      'text/html;charset=utf-8',
-    );
-    showStatusToast(toast, 'HTML-отчёт скачан: business-game-report.html.');
+    const savedAt = Date.now();
+    const filename = reportHtmlFilename(savedAt);
+    downloadTextFile(filename, buildHtmlReport(dossier.read(), savedAt), 'text/html;charset=utf-8');
+    showStatusToast(toast, `HTML-отчёт скачан: ${filename}.`);
   });
 
   telegramBtn.addEventListener('click', async () => {
@@ -296,7 +294,7 @@ export function renderAuditFinish(
 
   copyBtn.addEventListener('click', async () => {
     const copied = await copyTextToClipboard(
-      buildAuditHandoff(collectReportSources(bridge)),
+      buildAuditHandoff(collectReportSources(bridge), dossier.read().history, Date.now()),
       'отчёт для Ефима',
     );
     window.open(THREADS_PROFILE_URL, '_blank', 'noopener,noreferrer');

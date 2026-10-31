@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDossier, type MetricSnapshot } from '../../lib/dossier';
 import { formatRubles } from '../../lib/format';
-import { buildHtmlReport } from './html-report';
+import { buildHtmlReport, reportHtmlFilename } from './html-report';
 import type { ReportSources } from './summary';
 
 const DAY = 86_400_000;
@@ -107,6 +107,16 @@ describe('html report', () => {
     expect(html).toContain('Можно начинать');
     expect(html).toContain('Приём обращений');
     expect(html).toContain('Что сделать на этой неделе');
+    expect(html).toContain('class="week-plan"');
+    expect(html).toContain('break-before: page');
+    expect(html).not.toContain('0.1.0');
+    expect(html).toMatch(/версия [0-9a-f]{7}/);
+    expect(reportHtmlFilename(Date.parse('2026-10-31T21:30:00Z'))).toBe(
+      'business-game-report-2026-11-01.html',
+    );
+    expect(reportHtmlFilename(Date.parse('2026-10-31T11:32:00Z'))).toBe(
+      'business-game-report-2026-10-31.html',
+    );
     expect(html).not.toContain('<svg');
     expect(new TextEncoder().encode(html).byteLength).toBeLessThanOrEqual(50 * 1024);
     const urls = html.match(/https?:\/\/[^\s"'<]+/g) ?? [];

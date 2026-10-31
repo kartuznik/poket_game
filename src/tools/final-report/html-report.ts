@@ -13,9 +13,26 @@ import {
 import { formatGeneratedAt } from './export';
 import { EMPTY_REPORT_TEXT } from './summary';
 
-export const REPORT_HTML_FILENAME = 'business-game-report.html';
-const PRODUCT_VERSION = '0.1.0';
+declare const __APP_COMMIT__: string;
+
 const PRODUCT_URL = 'https://kartuznik.github.io/poket_game/';
+
+/** First seven characters of the commit that built this page. Empty outside a git checkout. */
+function productCommit(): string {
+  const value = typeof __APP_COMMIT__ === 'string' ? __APP_COMMIT__ : '';
+  return /^[0-9a-f]{7}$/.test(value) ? value : '';
+}
+
+/** `business-game-report-2026-10-31.html`, dated in Moscow. */
+export function reportHtmlFilename(now: number): string {
+  const day = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(now));
+  return `business-game-report-${day}.html`;
+}
 
 function esc(value: string): string {
   return value
@@ -147,6 +164,7 @@ footer { margin-top: 28px; color: var(--text-muted); font-size: 0.8125rem; displ
   body { background: #fff; color: #16181d; }
   main { width: auto; max-width: none; }
   .metric, .panel { box-shadow: none; background: #fff; }
+  .week-plan { break-before: page; page-break-before: always; }
 }
 `.trim();
 
@@ -231,11 +249,13 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
   const planHtml =
     plan.length === 0
       ? ''
-      : `<section><h2>Что сделать на этой неделе</h2><ol>${plan
+      : `<section class="week-plan"><h2>Что сделать на этой неделе</h2><ol>${plan
           .map((step) => `<li>${esc(step.text)}</li>`)
           .join('')}</ol></section>`;
 
   const empty = hasData ? '' : `<p class="panel">${esc(EMPTY_REPORT_TEXT)}</p>`;
+  const commit = productCommit();
+  const versionLine = commit ? `<p>Игра в бизнес, версия ${esc(commit)}</p>` : '';
 
   return `<!DOCTYPE html>
 <html lang="ru">
@@ -262,7 +282,7 @@ ${progressHtml}
 ${planHtml}
 <footer>
 <p>Сгенерировано ${esc(stamp)}</p>
-<p>Игра в бизнес, версия ${PRODUCT_VERSION}</p>
+${versionLine}
 <p><a href="${PRODUCT_URL}">${esc(PRODUCT_URL)}</a></p>
 </footer>
 </main>

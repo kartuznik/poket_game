@@ -80,6 +80,7 @@ describe('audit handoff', () => {
     expect(text).toContain('Что сделать на этой неделе');
     expect(text).toContain('Повторить замер до 8 января.');
     expect(text).not.toContain('Что сделать дальше');
+    expect(text).not.toContain('За 30 дней');
     expect(text).toContain('https://kartuznik.github.io/poket_game/');
     expect(text).not.toContain('Готовность');
   });
@@ -96,6 +97,24 @@ describe('audit handoff', () => {
     expect(text).not.toContain('Что сделать дальше');
     expect(text).not.toContain('Что сделать на этой неделе');
     expect(text).not.toContain('Повторить замер');
+  });
+
+  it('adds the progress sentence when a snapshot is at least a day old', () => {
+    const now = 40 * 86_400_000;
+    const text = buildAuditHandoff(
+      sources,
+      [
+        {
+          savedAt: now - 30 * 86_400_000,
+          revenueAtRiskPerMonth: 35000,
+          routineHoursPerMonth: null,
+          readinessScore: null,
+        },
+      ],
+      now,
+    );
+    expect(text).toContain('За 30 дней: риск выручки −10%');
+    expect(text).not.toContain('без изменений');
   });
 });
 

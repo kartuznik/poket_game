@@ -7,8 +7,9 @@ import {
 } from '../revenue-risk/calc';
 import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from '../final-report/summary';
 import type { RevenueRiskBridgeSnapshot } from '../../lib/types';
+import type { MetricSnapshot } from '../../lib/dossier';
 import { buildWeekPlan } from './week-plan';
-import { formatDayMonth } from './progress';
+import { buildProgress, formatDayMonth } from './progress';
 
 export const THREADS_PROFILE_URL = 'https://www.threads.com/@_kartuzzz';
 /** Telegram chat of the author. Threads stays @_kartuzzz. */
@@ -43,8 +44,34 @@ export function buildRecommendations(sources: ReportSources): readonly string[] 
   return items.slice(0, 3);
 }
 
+function progressSentence(
+  sources: ReportSources,
+  history: readonly MetricSnapshot[],
+  now: number,
+): string | null {
+  const metrics = {
+    revenueAtRiskPerMonth: sources.revenue?.results.revenueAtRiskMax ?? null,
+    routineHoursPerMonth: sources.routine?.results.hoursPerMonth ?? null,
+    readinessScore: sources.readiness?.results.score ?? null,
+  };
+  const last = history[history.length - 1];
+  const current: MetricSnapshot =
+    last &&
+    last.revenueAtRiskPerMonth === metrics.revenueAtRiskPerMonth &&
+    last.routineHoursPerMonth === metrics.routineHoursPerMonth &&
+    last.readinessScore === metrics.readinessScore
+      ? last
+      : { savedAt: now, ...metrics };
+  const line = buildProgress(history, current, now).line;
+  return line ? `${line.label}: ${line.text}` : null;
+}
+
 /** Text the visitor pastes to Efim: the confirmed numbers and the next steps. */
-export function buildAuditHandoff(sources: ReportSources): string {
+export function buildAuditHandoff(
+  sources: ReportSources,
+  history: readonly MetricSnapshot[] = [],
+  now = Date.now(),
+): string {
   const summary = buildFinalSummary(sources);
   const lines = ['Игра в бизнес — отчёт для Ефима', ''];
 
@@ -76,6 +103,8 @@ export function buildAuditHandoff(sources: ReportSources): string {
     if (due) lines.push(due);
     lines.push('');
   }
+  const progress = progressSentence(sources, history, now);
+  if (progress) lines.push(progress, '');
   lines.push(
     'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/',
     '@_kartuzzz',
