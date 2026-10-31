@@ -570,7 +570,8 @@ body {
 }
 
 .tool-card > .rank-list,
-.tool-card > .week-plan {
+.tool-card > .week-plan,
+.tool-card > .progress-card {
   margin-bottom: 2px;
 }
 
@@ -623,6 +624,43 @@ body {
   font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.35;
+}
+
+.progress-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.progress-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.progress-card__text,
+.progress-card__caption {
+  margin: 0;
+  min-width: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.progress-card__caption {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.progress-spark {
+  display: block;
+  width: 100%;
+  height: 72px;
+  color: var(--accent-primary);
+  overflow: hidden;
 }
 
 a.action-btn {

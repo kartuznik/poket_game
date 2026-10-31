@@ -83,3 +83,31 @@ export function buildProgress(
       : `С замера ${formatDayMonth(baseline.savedAt)}`;
   return { line: { label, text: describeChange(baseline, current) }, baseline, series };
 }
+
+export interface ProgressChart {
+  readonly title: string;
+  readonly values: readonly number[];
+}
+
+function finiteValues(
+  series: readonly MetricSnapshot[],
+  read: (item: MetricSnapshot) => number | null,
+): number[] {
+  const values: number[] = [];
+  for (const item of series) {
+    const value = read(item);
+    if (value !== null) values.push(value);
+  }
+  return values;
+}
+
+/** One line, and only once three points of the same metric exist. */
+export function progressChart(series: readonly MetricSnapshot[]): ProgressChart | null {
+  const revenue = finiteValues(series, (item) => item.revenueAtRiskPerMonth);
+  if (revenue.length >= 3) return { title: 'Риск выручки, ₽/мес', values: revenue };
+  const routine = finiteValues(series, (item) => item.routineHoursPerMonth);
+  if (routine.length >= 3) return { title: 'Рутина, ч/мес', values: routine };
+  const readiness = finiteValues(series, (item) => item.readinessScore);
+  if (readiness.length >= 3) return { title: 'Готовность, баллы', values: readiness };
+  return null;
+}

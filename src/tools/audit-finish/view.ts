@@ -1,6 +1,7 @@
 import { celebrate } from '../../components/confetti';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
+import { metricsFromDossier, type BusinessDossier, type MetricSnapshot } from '../../lib/dossier';
 import { downloadTextFile } from '../../lib/csv';
 import { resetVisitorProgress } from '../../lib/reset-progress';
 import { JOURNEY_LENGTH, globalProgressPercent } from '../../lib/wizard';
@@ -15,6 +16,7 @@ import {
   buildAuditHandoff,
   buildTelegramSummary,
 } from './report';
+import { buildProgress, progressChart } from './progress';
 import { buildWeekPlan } from './week-plan';
 
 const THREADS_GLYPH =
@@ -22,6 +24,70 @@ const THREADS_GLYPH =
 
 const TELEGRAM_GLYPH =
   'M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z';
+
+function currentMetricSnapshot(history: readonly MetricSnapshot[], metrics: Omit<MetricSnapshot, 'savedAt'>, updatedAt: number): MetricSnapshot {
+  const last = history[history.length - 1];
+  if (
+    last &&
+    last.revenueAtRiskPerMonth === metrics.revenueAtRiskPerMonth &&
+    last.routineHoursPerMonth === metrics.routineHoursPerMonth &&
+    last.readinessScore === metrics.readinessScore
+  ) {
+    return last;
+  }
+  return { savedAt: updatedAt, ...metrics };
+}
+
+function sparkline(values: readonly number[], label: string): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 100 36');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', label);
+  svg.classList.add('progress-spark');
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const points = values
+    .map((value, index) => {
+      const x = values.length === 1 ? 50 : (index / (values.length - 1)) * 100;
+      const y = 4 + (1 - (value - min) / span) * 28;
+      return `${x},${y}`;
+    })
+    .join(' ');
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  line.setAttribute('points', points);
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', 'currentColor');
+  line.setAttribute('stroke-width', '2');
+  line.setAttribute('stroke-linejoin', 'round');
+  line.setAttribute('stroke-linecap', 'round');
+  svg.append(line);
+  return svg;
+}
+
+function progressView(stored: BusinessDossier, now: number): HTMLElement | null {
+  const metrics = metricsFromDossier(stored);
+  const current = currentMetricSnapshot(stored.history, metrics, stored.updatedAt);
+  const view = buildProgress(stored.history, current, now);
+  if (!view.line) return null;
+  const section = document.createElement('section');
+  section.className = 'progress-card';
+  const title = document.createElement('h3');
+  title.className = 'progress-card__title';
+  title.textContent = 'Ваш прогресс';
+  const text = document.createElement('p');
+  text.className = 'progress-card__text';
+  text.textContent = `${view.line.label}: ${view.line.text}`;
+  section.append(title, text);
+  const chart = progressChart(view.series);
+  if (chart) {
+    const caption = document.createElement('p');
+    caption.className = 'progress-card__caption';
+    caption.textContent = chart.title;
+    section.append(caption, sparkline(chart.values, `${chart.title}: ${chart.values.join(', ')}`));
+  }
+  return section;
+}
 
 function paintBrandButton(button: HTMLButtonElement, label: string, glyph: string): void {
   const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -160,6 +226,9 @@ export function renderAuditFinish(
     plan.append(planTitle, planList);
     card.append(plan);
   }
+
+  const progressCard = progressView(dossier.read(), Date.now());
+  if (progressCard) card.append(progressCard);
 
   const actions = document.createElement('div');
   actions.className = 'audit-actions';

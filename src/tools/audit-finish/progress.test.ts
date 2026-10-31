@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MetricSnapshot } from '../../lib/dossier';
-import { buildProgress } from './progress';
+import { buildProgress, progressChart } from './progress';
 
 const point = (
   savedAt: number,
@@ -48,5 +48,18 @@ describe('buildProgress', () => {
     expect(view.line?.text).toContain('рутина −20%');
     expect(view.line?.text).toContain('готовность +50%');
     expect(view.line?.text.indexOf('₽/мес')).toBeLessThan(view.line?.text.indexOf('%') ?? -1);
+  });
+
+  it('draws a line only from the third point of one metric', () => {
+    const now = 10 * DAY;
+    const two = buildProgress([point(now - 40 * DAY, 10)], point(now, 8), now);
+    expect(progressChart(two.series)).toBeNull();
+    const three = buildProgress(
+      [point(now - 40 * DAY, 10), point(now - 10 * DAY, 9)],
+      point(now, 8),
+      now,
+    );
+    expect(progressChart(three.series)?.values).toEqual([10, 9, 8]);
+    expect(progressChart(three.series)?.title).toBe('Риск выручки, ₽/мес');
   });
 });
