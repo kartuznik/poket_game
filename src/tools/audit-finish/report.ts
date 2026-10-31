@@ -1,5 +1,12 @@
 import { formatRubles, formatWorkHours } from '../../lib/format';
+import {
+  computeCorridor,
+  defaultUncertainty,
+  formatCorridorLine,
+  isAllPrecise,
+} from '../revenue-risk/calc';
 import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from '../final-report/summary';
+import type { RevenueRiskBridgeSnapshot } from '../../lib/types';
 
 export const THREADS_PROFILE_URL = 'https://www.threads.com/@_kartuzzz';
 
@@ -67,5 +74,30 @@ export function buildAuditHandoff(sources: ReportSources): string {
     'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/',
     '@_kartuzzz',
   );
+  return lines.join('\n');
+}
+
+function telegramRevenueLine(revenue: RevenueRiskBridgeSnapshot): string {
+  const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
+  if (isAllPrecise(tags)) {
+    return `Возврат: ${formatRubles(revenue.results.recoverableRevenue)}/мес`;
+  }
+  const corridor = computeCorridor(revenue.inputs, tags);
+  return `Возврат: ${formatCorridorLine(corridor, tags)}`;
+}
+
+/**
+ * Messenger-sized summary. A later lead bot can send this same text.
+ * Round 1 only copies it into Telegram. At most six lines.
+ */
+export function buildTelegramSummary(sources: ReportSources): string {
+  const lines = ['Игра в бизнес'];
+  if (sources.revenue) lines.push(telegramRevenueLine(sources.revenue));
+  if (sources.routine) {
+    lines.push(`Рутина: ${formatWorkHours(sources.routine.results.savedHoursPerMonth)}`);
+  }
+  if (sources.priority) lines.push(`Первым: ${sources.priority.results.topTitle}`);
+  if (sources.readiness) lines.push(`Готовность: ${sources.readiness.results.bandLabel}`);
+  lines.push('https://kartuznik.github.io/poket_game/');
   return lines.join('\n');
 }

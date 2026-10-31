@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildAuditHandoff, buildRecommendations } from './report';
+import { buildAuditHandoff, buildRecommendations, buildTelegramSummary } from './report';
+import type { ReadinessBridgeSnapshot, RoutineBridgeSnapshot } from '../../lib/types';
 import type { ReportSources } from '../final-report/summary';
 import type {
   PriorityBridgeSnapshot,
@@ -84,5 +85,66 @@ describe('audit handoff', () => {
     expect(text).toContain('Заполните хотя бы один инструмент');
     expect(text).not.toContain('Имя:');
     expect(text).not.toContain('Что сделать дальше');
+  });
+});
+
+const routine: RoutineBridgeSnapshot = {
+  toolId: 'routine-calc',
+  updatedAt: 1,
+  inputs: {
+    presetId: 'answers',
+    operationsPerWeek: 40,
+    minutesPerOperation: 6,
+    hourlyRate: 500,
+    automationSharePercent: 70,
+  },
+  results: {
+    hoursPerMonth: 17.32,
+    workDaysPerYear: 25.98,
+    savedHoursPerMonth: 12.12,
+    savedWorkDaysPerYear: 18.18,
+    savedMoneyPerMonth: 6060,
+  },
+};
+
+const readiness: ReadinessBridgeSnapshot = {
+  toolId: 'readiness-check',
+  updatedAt: 1,
+  inputs: {
+    repeated: 'yes',
+    rules: 'yes',
+    'one-path': 'yes',
+    'one-place': 'yes',
+    faq: 'yes',
+    numbers: 'yes',
+    owner: 'yes',
+    channel: 'yes',
+    time: 'yes',
+  },
+  results: { score: 9, band: 'ready', bandLabel: 'Можно начинать', unclosedTitles: [] },
+};
+
+describe('telegram summary', () => {
+  it('stays within six lines for one, two, three and four confirmed tools', () => {
+    const one = buildTelegramSummary({ revenue, routine: null, priority: null, readiness: null });
+    const two = buildTelegramSummary({ revenue, routine, priority: null, readiness: null });
+    const three = buildTelegramSummary({ revenue, routine, priority, readiness: null });
+    const four = buildTelegramSummary({ revenue, routine, priority, readiness });
+    expect(one.split('\n')).toHaveLength(3);
+    expect(two.split('\n')).toHaveLength(4);
+    expect(three.split('\n')).toHaveLength(5);
+    expect(four.split('\n')).toHaveLength(6);
+    for (const text of [one, two, three, four]) {
+      expect(text.split('\n').length).toBeLessThanOrEqual(6);
+      expect(text).toContain('https://kartuznik.github.io/poket_game/');
+      expect(text.startsWith('Игра в бизнес')).toBe(true);
+    }
+    expect(one).toContain('Возврат:');
+    expect(one).not.toContain('Рутина:');
+    expect(two).toContain('Рутина:');
+    expect(two).not.toContain('Первым:');
+    expect(three).toContain('Первым: Приём обращений');
+    expect(three).not.toContain('Готовность:');
+    expect(four).toContain('Готовность: Можно начинать');
   });
 });

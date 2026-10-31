@@ -9,7 +9,7 @@ import { REPORT_CSV_FILENAME, buildReportCsv } from '../final-report/export';
 import { collectReportSources } from '../final-report/view';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from '../final-report/summary';
 import type { ToolStubRenderContext } from '../stub-factory';
-import { THREADS_PROFILE_URL, buildAuditHandoff, buildRecommendations } from './report';
+import { THREADS_PROFILE_URL, buildAuditHandoff, buildRecommendations, buildTelegramSummary } from './report';
 
 export function renderAuditFinish(
   container: HTMLElement,
@@ -135,7 +135,11 @@ export function renderAuditFinish(
   csvBtn.type = 'button';
   csvBtn.className = 'action-btn action-btn--secondary';
   csvBtn.textContent = 'Скачать таблицу (.csv)';
-  actions.append(copyBtn, csvBtn);
+  const telegramBtn = document.createElement('button');
+  telegramBtn.type = 'button';
+  telegramBtn.className = 'action-btn action-btn--secondary';
+  telegramBtn.textContent = 'Отправить цифры в Telegram';
+  actions.append(copyBtn, telegramBtn, csvBtn);
 
   csvBtn.disabled = !summary.hasData;
 
@@ -152,6 +156,15 @@ export function renderAuditFinish(
       'text/csv;charset=utf-8',
     );
     showStatusToast(toast, 'Таблица скачана: business-game-report.csv.');
+  });
+
+  telegramBtn.addEventListener('click', async () => {
+    const copied = await copyTextToClipboard(
+      buildTelegramSummary(collectReportSources(bridge)),
+      'цифры для Telegram',
+    );
+    window.open('https://t.me/_kartuzzz', '_blank', 'noopener,noreferrer');
+    showStatusToast(toast, copied.ok ? 'скопировано — вставь в чат' : copied.message);
   });
 
   copyBtn.addEventListener('click', async () => {
