@@ -131,9 +131,22 @@ footer { margin-top: 28px; color: var(--text-muted); font-size: 0.8125rem; displ
 }
 @media print {
   button, .no-print { display: none !important; }
+  :root {
+    color-scheme: light;
+    --bg-page: #fff;
+    --bg-surface: #fff;
+    --bg-result: #fff;
+    --text-primary: #16181d;
+    --text-secondary: #434956;
+    --text-muted: #646b7a;
+    --text-accent: #1d4ed8;
+    --accent-primary: #1d4ed8;
+    --border-color: #16181d;
+    --shadow-card: none;
+  }
   body { background: #fff; color: #16181d; }
   main { width: auto; max-width: none; }
-  .metric, .panel { box-shadow: none; }
+  .metric, .panel { box-shadow: none; background: #fff; }
 }
 `.trim();
 
@@ -196,10 +209,10 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
 
   let top = '';
   if (priority) {
-    const items = priority.results.ranking.slice(0, 3).map((item, index) => {
+    const items = priority.results.ranking.slice(0, 3).map((item) => {
       const process = PRIORITY_PROCESSES.find((entry) => entry.id === item.id);
       const advice = process?.recommendation ?? '';
-      return `<li><strong>${esc(`${String(index + 1)}. ${item.title}`)}</strong> <span class="muted">балл ${esc(String(item.score).replace('.', ','))}</span><p>${esc(advice)}</p></li>`;
+      return `<li><strong>${esc(item.title)}</strong> <span class="muted">балл ${esc(String(item.score).replace('.', ','))}</span><p>${esc(advice)}</p></li>`;
     });
     top = `<section><h2>Три процесса, с которых начать</h2><ol>${items.join('')}</ol></section>`;
   }
