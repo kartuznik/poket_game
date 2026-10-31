@@ -134,7 +134,8 @@ describe('report export', () => {
       },
     });
     expect(csv).toContain('Итого экономия, ₽/мес;');
-    expect(csv).toContain('Итого часов в месяц;0');
+    expect(csv).toContain('Часов в месяц;0');
+    expect(csv).not.toContain('Итого часов');
   });
 
   it('prints the meta stamp in Moscow time and keeps each priority once', () => {
@@ -183,7 +184,28 @@ describe('report export', () => {
     const csv = buildReportCsv(full, [], stamp);
     expect(csv).toContain('# Сгенерировано: 31 октября 2026, 14:32');
     expect(csv).toContain('Итого риск, ₽;31500');
-    expect(csv).toContain('Итого часов в месяц;1,08');
+    expect(csv).toContain('Часов в месяц;1,08');
+    expect(csv).not.toContain('Итого часов');
+    const precise = buildReportCsv(
+      {
+        ...sources,
+        revenue: {
+          ...sources.revenue!,
+          uncertainty: {
+            leads: 'precise',
+            lateShare: 'precise',
+            conversion: 'precise',
+            check: 'precise',
+            recoveryShare: 'precise',
+          },
+        },
+      },
+      [],
+      stamp,
+    );
+    expect(precise).toContain('Коридор;Точка (все входы точные);');
+    expect(precise).not.toContain('Коридор от');
+    expect(precise).not.toContain('Коридор до');
     expect(csv).toContain('Итого баллов;1,5');
     expect(csv).not.toContain('---История изменений---');
     const main = csv.split('Детализация процесса №1')[0] ?? '';

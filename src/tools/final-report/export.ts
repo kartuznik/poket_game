@@ -4,6 +4,7 @@ import {
   computeWhatIf,
   defaultUncertainty,
   formatUncertaintyProfile,
+  isAllPrecise,
 } from '../revenue-risk/calc';
 import { READINESS_ITEMS } from '../readiness-check/calc';
 import { getRoutinePresetById } from '../routine-calc/calc';
@@ -154,11 +155,12 @@ export function buildReportCsv(
     );
     const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
     const corridor = computeCorridor(revenue.inputs, tags);
-    lines.push(
-      num('Коридор от, ₽', corridor.low),
-      num('Коридор до, ₽', corridor.high),
-      pair('Профиль точности', formatUncertaintyProfile(tags)),
-    );
+    if (isAllPrecise(tags)) {
+      lines.push(cells(['Коридор', 'Точка (все входы точные)', formatCsvNumber(corridor.low)]));
+    } else {
+      lines.push(num('Коридор от, ₽', corridor.low), num('Коридор до, ₽', corridor.high));
+    }
+    lines.push(pair('Профиль точности', formatUncertaintyProfile(tags)));
     if (typeof revenue.botCoverage === 'number') {
       const whatIf = computeWhatIf(
         { risk: revenue.results.revenueAtRiskMax, lossFactor: revenue.inputs.lossFactor },
@@ -201,8 +203,8 @@ export function buildReportCsv(
       routine.results.savedMoneyPerMonth === null
         ? pair('Итого экономия, ₽/мес', '')
         : num('Итого экономия, ₽/мес', routine.results.savedMoneyPerMonth),
+      '',
     );
-    lines.push(num('Итого часов в месяц', routine.results.hoursPerMonth), '');
   }
 
   if (priority) {
