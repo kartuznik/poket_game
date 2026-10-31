@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { renderAuditFinish } from './view';
 import {
   TELEGRAM_PROFILE_URL,
   THREADS_PROFILE_URL,
@@ -140,15 +138,14 @@ describe('share destinations', () => {
     expect(TELEGRAM_PROFILE_URL).not.toContain('_kartuzzz');
     expect(THREADS_PROFILE_URL).not.toContain('t.me');
 
-    const source = readFileSync(
-      join(dirname(fileURLToPath(import.meta.url)), 'view.ts'),
-      'utf8',
-    );
+    const source = renderAuditFinish.toString();
     const openedBy = (button: string): string => {
-      const start = source.indexOf(`${button}.addEventListener('click'`);
+      const start = source.indexOf(`${button}.addEventListener`);
       const openAt = source.indexOf('window.open(', start);
-      const end = source.indexOf(',', openAt);
-      return source.slice(openAt + 'window.open('.length, end).trim();
+      const end = source.indexOf(')', openAt);
+      const call = source.slice(openAt, end);
+      const name = call.match(/\.([A-Z0-9_]+)/);
+      return name?.[1] ?? '';
     };
     expect(openedBy('telegramBtn')).toBe('TELEGRAM_PROFILE_URL');
     expect(openedBy('copyBtn')).toBe('THREADS_PROFILE_URL');
