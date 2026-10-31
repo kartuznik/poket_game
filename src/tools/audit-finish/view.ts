@@ -7,6 +7,7 @@ import { resetVisitorProgress } from '../../lib/reset-progress';
 import { JOURNEY_LENGTH, globalProgressPercent } from '../../lib/wizard';
 import { TOOLS_CATALOG } from '../catalog';
 import { REPORT_CSV_FILENAME, buildReportCsv } from '../final-report/export';
+import { REPORT_HTML_FILENAME, buildHtmlReport } from '../final-report/html-report';
 import { collectReportSources } from '../final-report/view';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from '../final-report/summary';
 import type { ToolStubRenderContext } from '../stub-factory';
@@ -250,9 +251,14 @@ export function renderAuditFinish(
   csvBtn.type = 'button';
   csvBtn.className = 'action-btn action-btn--secondary';
   csvBtn.textContent = 'Скачать таблицу (.csv)';
-  actions.append(share, csvBtn);
+  const htmlBtn = document.createElement('button');
+  htmlBtn.type = 'button';
+  htmlBtn.className = 'action-btn action-btn--secondary';
+  htmlBtn.textContent = 'Скачать HTML-отчёт';
+  actions.append(share, csvBtn, htmlBtn);
 
   csvBtn.disabled = !summary.hasData;
+  htmlBtn.disabled = !summary.hasData;
 
   const toast = document.createElement('p');
   toast.className = 'status-toast';
@@ -267,6 +273,16 @@ export function renderAuditFinish(
       'text/csv;charset=utf-8',
     );
     showStatusToast(toast, 'Таблица скачана: business-game-report.csv.');
+  });
+
+  htmlBtn.addEventListener('click', () => {
+    if (htmlBtn.disabled) return;
+    downloadTextFile(
+      REPORT_HTML_FILENAME,
+      buildHtmlReport(dossier.read(), Date.now()),
+      'text/html;charset=utf-8',
+    );
+    showStatusToast(toast, 'HTML-отчёт скачан: business-game-report.html.');
   });
 
   telegramBtn.addEventListener('click', async () => {
