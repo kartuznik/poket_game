@@ -9,7 +9,13 @@ import { REPORT_CSV_FILENAME, buildReportCsv } from '../final-report/export';
 import { collectReportSources } from '../final-report/view';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from '../final-report/summary';
 import type { ToolStubRenderContext } from '../stub-factory';
-import { THREADS_PROFILE_URL, buildAuditHandoff, buildRecommendations, buildTelegramSummary } from './report';
+import {
+  TELEGRAM_PROFILE_URL,
+  THREADS_PROFILE_URL,
+  buildAuditHandoff,
+  buildRecommendations,
+  buildTelegramSummary,
+} from './report';
 
 export function renderAuditFinish(
   container: HTMLElement,
@@ -163,7 +169,7 @@ export function renderAuditFinish(
       buildTelegramSummary(collectReportSources(bridge)),
       'цифры для Telegram',
     );
-    window.open('https://t.me/_kartuzzz', '_blank', 'noopener,noreferrer');
+    window.open(TELEGRAM_PROFILE_URL, '_blank', 'noopener,noreferrer');
     showStatusToast(toast, copied.ok ? 'скопировано — вставь в чат' : copied.message);
   });
 

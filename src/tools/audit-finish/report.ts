@@ -9,6 +9,8 @@ import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from '../fin
 import type { RevenueRiskBridgeSnapshot } from '../../lib/types';
 
 export const THREADS_PROFILE_URL = 'https://www.threads.com/@_kartuzzz';
+/** Telegram chat of the author. Threads stays @_kartuzzz. */
+export const TELEGRAM_PROFILE_URL = 'https://t.me/kartuznik';
 
 /** Two or three concrete next steps. Missing tools are simply absent. */
 export function buildRecommendations(sources: ReportSources): readonly string[] {

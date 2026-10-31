@@ -1,5 +1,14 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { buildAuditHandoff, buildRecommendations, buildTelegramSummary } from './report';
+import {
+  TELEGRAM_PROFILE_URL,
+  THREADS_PROFILE_URL,
+  buildAuditHandoff,
+  buildRecommendations,
+  buildTelegramSummary,
+} from './report';
 import type { ReadinessBridgeSnapshot, RoutineBridgeSnapshot } from '../../lib/types';
 import type { ReportSources } from '../final-report/summary';
 import type {
@@ -123,6 +132,30 @@ const readiness: ReadinessBridgeSnapshot = {
   },
   results: { score: 9, band: 'ready', bandLabel: 'Можно начинать', unclosedTitles: [] },
 };
+
+describe('share destinations', () => {
+  it('opens Telegram at @kartuznik and Threads at @_kartuzzz', () => {
+    expect(TELEGRAM_PROFILE_URL).toBe('https://t.me/kartuznik');
+    expect(THREADS_PROFILE_URL).toBe('https://www.threads.com/@_kartuzzz');
+    expect(TELEGRAM_PROFILE_URL).not.toContain('_kartuzzz');
+    expect(THREADS_PROFILE_URL).not.toContain('t.me');
+
+    const source = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), 'view.ts'),
+      'utf8',
+    );
+    const openedBy = (button: string): string => {
+      const start = source.indexOf(`${button}.addEventListener('click'`);
+      const openAt = source.indexOf('window.open(', start);
+      const end = source.indexOf(',', openAt);
+      return source.slice(openAt + 'window.open('.length, end).trim();
+    };
+    expect(openedBy('telegramBtn')).toBe('TELEGRAM_PROFILE_URL');
+    expect(openedBy('copyBtn')).toBe('THREADS_PROFILE_URL');
+    expect(source).not.toContain('t.me/_kartuzzz');
+    expect(source).not.toContain('threads.com/@kartuznik');
+  });
+});
 
 describe('telegram summary', () => {
   it('stays within six lines for one, two, three and four confirmed tools', () => {
