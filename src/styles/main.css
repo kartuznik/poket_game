@@ -332,7 +332,7 @@ body {
   min-width: 44px;
 }
 
-.wizard-nav__next {
+.action-btn.wizard-nav__next {
   text-wrap: balance;
   font-size: 13px;
   padding: 10px 8px;
