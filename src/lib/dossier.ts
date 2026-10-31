@@ -28,6 +28,7 @@ export interface RevenueDraft {
   readonly mode: 'custom' | 'preset';
   readonly presetId: string | null;
   readonly uncertainty?: UncertaintyProfile;
+  readonly botCoverage?: number | null;
 }
 
 export interface RoutineDraft {
@@ -271,6 +272,13 @@ function readUncertainty(value: unknown): UncertaintyProfile | null {
   return tags;
 }
 
+function readBotCoverage(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1) return value;
+  return undefined;
+}
+
 function readRevenueDraft(value: unknown): RevenueDraft | null {
   if (!isRecord(value)) return null;
   const step = stepIn(value.step, 4);
@@ -293,6 +301,7 @@ function readRevenueDraft(value: unknown): RevenueDraft | null {
   }
   const presetId = text(value.presetId);
   const uncertainty = readUncertainty(value.uncertainty);
+  const botCoverage = readBotCoverage(value.botCoverage);
   return {
     step,
     leadsPerMonth,
@@ -303,6 +312,7 @@ function readRevenueDraft(value: unknown): RevenueDraft | null {
     mode,
     presetId,
     ...(uncertainty ? { uncertainty } : {}),
+    ...(botCoverage !== undefined ? { botCoverage } : {}),
   };
 }
 
@@ -412,10 +422,12 @@ function readRevenue(value: unknown): RevenueRiskBridgeSnapshot | null {
   }
   const presetId = text(value.inputs.presetId);
   const uncertainty = readUncertainty(value.uncertainty);
+  const botCoverage = readBotCoverage(value.botCoverage);
   return {
     toolId: 'revenue-risk',
     updatedAt,
     ...(uncertainty ? { uncertainty } : {}),
+    ...(botCoverage !== undefined ? { botCoverage } : {}),
     inputs: {
       leadsPerMonth,
       lateSharePercent,

@@ -695,6 +695,36 @@ a.action-btn {
   color: var(--text-secondary);
 }
 
+.what-if {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: var(--border-width) solid var(--border-color);
+}
+
+.what-if__title,
+.what-if__caption,
+.what-if__hint,
+.what-if__source,
+.what-if__table p {
+  margin: 0;
+}
+
+.what-if__caption,
+.what-if__hint,
+.what-if__source {
+  color: var(--text-secondary);
+}
+
+.what-if__table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
 .result-card__value {
   margin: 0;
   font-family: var(--font-display);

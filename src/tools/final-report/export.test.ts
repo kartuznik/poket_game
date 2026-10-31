@@ -69,6 +69,7 @@ describe('report export', () => {
     expect(csv).toContain('Выручка;Коридор от, ₽;');
     expect(csv).toContain('Выручка;Профиль точности;');
     expect(csv).toContain('доля возврата — наугад');
+    expect(csv).not.toContain('Покрытие ботом');
     expect(csv).toContain('Готовность;Вердикт;Рано');
     expect(csv).toContain('"Правила ответа; Один сценарий"');
     expect(csv).toContain('Понятно, что отвечать в типовых ситуациях;Частично');

@@ -10,6 +10,7 @@ import {
   formatIntegerGrouping,
   formatPercent,
   formatRubles,
+  formatWorkHours,
   normalizeFiniteNumber,
 } from '../../lib/format';
 import { TOOLS_CATALOG } from '../catalog';
@@ -21,11 +22,13 @@ import {
   NICHE_PRESETS,
   type NichePresetId,
   REVENUE_RISK_DEFAULTS,
+  BOT_COVERAGE_CHOICES,
   CORRIDOR_WIDTH_NOTE,
   UNCERTAINTY_INPUT_LABELS,
   UNCERTAINTY_TAG_LABELS,
   calculateRevenueRisk,
   computeCorridor,
+  computeWhatIf,
   defaultUncertainty,
   formatCorridorLine,
   formatUncertaintyProfile,
@@ -38,6 +41,7 @@ import {
   validateRevenueRiskDraft,
 } from './calc';
 import type { UncertaintyInputId, UncertaintyProfile, UncertaintyTag } from '../../lib/types';
+import { answersAutomationPercent } from '../routine-calc/calc';
 
 const HELP = {
   leads:
@@ -179,6 +183,16 @@ export function renderRevenueRiskTool(
   let selectedPresetId: NichePresetId = restoredPreset;
   let tags: UncertaintyProfile =
     draft?.uncertainty ?? saved?.uncertainty ?? defaultUncertainty(mode);
+  let botCoverage: number | null = draft?.botCoverage ?? saved?.botCoverage ?? null;
+  let botFromRoutine = false;
+  const suggestedCoverage = answersAutomationPercent(bridge.getRoutineResult());
+  if (
+    botCoverage !== null &&
+    suggestedCoverage !== null &&
+    Math.abs(botCoverage - suggestedCoverage / 100) < 0.001
+  ) {
+    botFromRoutine = true;
+  }
 
   let leadsRaw =
     draft?.leadsPerMonth ??
@@ -616,6 +630,68 @@ export function renderRevenueRiskTool(
   measureNote.textContent = CORRIDOR_WIDTH_NOTE;
   measureBlock.append(measureTitle, measureTargets, measureNote);
 
+  const whatIf = document.createElement('section');
+  whatIf.className = 'what-if';
+  const whatIfTitle = document.createElement('h3');
+  whatIfTitle.className = 'what-if__title';
+  whatIfTitle.textContent = 'Что если первый ответ — бот';
+  const whatIfCaption = document.createElement('p');
+  whatIfCaption.className = 'what-if__caption';
+  whatIfCaption.textContent = 'ваше допущение';
+  const whatIfControl = document.createElement('div');
+  whatIfControl.className = 'segmented-control segmented-control--triple';
+  whatIfControl.setAttribute('role', 'group');
+  whatIfControl.setAttribute('aria-label', 'Доля, которую заберёт бот');
+  const coverageButtons = new Map<number, HTMLButtonElement>();
+  for (const choice of BOT_COVERAGE_CHOICES) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'segmented-control__btn';
+    button.textContent = `${Math.round(choice * 100)}%`;
+    button.addEventListener('click', () => {
+      botCoverage = choice;
+      botFromRoutine = false;
+      paintWhatIf();
+      persistRevenueDraft(wizard.currentStep());
+    });
+    coverageButtons.set(choice, button);
+    whatIfControl.append(button);
+  }
+  const routineFill = document.createElement('button');
+  routineFill.type = 'button';
+  routineFill.className = 'action-btn action-btn--secondary what-if__routine';
+  routineFill.textContent = 'подставить из рутины';
+  routineFill.addEventListener('click', () => {
+    const share = answersAutomationPercent(bridge.getRoutineResult());
+    if (share === null) return;
+    botCoverage = share / 100;
+    botFromRoutine = true;
+    paintWhatIf();
+    persistRevenueDraft(wizard.currentStep());
+  });
+  const whatIfHint = document.createElement('p');
+  whatIfHint.className = 'what-if__hint';
+  whatIfHint.textContent = 'Выберите долю потерянной выручки. Цифры появятся после выбора.';
+  const whatIfSource = document.createElement('p');
+  whatIfSource.className = 'what-if__source';
+  whatIfSource.textContent = 'подставили из вашей рутины, можно менять';
+  const whatIfTable = document.createElement('div');
+  whatIfTable.className = 'what-if__table';
+  const whatIfNow = document.createElement('p');
+  const whatIfBot = document.createElement('p');
+  const whatIfPrevented = document.createElement('p');
+  const whatIfHours = document.createElement('p');
+  whatIfTable.append(whatIfNow, whatIfBot, whatIfPrevented, whatIfHours);
+  whatIf.append(
+    whatIfTitle,
+    whatIfCaption,
+    whatIfControl,
+    routineFill,
+    whatIfHint,
+    whatIfSource,
+    whatIfTable,
+  );
+
   const subNoteEl = document.createElement('p');
   subNoteEl.className = 'result-card__note';
   subNoteEl.id = 'rr-result-late-leads';
@@ -678,6 +754,7 @@ export function renderRevenueRiskTool(
     corridorEl,
     certaintyDetails,
     measureBlock,
+    whatIf,
     subNoteEl,
     metricsGrid,
     triggerBanner,
@@ -907,9 +984,40 @@ export function renderRevenueRiskTool(
     }
     const showMeasure = shouldShowMeasureFirst(corridor);
     measureBlock.hidden = !showMeasure;
-    if (!showMeasure) return;
-    const names = topUncertainInputs(tags).map((id) => UNCERTAINTY_INPUT_LABELS[id]);
-    measureTargets.textContent = `Сначала уточните: ${names.join(' и ')}.`;
+    if (showMeasure) {
+      const names = topUncertainInputs(tags).map((id) => UNCERTAINTY_INPUT_LABELS[id]);
+      measureTargets.textContent = `Сначала уточните: ${names.join(' и ')}.`;
+    }
+    paintWhatIf();
+  }
+
+  function paintWhatIf(): void {
+    const share = answersAutomationPercent(bridge.getRoutineResult());
+    routineFill.hidden = share === null;
+    for (const [choice, button] of coverageButtons) {
+      button.setAttribute('aria-pressed', String(botCoverage === choice));
+    }
+    const chosen = botCoverage !== null;
+    whatIfHint.hidden = chosen;
+    whatIfSource.hidden = !chosen || !botFromRoutine;
+    whatIfTable.hidden = !chosen;
+    if (!chosen || !latestResult || botCoverage === null) return;
+    const coverage = botCoverage;
+    const outcome = computeWhatIf(
+      {
+        risk: latestResult.revenueAtRiskMax,
+        lossFactor: latestResult.normalizedInput.lossFactor,
+      },
+      coverage,
+    );
+    whatIfNow.textContent = `Сейчас: ${formatRubles(outcome.lostNow)}/мес`;
+    whatIfBot.textContent = `С ботом: ${formatRubles(outcome.lostWithBot)}/мес`;
+    whatIfPrevented.textContent = `Предотвращено: ${formatRubles(outcome.prevented)}/мес`;
+    const routine = bridge.getRoutineResult();
+    whatIfHours.hidden = routine === null;
+    if (routine) {
+      whatIfHours.textContent = `Освобождённые часы: ${formatWorkHours(routine.results.savedHoursPerMonth)}`;
+    }
   }
 
   // Event listeners
@@ -1064,8 +1172,11 @@ export function renderRevenueRiskTool(
         mode,
         presetId: mode === 'preset' ? selectedPresetId : null,
         uncertainty: tags,
+        botCoverage,
       },
-      ...(current.revenue ? { revenue: { ...current.revenue, uncertainty: tags } } : {}),
+      ...(current.revenue
+        ? { revenue: { ...current.revenue, uncertainty: tags, botCoverage } }
+        : {}),
     }));
     if (written.dossier.revenue) {
       bridge.saveRevenueRiskResult(written.dossier.revenue);
@@ -1093,6 +1204,7 @@ export function renderRevenueRiskTool(
         costPerMissedDialog: calcResult.costPerMissedDialog,
       },
       uncertainty: tags,
+      botCoverage,
     });
     dossier.update((current) => ({
       ...current,

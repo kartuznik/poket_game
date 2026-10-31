@@ -54,6 +54,8 @@ export interface RevenueRiskBridgeSnapshot {
     readonly costPerMissedDialog: number;
   };
   readonly uncertainty?: UncertaintyProfile;
+  /** Null until the visitor picks 30, 50 or 70 percent. Free typing is a later round. */
+  readonly botCoverage?: number | null;
   readonly updatedAt: number;
 }
 

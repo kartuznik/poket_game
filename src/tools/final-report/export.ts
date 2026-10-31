@@ -1,6 +1,7 @@
 import { formatCsvNumber, toCsv } from '../../lib/csv';
 import {
   computeCorridor,
+  computeWhatIf,
   defaultUncertainty,
   formatUncertaintyProfile,
 } from '../revenue-risk/calc';
@@ -67,6 +68,18 @@ export function buildReportCsv(sources: ReportSources): string {
       row('Выручка', 'Коридор до, ₽', formatCsvNumber(corridor.high)),
       row('Выручка', 'Профиль точности', formatUncertaintyProfile(tags)),
     );
+    if (typeof revenue.botCoverage === 'number') {
+      const whatIf = computeWhatIf(
+        { risk: revenue.results.revenueAtRiskMax, lossFactor: revenue.inputs.lossFactor },
+        revenue.botCoverage,
+      );
+      rows.push(
+        row('Выручка', 'Покрытие ботом, %', formatCsvNumber(revenue.botCoverage * 100)),
+        row('Выручка', 'Потери сейчас, ₽', formatCsvNumber(whatIf.lostNow)),
+        row('Выручка', 'Потери с ботом, ₽', formatCsvNumber(whatIf.lostWithBot)),
+        row('Выручка', 'Предотвращено, ₽', formatCsvNumber(whatIf.prevented)),
+      );
+    }
   }
 
   if (routine) {

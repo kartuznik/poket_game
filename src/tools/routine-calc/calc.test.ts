@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ROUTINE_PRESETS,
+  answersAutomationPercent,
   calculateRoutine,
   getRoutinePresetById,
   validateRoutineDraft,
@@ -140,5 +141,23 @@ describe('routine presets', () => {
     ]);
     expect(getRoutinePresetById('sheets').operationsPerWeek).toBe(15);
     expect(getRoutinePresetById('answers').automationSharePercent).toBe(70);
+  });
+
+  it('offers the answers-process share and ignores other confirmed routines', () => {
+    expect(
+      answersAutomationPercent({
+        inputs: { presetId: 'answers', automationSharePercent: 65 },
+      }),
+    ).toBe(65);
+    expect(
+      answersAutomationPercent({
+        inputs: { presetId: 'orders', automationSharePercent: 60 },
+      }),
+    ).toBeNull();
+    expect(
+      answersAutomationPercent({
+        inputs: { presetId: null, automationSharePercent: 70 },
+      }),
+    ).toBeNull();
   });
 });

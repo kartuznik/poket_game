@@ -60,6 +60,22 @@ export function getRoutinePresetById(id: RoutinePresetId): RoutinePreset {
   return ROUTINE_PRESETS.find((preset) => preset.id === id) ?? ROUTINE_PRESETS[0]!;
 }
 
+/** Share from a confirmed routine whose process is «Ответы на вопросы». */
+export function answersAutomationPercent(
+  routine: {
+    readonly inputs: {
+      readonly presetId: RoutinePresetId | null;
+      readonly automationSharePercent: number;
+    };
+  } | null,
+): number | null {
+  if (!routine || routine.inputs.presetId === null) return null;
+  const preset = ROUTINE_PRESETS.find((item) => item.id === routine.inputs.presetId);
+  if (!preset || preset.title !== 'Ответы на вопросы') return null;
+  const share = routine.inputs.automationSharePercent;
+  return Number.isFinite(share) ? share : null;
+}
+
 export interface RoutineInput {
   readonly operationsPerWeek: number;
   readonly minutesPerOperation: number;

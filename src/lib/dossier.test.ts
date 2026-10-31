@@ -245,6 +245,43 @@ describe('business dossier', () => {
     });
     expect(kept?.revenueDraft?.uncertainty?.leads).toBe('precise');
     expect(kept?.revenueDraft?.uncertainty?.conversion).toBe('guess');
+    const withCoverage = parseDossier({
+      version: 1,
+      updatedAt: 3,
+      revenueDraft: {
+        step: 4,
+        leadsPerMonth: '10',
+        lateSharePercent: '20',
+        conversionPercent: '15',
+        avgCheck: '1000',
+        lossFactorPercent: '30',
+        mode: 'custom',
+        presetId: null,
+        botCoverage: 0.5,
+      },
+      revenue: {
+        toolId: 'revenue-risk',
+        updatedAt: 3,
+        inputs: {
+          leadsPerMonth: 10,
+          lateSharePercent: 20,
+          conversionPercent: 15,
+          avgCheck: 1000,
+          lossFactor: 0.3,
+          mode: 'custom',
+        },
+        results: {
+          lateLeads: 2,
+          revenueAtRiskMax: 300,
+          recoverableRevenue: 210,
+          revenueAtRiskPerYear: 3600,
+          costPerMissedDialog: 150,
+        },
+        botCoverage: 4,
+      },
+    });
+    expect(withCoverage?.revenueDraft?.botCoverage).toBe(0.5);
+    expect(withCoverage?.revenue?.botCoverage).toBeUndefined();
   });
 
   it('asks for a name and at least one way to reply', () => {

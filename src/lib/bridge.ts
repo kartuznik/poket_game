@@ -157,6 +157,7 @@ export class ToolBridge {
       results: snapshot.results,
       updatedAt: snapshot.updatedAt ?? Date.now(),
       ...(snapshot.uncertainty ? { uncertainty: snapshot.uncertainty } : {}),
+      ...(snapshot.botCoverage !== undefined ? { botCoverage: snapshot.botCoverage } : {}),
     };
     this.latestRevenueRiskSnapshot = record;
     return record;

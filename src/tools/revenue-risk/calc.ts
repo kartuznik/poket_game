@@ -426,3 +426,30 @@ export function formatCorridorLine(corridor: RevenueCorridor, tags: UncertaintyP
   if (isAllPrecise(tags)) return CORRIDOR_POINT_LINE;
   return `от ${formatRubles(corridor.low)} до ${formatRubles(corridor.high)}/мес`;
 }
+
+export interface WhatIfResult {
+  readonly lostNow: number;
+  readonly lostWithBot: number;
+  readonly prevented: number;
+}
+
+/**
+ * Round 1 only offers 30%, 50% and 70%.
+ * A free-typed coverage belongs to a later round.
+ */
+export const BOT_COVERAGE_CHOICES = [0.3, 0.5, 0.7] as const;
+
+export function computeWhatIf(
+  input: { readonly risk: number; readonly lossFactor: number },
+  coverage: number,
+): WhatIfResult {
+  const risk = Math.max(0, normalizeFiniteNumber(input.risk, 0));
+  const lossFactor = clamp(normalizeFiniteNumber(input.lossFactor, 0), 0, 1);
+  const share = clamp(normalizeFiniteNumber(coverage, 0), 0, 1);
+  const lostNow = risk * lossFactor;
+  return {
+    lostNow,
+    lostWithBot: risk * (1 - share) * lossFactor,
+    prevented: share * lostNow,
+  };
+}

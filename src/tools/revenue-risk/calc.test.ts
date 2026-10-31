@@ -8,6 +8,7 @@ import {
   calculateRevenueRisk,
   getNichePresetById,
   computeCorridor,
+  computeWhatIf,
   defaultUncertainty,
   formatCorridorLine,
   isAllPrecise,
@@ -415,5 +416,17 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
     const restored = uncertaintyAfterModeChange(moved, 'custom', 'preset');
     expect(moved.conversion).toBe('rough');
     expect(restored.conversion).toBe('guess');
+  });
+
+  it('keeps today\'s loss at zero coverage and clears it when the bot covers everything', () => {
+    const none = computeWhatIf({ risk: 31500, lossFactor: 0.3 }, 0);
+    expect(none.lostNow).toBeCloseTo(9450, 5);
+    expect(none.lostWithBot).toBeCloseTo(none.lostNow, 5);
+    expect(none.prevented).toBeCloseTo(0, 5);
+    const all = computeWhatIf({ risk: 31500, lossFactor: 0.3 }, 1);
+    expect(all.lostWithBot).toBeCloseTo(0, 5);
+    expect(all.prevented).toBeCloseTo(all.lostNow, 5);
+    const half = computeWhatIf({ risk: 31500, lossFactor: 0.3 }, 0.5);
+    expect(half.prevented).toBeCloseTo(0.5 * half.lostNow, 5);
   });
 });
