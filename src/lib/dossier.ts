@@ -188,6 +188,10 @@ export function hydrateBridge(dossier: BusinessDossier, bridge: ToolBridge): voi
       inputs: dossier.revenue.inputs,
       results: dossier.revenue.results,
       updatedAt: dossier.revenue.updatedAt,
+      ...(dossier.revenue.uncertainty ? { uncertainty: dossier.revenue.uncertainty } : {}),
+      ...(dossier.revenue.botCoverage !== undefined
+        ? { botCoverage: dossier.revenue.botCoverage }
+        : {}),
     });
   }
   if (dossier.routine) {

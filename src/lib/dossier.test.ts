@@ -197,6 +197,8 @@ describe('business dossier', () => {
     const bridge = new ToolBridge();
     hydrateBridge(base, bridge);
     expect(bridge.getRevenueRiskResult()?.results.revenueAtRiskMax).toBe(31500);
+    expect(bridge.getRevenueRiskResult()?.uncertainty).toBeUndefined();
+    expect(bridge.getRevenueRiskResult()?.botCoverage).toBeUndefined();
     expect(bridge.getReadinessResult()).toBeNull();
     const restored = parseDossier(JSON.parse(JSON.stringify(base)) as unknown);
     expect(restored?.revenue?.inputs.lossFactor).toBe(0.3);
@@ -204,6 +206,44 @@ describe('business dossier', () => {
     expect(restored?.revenue?.results.recoverableRevenue).toBe(22050);
     expect(recoveryPercentFromLossFactor(restored?.revenue?.inputs.lossFactor ?? Number.NaN)).toBe(70);
     expect(restored?.revenue?.uncertainty).toBeUndefined();
+  });
+
+  it('puts the saved certainty and bot coverage back on the bridge', () => {
+    const uncertainty = {
+      leads: 'precise' as const,
+      lateShare: 'precise' as const,
+      conversion: 'precise' as const,
+      check: 'precise' as const,
+      recoveryShare: 'precise' as const,
+    };
+    const base: BusinessDossier = {
+      ...emptyDossier(1),
+      revenue: {
+        toolId: 'revenue-risk',
+        updatedAt: 5,
+        inputs: {
+          leadsPerMonth: 40,
+          lateSharePercent: 50,
+          conversionPercent: 30,
+          avgCheck: 1300,
+          lossFactor: 0.2,
+          mode: 'preset',
+        },
+        results: {
+          lateLeads: 20,
+          revenueAtRiskMax: 7800,
+          recoverableRevenue: 1560,
+          revenueAtRiskPerYear: 93600,
+          costPerMissedDialog: 260,
+        },
+        uncertainty,
+        botCoverage: 0.7,
+      },
+    };
+    const bridge = new ToolBridge();
+    hydrateBridge(base, bridge);
+    expect(bridge.getRevenueRiskResult()?.uncertainty).toEqual(uncertainty);
+    expect(bridge.getRevenueRiskResult()?.botCoverage).toBe(0.7);
   });
 
   it('keeps an old revenue draft and ignores a broken certainty profile', () => {
