@@ -8,6 +8,8 @@ import {
 import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import { READINESS_ITEMS } from '../readiness-check/calc';
 import { getRoutinePresetById } from '../routine-calc/calc';
+import type { MetricSnapshot } from '../../lib/dossier';
+import { buildProgress, metricDelta } from '../audit-finish/progress';
 import type { ReportSources } from './summary';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from './summary';
 
@@ -34,13 +36,48 @@ export function buildEfimReport(sources: ReportSources): string {
   return lines.join('\n');
 }
 
-function row(section: string, label: string, value: string): readonly [string, string, string] {
-  return [section, label, value];
+function row(
+  section: string,
+  label: string,
+  value: string,
+  previous = '',
+  change = '',
+): readonly [string, string, string, string, string] {
+  return [section, label, value, previous, change];
+}
+
+function csvChange(before: number, after: number): string {
+  const delta = metricDelta(before, after);
+  if (delta.kind === 'same') return '0';
+  if (delta.kind === 'absolute') return formatCsvNumber(delta.value);
+  return `${delta.value}%`;
+}
+
+function trackedCells(
+  baseline: MetricSnapshot | null,
+  before: number | null | undefined,
+  after: number,
+): { readonly previous: string; readonly change: string } {
+  if (baseline === null || before === null || before === undefined) return { previous: '', change: '' };
+  return { previous: formatCsvNumber(before), change: csvChange(before, after) };
 }
 
 /** Every entered value and result, ready for Excel and Google Sheets. */
-export function buildReportCsv(sources: ReportSources): string {
-  const rows: (readonly string[])[] = [['Раздел', 'Показатель', 'Значение']];
+export function buildReportCsv(
+  sources: ReportSources,
+  history: readonly MetricSnapshot[] = [],
+  now = Date.now(),
+): string {
+  const current: MetricSnapshot = {
+    savedAt: now,
+    revenueAtRiskPerMonth: sources.revenue?.results.revenueAtRiskMax ?? null,
+    routineHoursPerMonth: sources.routine?.results.hoursPerMonth ?? null,
+    readinessScore: sources.readiness?.results.score ?? null,
+  };
+  const baseline = buildProgress(history, current, now).baseline;
+  const rows: (readonly string[])[] = [
+    ['Раздел', 'Показатель', 'Значение', 'Предыдущее значение', 'Изменение'],
+  ];
   const { revenue, routine, priority, readiness } = sources;
 
   if (revenue) {
@@ -56,7 +93,15 @@ export function buildReportCsv(sources: ReportSources): string {
       ),
       row('Выручка', 'Режим', revenue.inputs.mode === 'preset' ? 'Сценарное допущение' : 'Моя конверсия'),
       row('Выручка', 'Поздних обращений', formatCsvNumber(revenue.results.lateLeads)),
-      row('Выручка', 'Риск в месяц, ₽', formatCsvNumber(revenue.results.revenueAtRiskMax)),
+      row(
+        'Выручка',
+        'Риск в месяц, ₽',
+        formatCsvNumber(revenue.results.revenueAtRiskMax),
+        trackedCells(baseline, baseline?.revenueAtRiskPerMonth, revenue.results.revenueAtRiskMax)
+          .previous,
+        trackedCells(baseline, baseline?.revenueAtRiskPerMonth, revenue.results.revenueAtRiskMax)
+          .change,
+      ),
       row('Выручка', 'Риск в год, ₽', formatCsvNumber(revenue.results.revenueAtRiskPerYear)),
       row('Выручка', 'Потенциал возврата, ₽', formatCsvNumber(revenue.results.recoverableRevenue)),
       row('Выручка', 'Один вовремя отвеченный диалог, ₽', formatCsvNumber(revenue.results.costPerMissedDialog)),
@@ -97,7 +142,13 @@ export function buildReportCsv(sources: ReportSources): string {
         'Ставка, ₽/час',
         routine.inputs.hourlyRate === null ? '' : formatCsvNumber(routine.inputs.hourlyRate),
       ),
-      row('Рутина', 'Часов в месяц', formatCsvNumber(routine.results.hoursPerMonth)),
+      row(
+        'Рутина',
+        'Часов в месяц',
+        formatCsvNumber(routine.results.hoursPerMonth),
+        trackedCells(baseline, baseline?.routineHoursPerMonth, routine.results.hoursPerMonth).previous,
+        trackedCells(baseline, baseline?.routineHoursPerMonth, routine.results.hoursPerMonth).change,
+      ),
       row('Рутина', 'Рабочих дней в год', formatCsvNumber(routine.results.workDaysPerYear)),
       row('Рутина', 'Экономия часов в месяц', formatCsvNumber(routine.results.savedHoursPerMonth)),
       row(
@@ -130,7 +181,13 @@ export function buildReportCsv(sources: ReportSources): string {
 
   if (readiness) {
     rows.push(
-      row('Готовность', 'Баллы', formatCsvNumber(readiness.results.score)),
+      row(
+        'Готовность',
+        'Баллы',
+        formatCsvNumber(readiness.results.score),
+        trackedCells(baseline, baseline?.readinessScore, readiness.results.score).previous,
+        trackedCells(baseline, baseline?.readinessScore, readiness.results.score).change,
+      ),
       row('Готовность', 'Вердикт', readiness.results.bandLabel),
       row('Готовность', 'Не закрыто', readiness.results.unclosedTitles.join('; ')),
     );

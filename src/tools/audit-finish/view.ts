@@ -194,7 +194,7 @@ export function renderAuditFinish(
     if (csvBtn.disabled) return;
     downloadTextFile(
       REPORT_CSV_FILENAME,
-      buildReportCsv(collectReportSources(bridge)),
+      buildReportCsv(collectReportSources(bridge), dossier.read().history, Date.now()),
       'text/csv;charset=utf-8',
     );
     showStatusToast(toast, 'Таблица скачана: business-game-report.csv.');

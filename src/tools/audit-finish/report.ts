@@ -7,6 +7,8 @@ import {
 } from '../revenue-risk/calc';
 import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from '../final-report/summary';
 import type { RevenueRiskBridgeSnapshot } from '../../lib/types';
+import { buildWeekPlan } from './week-plan';
+import { formatDayMonth } from './progress';
 
 export const THREADS_PROFILE_URL = 'https://www.threads.com/@_kartuzzz';
 /** Telegram chat of the author. Threads stays @_kartuzzz. */
@@ -66,10 +68,12 @@ export function buildAuditHandoff(sources: ReportSources): string {
     lines.push('');
   }
 
-  const recommendations = buildRecommendations(sources);
-  if (recommendations.length > 0) {
-    lines.push('Что сделать дальше');
-    for (const item of recommendations) lines.push(`• ${item}`);
+  const plan = buildWeekPlan(sources);
+  if (plan.length > 0) {
+    lines.push('Что сделать на этой неделе');
+    for (const step of plan) lines.push(`• ${step.text}`);
+    const due = remeasureBy(sources);
+    if (due) lines.push(due);
     lines.push('');
   }
   lines.push(
@@ -77,6 +81,17 @@ export function buildAuditHandoff(sources: ReportSources): string {
     '@_kartuzzz',
   );
   return lines.join('\n');
+}
+
+const DAY_MS = 86_400_000;
+
+function remeasureBy(sources: ReportSources): string | null {
+  const stamps = [sources.revenue, sources.routine, sources.priority, sources.readiness]
+    .map((item) => item?.updatedAt)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  if (stamps.length === 0) return null;
+  const latest = Math.max(...stamps);
+  return `Повторить замер до ${formatDayMonth(latest + 7 * DAY_MS)}.`;
 }
 
 function telegramRevenueLine(revenue: RevenueRiskBridgeSnapshot): string {

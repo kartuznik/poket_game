@@ -77,7 +77,9 @@ describe('audit handoff', () => {
     expect(text).not.toContain('Telegram:');
     expect(text).not.toContain('Телефон:');
     expect(text).toContain('Потенциал возврата');
-    expect(text).toContain('Что сделать дальше');
+    expect(text).toContain('Что сделать на этой неделе');
+    expect(text).toContain('Повторить замер до 8 января.');
+    expect(text).not.toContain('Что сделать дальше');
     expect(text).toContain('https://kartuznik.github.io/poket_game/');
     expect(text).not.toContain('Готовность');
   });
@@ -92,6 +94,8 @@ describe('audit handoff', () => {
     expect(text).toContain('Заполните хотя бы один инструмент');
     expect(text).not.toContain('Имя:');
     expect(text).not.toContain('Что сделать дальше');
+    expect(text).not.toContain('Что сделать на этой неделе');
+    expect(text).not.toContain('Повторить замер');
   });
 });
 
@@ -167,6 +171,7 @@ describe('telegram summary', () => {
     for (const text of [one, two, three, four]) {
       expect(text.split('\n').length).toBeLessThanOrEqual(6);
       expect(text).toContain('https://kartuznik.github.io/poket_game/');
+      expect(text).not.toContain('Что сделать на этой неделе');
       expect(text.startsWith('Игра в бизнес')).toBe(true);
     }
     expect(one).toContain('Возврат:');

@@ -65,7 +65,23 @@ describe('report export', () => {
   it('builds a UTF-8 CSV with Cyrillic and a quoted list', () => {
     const csv = buildReportCsv(sources);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
-    expect(csv).toContain('Выручка;Риск в месяц, ₽;31500');
+    expect(csv).toContain('Раздел;Показатель;Значение;Предыдущее значение;Изменение');
+    expect(csv).toContain('Выручка;Риск в месяц, ₽;31500;;');
+    expect(csv.split('\r\n').some((line) => line.startsWith('Выручка;Профиль точности;') && line.endsWith(';;'))).toBe(true);
+    const now = 40 * 86_400_000;
+    const compared = buildReportCsv(
+      sources,
+      [
+        {
+          savedAt: now - 30 * 86_400_000,
+          revenueAtRiskPerMonth: 15000,
+          routineHoursPerMonth: null,
+          readinessScore: null,
+        },
+      ],
+      now,
+    );
+    expect(compared).toContain('Выручка;Риск в месяц, ₽;31500;15000;110%');
     expect(csv).toContain('Выручка;Коридор от, ₽;');
     expect(csv).toContain('Выручка;Профиль точности;');
     expect(csv).toContain('доля возврата — наугад');
