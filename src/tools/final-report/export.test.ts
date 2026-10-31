@@ -83,7 +83,28 @@ describe('report export', () => {
     expect(csv).toContain('"Правила ответа; Один сценарий"');
     expect(csv).toContain('Понятно, что отвечать в типовых ситуациях;Частично');
     expect(csv).toContain('Что сделать на этой неделе');
+    expect(csv).not.toContain('---История изменений---');
     expect(csv).not.toContain('Контакты;');
+    const now = 40 * 86_400_000;
+    const compared = buildReportCsv(
+      sources,
+      [
+        {
+          savedAt: now - 30 * 86_400_000,
+          revenueAtRiskPerMonth: 15000,
+          routineHoursPerMonth: null,
+          readinessScore: null,
+        },
+      ],
+      now,
+    );
+    expect(compared).toContain('---История изменений---');
+    expect(compared).toContain('Раздел;Показатель;Значение;Предыдущее;Изменение');
+    expect(compared).toContain('Выручка;Риск в месяц, ₽;31500;15000;+110%');
+    expect(compared).not.toContain('Рутина;Часов в месяц;');
+    const mainRisk = compared.split('---История изменений---')[0] ?? '';
+    expect(mainRisk).toContain('Итого риск, ₽;31500');
+    expect(mainRisk).not.toContain('Предыдущее');
   });
 
   it('leaves money blank when the routine rate is empty', () => {

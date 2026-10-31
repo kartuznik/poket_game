@@ -8,6 +8,7 @@ import {
 import { READINESS_ITEMS } from '../readiness-check/calc';
 import { getRoutinePresetById } from '../routine-calc/calc';
 import type { MetricSnapshot } from '../../lib/dossier';
+import { buildProgress, metricDelta } from '../audit-finish/progress';
 import { buildWeekPlan } from '../audit-finish/week-plan';
 import type { ReportSources } from './summary';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from './summary';
@@ -77,14 +78,51 @@ function stepLine(index: number, text: string): string {
   return cells([`${String(index)}. ${sentence}`]);
 }
 
-/** Placeholder until the history section lands in its own change. */
+function csvChange(before: number, after: number): string {
+  const delta = metricDelta(before, after);
+  if (delta.kind === 'same') return '0';
+  if (delta.kind === 'absolute') {
+    const text = formatCsvNumber(delta.value);
+    return delta.value > 0 ? `+${text}` : text;
+  }
+  return `${delta.value > 0 ? '+' : ''}${String(delta.value)}%`;
+}
+
+function historyRow(
+  section: string,
+  label: string,
+  before: number | null,
+  after: number | null,
+): string | null {
+  if (before === null || after === null) return null;
+  return cells([section, label, formatCsvNumber(after), formatCsvNumber(before), csvChange(before, after)]);
+}
+
+/** Previous and change live here, and only when a comparable snapshot exists. */
 function historyLines(
   sources: ReportSources,
   history: readonly MetricSnapshot[],
   now: number,
 ): readonly string[] {
-  if (sources.revenue === null && history.length === 0 && now < 0) return [];
-  return [];
+  const current: MetricSnapshot = {
+    savedAt: now,
+    revenueAtRiskPerMonth: sources.revenue?.results.revenueAtRiskMax ?? null,
+    routineHoursPerMonth: sources.routine?.results.hoursPerMonth ?? null,
+    readinessScore: sources.readiness?.results.score ?? null,
+  };
+  const baseline = buildProgress(history, current, now).baseline;
+  if (!baseline) return [];
+  const rows = [
+    historyRow('Выручка', 'Риск в месяц, ₽', baseline.revenueAtRiskPerMonth, current.revenueAtRiskPerMonth),
+    historyRow('Рутина', 'Часов в месяц', baseline.routineHoursPerMonth, current.routineHoursPerMonth),
+    historyRow('Готовность', 'Баллы', baseline.readinessScore, current.readinessScore),
+  ].filter((row): row is string => row !== null);
+  if (rows.length === 0) return [];
+  return [
+    '---История изменений---',
+    'Раздел;Показатель;Значение;Предыдущее;Изменение',
+    ...rows,
+  ];
 }
 
 /** Every entered value and result, ready for Excel and Google Sheets. */
