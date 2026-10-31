@@ -65,30 +65,24 @@ describe('report export', () => {
   it('builds a UTF-8 CSV with Cyrillic and a quoted list', () => {
     const csv = buildReportCsv(sources);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
-    expect(csv).toContain('Раздел;Показатель;Значение;Предыдущее значение;Изменение');
-    expect(csv).toContain('Выручка;Риск в месяц, ₽;31500;;');
-    expect(csv.split('\r\n').some((line) => line.startsWith('Выручка;Профиль точности;') && line.endsWith(';;'))).toBe(true);
-    const now = 40 * 86_400_000;
-    const compared = buildReportCsv(
-      sources,
-      [
-        {
-          savedAt: now - 30 * 86_400_000,
-          revenueAtRiskPerMonth: 15000,
-          routineHoursPerMonth: null,
-          readinessScore: null,
-        },
-      ],
-      now,
-    );
-    expect(compared).toContain('Выручка;Риск в месяц, ₽;31500;15000;110%');
-    expect(csv).toContain('Выручка;Коридор от, ₽;');
-    expect(csv).toContain('Выручка;Профиль точности;');
+    const lines = csv.slice(1).split('\r\n');
+    expect(lines[0]).toBe('# Игра в бизнес · Бизнес-аудит');
+    expect(lines[1]?.startsWith('# Сгенерировано: ')).toBe(true);
+    expect(lines[2]).toBe('# https://kartuznik.github.io/poket_game/');
+    expect(csv).toContain('Раздел;Показатель;Значение');
+    expect(csv).not.toContain('Предыдущее');
+    expect(csv).not.toContain('Изменение');
+    expect(csv).toContain('Итого риск, ₽;31500');
+    expect(csv).toContain('Итого потенциал, ₽;22050');
+    expect(csv).toContain('Итого баллов;1,5');
+    expect(csv).toContain('Коридор от, ₽;');
+    expect(csv).toContain('Профиль точности;');
     expect(csv).toContain('доля возврата — наугад');
     expect(csv).not.toContain('Покрытие ботом');
-    expect(csv).toContain('Готовность;Вердикт;Рано');
+    expect(csv).toContain('Вердикт;Рано');
     expect(csv).toContain('"Правила ответа; Один сценарий"');
     expect(csv).toContain('Понятно, что отвечать в типовых ситуациях;Частично');
+    expect(csv).toContain('Что сделать на этой неделе');
     expect(csv).not.toContain('Контакты;');
   });
 
@@ -116,7 +110,7 @@ describe('report export', () => {
         updatedAt: 1,
       },
     });
-    expect(csv).toContain('Рутина;Экономия, ₽/мес;');
-    expect(csv).toContain('Рутина;Часов в месяц;0');
+    expect(csv).toContain('Итого экономия, ₽/мес;');
+    expect(csv).toContain('Итого часов в месяц;0');
   });
 });
