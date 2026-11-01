@@ -6,7 +6,7 @@ import { downloadTextFile } from '../../lib/csv';
 import { resetVisitorProgress } from '../../lib/reset-progress';
 import { JOURNEY_LENGTH, globalProgressPercent } from '../../lib/wizard';
 import { TOOLS_CATALOG } from '../catalog';
-import { REPORT_CSV_FILENAME, buildReportCsv } from '../final-report/export';
+import { buildReportCsv, reportCsvFilename } from '../final-report/export';
 import { buildHtmlReport, reportHtmlFilename } from '../final-report/html-report';
 import { collectReportSources } from '../final-report/view';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from '../final-report/summary';
@@ -255,10 +255,15 @@ export function renderAuditFinish(
   htmlBtn.type = 'button';
   htmlBtn.className = 'action-btn action-btn--secondary';
   htmlBtn.textContent = 'Скачать HTML-отчёт';
-  actions.append(share, csvBtn, htmlBtn);
+  const pdfBtn = document.createElement('button');
+  pdfBtn.type = 'button';
+  pdfBtn.className = 'action-btn action-btn--secondary';
+  pdfBtn.textContent = 'Скачать PDF';
+  actions.append(share, csvBtn, htmlBtn, pdfBtn);
 
   csvBtn.disabled = !summary.hasData;
   htmlBtn.disabled = !summary.hasData;
+  pdfBtn.disabled = !summary.hasData;
 
   const toast = document.createElement('p');
   toast.className = 'status-toast';
@@ -267,12 +272,14 @@ export function renderAuditFinish(
 
   csvBtn.addEventListener('click', () => {
     if (csvBtn.disabled) return;
+    const savedAt = Date.now();
+    const filename = reportCsvFilename(savedAt);
     downloadTextFile(
-      REPORT_CSV_FILENAME,
-      buildReportCsv(collectReportSources(bridge), dossier.read().history, Date.now()),
+      filename,
+      buildReportCsv(collectReportSources(bridge), dossier.read().history, savedAt),
       'text/csv;charset=utf-8',
     );
-    showStatusToast(toast, 'Таблица скачана: business-game-report.csv.');
+    showStatusToast(toast, `Таблица скачана: ${filename}.`);
   });
 
   htmlBtn.addEventListener('click', () => {
@@ -304,6 +311,24 @@ export function renderAuditFinish(
         ? 'Отчёт скопирован. Вставьте его в сообщение Ефиму.'
         : copied.message,
     );
+  });
+
+  pdfBtn.addEventListener('click', () => {
+    if (pdfBtn.disabled) return;
+    const html = buildHtmlReport(dossier.read(), Date.now());
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const popup = window.open(url, '_blank');
+    if (!popup) {
+      URL.revokeObjectURL(url);
+      showStatusToast(toast, 'Разрешите всплывающее окно, чтобы сохранить PDF.');
+      return;
+    }
+    popup.addEventListener('load', () => {
+      popup.focus();
+      popup.print();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    });
   });
 
   card.append(actions, toast);

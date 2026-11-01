@@ -99,7 +99,7 @@ export function buildAuditHandoff(
   if (plan.length > 0) {
     lines.push('Что сделать на этой неделе');
     for (const step of plan) lines.push(`• ${step.text}`);
-    const due = remeasureBy(sources);
+    const due = formatRemeasureBy(sources);
     if (due) lines.push(due);
     lines.push('');
   }
@@ -114,7 +114,7 @@ export function buildAuditHandoff(
 
 const DAY_MS = 86_400_000;
 
-function remeasureBy(sources: ReportSources): string | null {
+export function formatRemeasureBy(sources: ReportSources): string | null {
   const stamps = [sources.revenue, sources.routine, sources.priority, sources.readiness]
     .map((item) => item?.updatedAt)
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));

@@ -5,7 +5,7 @@ import { copyTextToClipboard } from '../../lib/clipboard';
 import { downloadTextFile } from '../../lib/csv';
 import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
-import { REPORT_CSV_FILENAME, buildEfimReport, buildReportCsv } from './export';
+import { buildEfimReport, buildReportCsv, reportCsvFilename } from './export';
 import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from './summary';
 
 /** Reads the bridge at call time so a repeat visit cannot reuse an older paint. */
@@ -121,12 +121,14 @@ export function renderFinalReportTool(
     showStatusToast(toast, copied.ok ? 'Скопирован отчёт для Ефима' : copied.message);
   });
   csvBtn.addEventListener('click', () => {
+    const savedAt = Date.now();
+    const filename = reportCsvFilename(savedAt);
     downloadTextFile(
-      REPORT_CSV_FILENAME,
-      buildReportCsv(collectReportSources(ctx.bridge)),
+      filename,
+      buildReportCsv(collectReportSources(ctx.bridge), [], savedAt),
       'text/csv;charset=utf-8',
     );
-    showStatusToast(toast, 'Таблица скачана: business-game-report.csv.');
+    showStatusToast(toast, `Таблица скачана: ${filename}.`);
   });
 
   card.append(actions, toast);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDossier, type MetricSnapshot } from '../../lib/dossier';
-import { formatRubles } from '../../lib/format';
+import { formatNumber } from '../../lib/format';
 import { buildHtmlReport, reportHtmlFilename } from './html-report';
 import type { ReportSources } from './summary';
 
@@ -102,13 +102,16 @@ describe('html report', () => {
     expect(html).toContain('>Потенциал<');
     expect(html).toContain('>Часы<');
     expect(html).toContain('>Готовность<');
-    expect(html).toContain(formatRubles(31500));
-    expect(html).toContain(formatRubles(22050));
+    expect(formatNumber(773500)).toBe('773\u00A0500');
+    expect(html).toContain(`${formatNumber(31500)}\u00A0₽`);
+    expect(html).toContain(`${formatNumber(22050)}\u00A0₽`);
     expect(html).toContain('Можно начинать');
     expect(html).toContain('Приём обращений');
     expect(html).toContain('Что сделать на этой неделе');
+    expect(html).toContain('Повторить замер до 8 января.');
     expect(html).toContain('class="week-plan"');
-    expect(html).toContain('break-before: page');
+    expect(html).toContain('break-inside: avoid');
+    expect(html).not.toContain('break-before: page');
     expect(html).not.toContain('0.1.0');
     expect(html).toMatch(/версия [0-9a-f]{7}/);
     expect(reportHtmlFilename(Date.parse('2026-10-31T21:30:00Z'))).toBe(
@@ -117,6 +120,26 @@ describe('html report', () => {
     expect(reportHtmlFilename(Date.parse('2026-10-31T11:32:00Z'))).toBe(
       'business-game-report-2026-10-31.html',
     );
+    const base = visit();
+    const preciseHtml = buildHtmlReport(
+      base.revenue
+        ? {
+            ...base,
+            revenue: {
+              ...base.revenue,
+              uncertainty: {
+                leads: 'precise',
+                lateShare: 'precise',
+                conversion: 'precise',
+                check: 'precise',
+                recoveryShare: 'precise',
+              },
+            },
+          }
+        : base,
+      Date.parse('2026-10-31T11:32:00Z'),
+    );
+    expect(preciseHtml).toContain(`${formatNumber(22050)}\u00A0₽, вы уверены во всех входах`);
     expect(html).not.toContain('<svg');
     expect(new TextEncoder().encode(html).byteLength).toBeLessThanOrEqual(50 * 1024);
     const urls = html.match(/https?:\/\/[^\s"'<]+/g) ?? [];

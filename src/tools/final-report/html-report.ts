@@ -1,6 +1,7 @@
 import { metricsFromDossier, type BusinessDossier, type MetricSnapshot } from '../../lib/dossier';
-import { formatRubles, formatWorkHours } from '../../lib/format';
+import { formatNumber, formatWorkHours } from '../../lib/format';
 import { buildProgress, progressChart } from '../audit-finish/progress';
+import { formatRemeasureBy } from '../audit-finish/report';
 import { buildWeekPlan } from '../audit-finish/week-plan';
 import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import {
@@ -10,7 +11,7 @@ import {
   formatCorridorLine,
   formatUncertaintyProfile,
 } from '../revenue-risk/calc';
-import { formatGeneratedAt } from './export';
+import { formatGeneratedAt, reportFileDay } from './export';
 import { EMPTY_REPORT_TEXT } from './summary';
 
 declare const __APP_COMMIT__: string;
@@ -25,13 +26,11 @@ function productCommit(): string {
 
 /** `business-game-report-2026-10-31.html`, dated in Moscow. */
 export function reportHtmlFilename(now: number): string {
-  const day = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Moscow',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(now));
-  return `business-game-report-${day}.html`;
+  return `business-game-report-${reportFileDay(now)}.html`;
+}
+
+function rubles(amount: number): string {
+  return `${formatNumber(Math.max(0, Math.round(amount)))}\u00A0₽`;
 }
 
 function esc(value: string): string {
@@ -146,6 +145,7 @@ footer { margin-top: 28px; color: var(--text-muted); font-size: 0.8125rem; displ
   .metrics { grid-template-columns: 1fr; }
   .metric strong { font-size: 1.2rem; }
 }
+@page { margin: 12mm; }
 @media print {
   button, .no-print { display: none !important; }
   :root {
@@ -164,7 +164,10 @@ footer { margin-top: 28px; color: var(--text-muted); font-size: 0.8125rem; displ
   body { background: #fff; color: #16181d; }
   main { width: auto; max-width: none; }
   .metric, .panel { box-shadow: none; background: #fff; }
-  .week-plan { break-before: page; page-break-before: always; }
+  .metric, .panel, li, tr, header, footer, .week-plan, .spark {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
 `.trim();
 
@@ -183,12 +186,12 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
   const cards = [
     metricCard(
       'Риск',
-      revenue ? formatRubles(revenue.results.revenueAtRiskMax) : 'нет замера',
+      revenue ? rubles(revenue.results.revenueAtRiskMax) : 'нет замера',
       revenue ? 'в месяц' : '',
     ),
     metricCard(
       'Потенциал',
-      revenue ? formatRubles(revenue.results.recoverableRevenue) : 'нет замера',
+      revenue ? rubles(revenue.results.recoverableRevenue) : 'нет замера',
       revenue ? 'можно вернуть' : '',
     ),
     metricCard(
@@ -217,9 +220,9 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
         revenue.botCoverage,
       );
       rows.push(
-        `<tr><th>Сейчас</th><td>${esc(formatRubles(whatIf.lostNow))}</td></tr>`,
-        `<tr><th>С ботом</th><td>${esc(formatRubles(whatIf.lostWithBot))}</td></tr>`,
-        `<tr><th>Предотвращено</th><td>${esc(formatRubles(whatIf.prevented))}</td></tr>`,
+        `<tr><th>Сейчас</th><td>${esc(rubles(whatIf.lostNow))}</td></tr>`,
+        `<tr><th>С ботом</th><td>${esc(rubles(whatIf.lostWithBot))}</td></tr>`,
+        `<tr><th>Предотвращено</th><td>${esc(rubles(whatIf.prevented))}</td></tr>`,
       );
     }
     corridor = `<section><h2>Коридор и бот</h2><div class="panel"><table>${rows.join('')}</table></div></section>`;
@@ -246,12 +249,13 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
   }
 
   const plan = buildWeekPlan(sources);
+  const due = formatRemeasureBy(sources);
   const planHtml =
     plan.length === 0
       ? ''
       : `<section class="week-plan"><h2>Что сделать на этой неделе</h2><ol>${plan
           .map((step) => `<li>${esc(step.text)}</li>`)
-          .join('')}</ol></section>`;
+          .join('')}</ol>${due ? `<p>${esc(due)}</p>` : ''}</section>`;
 
   const empty = hasData ? '' : `<p class="panel">${esc(EMPTY_REPORT_TEXT)}</p>`;
   const commit = productCommit();

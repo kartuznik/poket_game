@@ -46,6 +46,22 @@ export function pluralize(count: number, forms: PluralForms): string {
 }
 
 /**
+ * Groups the whole part above 999 with non-breaking spaces. Fractions keep a comma.
+ * `1560` → `1 560`, `1.5` → `1,5`, `773500` → `773 500`.
+ */
+export function formatNumber(value: number): string {
+  const safe = normalizeFiniteNumber(value, 0);
+  const negative = safe < 0;
+  const rounded = Math.round(Math.abs(safe) * 100) / 100;
+  if (rounded === 0) return '0';
+  const whole = Math.trunc(rounded).toString();
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, NBSP);
+  const fraction = Number.isInteger(rounded) ? '' : `,${rounded.toString().split('.')[1]}`;
+  const body = `${grouped}${fraction}`;
+  return negative ? `−${body}` : body;
+}
+
+/**
  * Formats an integer with thin non-breaking spaces as thousand separators.
  */
 export function formatIntegerGrouping(value: number): string {

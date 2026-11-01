@@ -423,7 +423,7 @@ export function formatUncertaintyProfile(tags: UncertaintyProfile): string {
 }
 
 export function formatCorridorLine(corridor: RevenueCorridor, tags: UncertaintyProfile): string {
-  if (isAllPrecise(tags)) return CORRIDOR_POINT_LINE;
+  if (isAllPrecise(tags)) return `${formatRubles(corridor.base)}, ${CORRIDOR_POINT_LINE}`;
   return `от ${formatRubles(corridor.low)} до ${formatRubles(corridor.high)}/мес`;
 }
 

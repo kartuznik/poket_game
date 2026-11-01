@@ -385,6 +385,57 @@ describe('business dossier', () => {
     ]);
   });
 
+  it('reads a v1 record and writes version 2 without dropping the visit', () => {
+    const raw = JSON.stringify({
+      version: 1,
+      updatedAt: 4,
+      contacts: { name: 'Анна', telegram: '@anna', phone: '', business: 'цех' },
+      revenue: {
+        toolId: 'revenue-risk',
+        updatedAt: 4,
+        inputs: {
+          leadsPerMonth: 80,
+          lateSharePercent: 10,
+          conversionPercent: 20,
+          avgCheck: 500,
+          lossFactor: 0.3,
+          mode: 'custom',
+        },
+        results: {
+          lateLeads: 8,
+          revenueAtRiskMax: 800,
+          recoverableRevenue: 560,
+          revenueAtRiskPerYear: 9600,
+          costPerMissedDialog: 100,
+        },
+      },
+    });
+    const storage = memoryStorage(new Map([[DOSSIER_STORAGE_KEY, raw]]));
+    const store = createDossierStore(() => storage, () => 8);
+    const opened = store.read();
+    expect(DOSSIER_STORAGE_KEY).toBe('poket_game:dossier:v1');
+    expect(opened.version).toBe(2);
+    expect(opened.history).toEqual([]);
+    expect(opened.revenue?.results.revenueAtRiskMax).toBe(800);
+    expect(opened.contacts.name).toBe('Анна');
+    const written = store.update((current) => ({
+      ...current,
+      contacts: { ...current.contacts, phone: '1' },
+    }));
+    expect(written.persisted).toBe(true);
+    const saved = JSON.parse(storage.dump.get(DOSSIER_STORAGE_KEY) ?? '{}') as {
+      version: number;
+      history: unknown[];
+      contacts: { name: string; phone: string };
+      revenue: { results: { revenueAtRiskMax: number } };
+    };
+    expect(saved.version).toBe(2);
+    expect(saved.history).toEqual([]);
+    expect(saved.contacts.name).toBe('Анна');
+    expect(saved.contacts.phone).toBe('1');
+    expect(saved.revenue.results.revenueAtRiskMax).toBe(800);
+  });
+
   it('does not overwrite a dossier whose version it does not know', () => {
     const raw = JSON.stringify({ version: 99, updatedAt: 1, contacts: { name: 'Анна' } });
     const storage = memoryStorage(new Map([[DOSSIER_STORAGE_KEY, raw]]));
