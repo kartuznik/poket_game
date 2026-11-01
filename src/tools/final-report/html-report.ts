@@ -14,15 +14,7 @@ import {
 import { formatGeneratedAt, reportFileDay } from './export';
 import { EMPTY_REPORT_TEXT } from './summary';
 
-declare const __APP_COMMIT__: string;
-
 const PRODUCT_URL = 'https://kartuznik.github.io/poket_game/';
-
-/** First seven characters of the commit that built this page. Empty outside a git checkout. */
-function productCommit(): string {
-  const value = typeof __APP_COMMIT__ === 'string' ? __APP_COMMIT__ : '';
-  return /^[0-9a-f]{7}$/.test(value) ? value : '';
-}
 
 /** `business-game-report-2026-10-31.html`, dated in Moscow. */
 export function reportHtmlFilename(now: number): string {
@@ -258,15 +250,13 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
           .join('')}</ol>${due ? `<p>${esc(due)}</p>` : ''}</section>`;
 
   const empty = hasData ? '' : `<p class="panel">${esc(EMPTY_REPORT_TEXT)}</p>`;
-  const commit = productCommit();
-  const versionLine = commit ? `<p>Игра в бизнес, версия ${esc(commit)}</p>` : '';
 
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Игра в бизнес · Бизнес-аудит</title>
+<title>Бизнес-аудит</title>
 <style>${STYLE}</style>
 </head>
 <body>
@@ -286,7 +276,6 @@ ${progressHtml}
 ${planHtml}
 <footer>
 <p>Сгенерировано ${esc(stamp)}</p>
-${versionLine}
 <p><a href="${PRODUCT_URL}">${esc(PRODUCT_URL)}</a></p>
 </footer>
 </main>

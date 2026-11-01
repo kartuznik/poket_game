@@ -113,7 +113,10 @@ describe('html report', () => {
     expect(html).toContain('break-inside: avoid');
     expect(html).not.toContain('break-before: page');
     expect(html).not.toContain('0.1.0');
-    expect(html).toMatch(/версия [0-9a-f]{7}/);
+    expect(html.match(/Игра в бизнес · Бизнес-аудит/g)).toEqual(['Игра в бизнес · Бизнес-аудит']);
+    expect(html).not.toMatch(/версия [0-9a-f]{7}/);
+    expect(html).toContain(`Сгенерировано ${'31 октября 2026, 14:32'}`);
+    expect(html).toContain('https://kartuznik.github.io/poket_game/');
     expect(reportHtmlFilename(Date.parse('2026-10-31T21:30:00Z'))).toBe(
       'business-game-report-2026-11-01.html',
     );
