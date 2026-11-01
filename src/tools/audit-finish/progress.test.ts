@@ -59,6 +59,13 @@ describe('buildProgress', () => {
     expect(view.line?.text).not.toContain('0%');
   });
 
+  it('treats a percent that rounds to zero as unchanged', () => {
+    const now = 40 * DAY;
+    const view = buildProgress([point(now - 30 * DAY, 100, 10)], point(now, 100.4, 10), now);
+    expect(view.line?.text).toContain('риск выручки без изменений');
+    expect(view.line?.text).not.toContain('0%');
+  });
+
   it('draws a line only from the third point of one metric', () => {
     const now = 10 * DAY;
     const two = buildProgress([point(now - 40 * DAY, 10)], point(now, 8), now);

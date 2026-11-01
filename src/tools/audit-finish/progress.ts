@@ -41,8 +41,15 @@ function signed(value: number, suffix: string): string {
 
 function phrase(before: number, after: number, absoluteUnit: string): string {
   const delta = metricDelta(before, after);
-  if (delta.kind === 'same') return 'без изменений';
-  if (delta.kind === 'absolute') return signed(Math.round(delta.value * 100) / 100, ` ${absoluteUnit}`);
+  if (delta.kind === 'same' || (delta.kind === 'percent' && delta.value === 0)) return 'без изменений';
+  if (delta.kind === 'absolute') {
+    const rounded = Math.round(delta.value * 100) / 100;
+    const unit =
+      absoluteUnit === 'балла'
+        ? pluralize(Math.abs(rounded), ['балл', 'балла', 'баллов'])
+        : absoluteUnit;
+    return signed(rounded, ` ${unit}`);
+  }
   return signed(delta.value, '%');
 }
 

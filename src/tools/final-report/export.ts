@@ -14,7 +14,20 @@ import { buildWeekPlan } from '../audit-finish/week-plan';
 import type { ReportSources } from './summary';
 import { EMPTY_REPORT_TEXT, buildFinalSummary } from './summary';
 
-export const REPORT_CSV_FILENAME = 'business-game-report.csv';
+/** `2026-10-31` in Europe/Moscow. Shared by the CSV and HTML file names. */
+export function reportFileDay(now: number): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(now));
+}
+
+/** `business-game-report-2026-10-31.csv`, dated in Moscow. */
+export function reportCsvFilename(now: number): string {
+  return `business-game-report-${reportFileDay(now)}.csv`;
+}
 
 /** Structured note the owner can paste into a chat with Efim. */
 export function buildEfimReport(sources: ReportSources): string {
@@ -44,12 +57,12 @@ function cells(values: readonly string[]): string {
   return values.map((value) => escapeCsvCell(value)).join(';');
 }
 
-function pair(label: string, value: string): string {
-  return cells([label, value]);
+function csvRow(section: string, label: string, value: string): string {
+  return cells([section, label, value]);
 }
 
-function num(label: string, value: number): string {
-  return pair(label, formatCsvNumber(value));
+function num(section: string, label: string, value: number): string {
+  return csvRow(section, label, formatCsvNumber(value));
 }
 
 export function formatGeneratedAt(now: number): string {
@@ -76,12 +89,12 @@ export function formatGeneratedAt(now: number): string {
 
 function stepLine(index: number, text: string): string {
   const sentence = /[.!?…]$/.test(text) ? text : `${text}.`;
-  return cells([`${String(index)}. ${sentence}`]);
+  return csvRow('Что сделать на этой неделе', String(index), sentence);
 }
 
 function csvChange(before: number, after: number): string {
   const delta = metricDelta(before, after);
-  if (delta.kind === 'same') return '0';
+  if (delta.kind === 'same' || (delta.kind === 'percent' && delta.value === 0)) return '0';
   if (delta.kind === 'absolute') {
     const text = formatCsvNumber(delta.value);
     return delta.value > 0 ? `+${text}` : text;
@@ -141,112 +154,114 @@ export function buildReportCsv(
   const { revenue, routine, priority, readiness } = sources;
 
   if (revenue) {
-    lines.push('Выручка');
+    const section = 'Выручка';
     lines.push(
-      num('Обращений в месяц', revenue.inputs.leadsPerMonth),
-      num('Доля поздних, %', revenue.inputs.lateSharePercent),
-      num('Конверсия, %', revenue.inputs.conversionPercent),
-      num('Средний чек, ₽', revenue.inputs.avgCheck),
-      num('Доля возврата, %', (1 - revenue.inputs.lossFactor) * 100),
-      pair('Режим', revenue.inputs.mode === 'preset' ? 'Сценарное допущение' : 'Моя конверсия'),
-      num('Поздних обращений', revenue.results.lateLeads),
-      num('Риск в год, ₽', revenue.results.revenueAtRiskPerYear),
-      num('Один вовремя отвеченный диалог, ₽', revenue.results.costPerMissedDialog),
+      num(section, 'Обращений в месяц', revenue.inputs.leadsPerMonth),
+      num(section, 'Доля поздних, %', revenue.inputs.lateSharePercent),
+      num(section, 'Конверсия, %', revenue.inputs.conversionPercent),
+      num(section, 'Средний чек, ₽', revenue.inputs.avgCheck),
+      num(section, 'Доля возврата, %', (1 - revenue.inputs.lossFactor) * 100),
+      csvRow(section, 'Режим', revenue.inputs.mode === 'preset' ? 'Сценарное допущение' : 'Моя конверсия'),
+      num(section, 'Поздних обращений', revenue.results.lateLeads),
+      num(section, 'Риск в год, ₽', revenue.results.revenueAtRiskPerYear),
+      num(section, 'Один вовремя отвеченный диалог, ₽', revenue.results.costPerMissedDialog),
     );
     const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
     const corridor = computeCorridor(revenue.inputs, tags);
     if (isAllPrecise(tags)) {
-      lines.push(cells(['Коридор', 'Точка (все входы точные)', formatCsvNumber(corridor.low)]));
+      lines.push(csvRow(section, 'Точка (все входы точные)', formatCsvNumber(corridor.base)));
     } else {
-      lines.push(num('Коридор от, ₽', corridor.low), num('Коридор до, ₽', corridor.high));
+      lines.push(
+        num(section, 'Коридор от, ₽', corridor.low),
+        num(section, 'Коридор до, ₽', corridor.high),
+      );
     }
-    lines.push(pair('Профиль точности', formatUncertaintyProfile(tags)));
+    lines.push(csvRow(section, 'Профиль точности', formatUncertaintyProfile(tags)));
     if (typeof revenue.botCoverage === 'number') {
       const whatIf = computeWhatIf(
         { risk: revenue.results.revenueAtRiskMax, lossFactor: revenue.inputs.lossFactor },
         revenue.botCoverage,
       );
       lines.push(
-        num('Покрытие ботом, %', revenue.botCoverage * 100),
-        num('Потери сейчас, ₽', whatIf.lostNow),
-        num('Потери с ботом, ₽', whatIf.lostWithBot),
-        num('Предотвращено, ₽', whatIf.prevented),
+        num(section, 'Покрытие ботом, %', revenue.botCoverage * 100),
+        num(section, 'Потери сейчас, ₽', whatIf.lostNow),
+        num(section, 'Потери с ботом, ₽', whatIf.lostWithBot),
+        num(section, 'Предотвращено, ₽', whatIf.prevented),
       );
     }
     lines.push(
-      num('Итого риск, ₽', revenue.results.revenueAtRiskMax),
-      num('Итого потенциал, ₽', revenue.results.recoverableRevenue),
+      num(section, 'Итого риск, ₽', revenue.results.revenueAtRiskMax),
+      num(section, 'Итого потенциал, ₽', revenue.results.recoverableRevenue),
       '',
     );
   }
 
   if (routine) {
-    lines.push('Рутина');
+    const section = 'Рутина';
     lines.push(
-      pair(
+      csvRow(
+        section,
         'Типовая рутина',
         routine.inputs.presetId ? getRoutinePresetById(routine.inputs.presetId).title : 'свои цифры',
       ),
-      num('Операций в неделю', routine.inputs.operationsPerWeek),
-      num('Минут на операцию', routine.inputs.minutesPerOperation),
-      num('Доля автоматизации, %', routine.inputs.automationSharePercent),
+      num(section, 'Операций в неделю', routine.inputs.operationsPerWeek),
+      num(section, 'Минут на операцию', routine.inputs.minutesPerOperation),
+      num(section, 'Доля автоматизации, %', routine.inputs.automationSharePercent),
     );
     if (routine.inputs.hourlyRate !== null) {
-      lines.push(num('Ставка, ₽/час', routine.inputs.hourlyRate));
+      lines.push(num(section, 'Ставка, ₽/час', routine.inputs.hourlyRate));
     }
     lines.push(
-      num('Часов в месяц', routine.results.hoursPerMonth),
-      num('Рабочих дней в год', routine.results.workDaysPerYear),
-      num('Экономия часов в месяц', routine.results.savedHoursPerMonth),
+      num(section, 'Часов в месяц', routine.results.hoursPerMonth),
+      num(section, 'Рабочих дней в год', routine.results.workDaysPerYear),
+      num(section, 'Экономия часов в месяц', routine.results.savedHoursPerMonth),
     );
     lines.push(
       routine.results.savedMoneyPerMonth === null
-        ? pair('Итого экономия, ₽/мес', '')
-        : num('Итого экономия, ₽/мес', routine.results.savedMoneyPerMonth),
+        ? csvRow(section, 'Итого экономия, ₽/мес', '')
+        : num(section, 'Итого экономия, ₽/мес', routine.results.savedMoneyPerMonth),
       '',
     );
   }
 
   if (priority) {
-    lines.push('Приоритет');
-    priority.results.ranking.forEach((item, index) => {
-      lines.push(cells([`Процесс №${String(index + 1)}`, item.title, `балл ${formatCsvNumber(item.score)}`]));
-    });
-    lines.push(num('Итого процессов в топе', Math.min(TOP_PROCESS_COUNT, priority.results.ranking.length)), '');
-    priority.results.ranking.forEach((item, index) => {
+    const section = 'Приоритет';
+    const top = priority.results.ranking.slice(0, TOP_PROCESS_COUNT);
+    for (const item of top) {
+      lines.push(num(section, `${item.title}, балл`, item.score));
+    }
+    lines.push(num(section, 'Итого процессов в топе', Math.min(TOP_PROCESS_COUNT, priority.results.ranking.length)));
+    for (const item of top) {
       const score = priority.inputs[item.id];
-      lines.push(`Детализация процесса №${String(index + 1)}: ${item.title}`);
       lines.push(
-        num('Частота', score.frequency),
-        num('Время', score.time),
-        num('Цена ошибки', score.errorCost),
-        '',
+        num(section, `${item.title} — частота`, score.frequency),
+        num(section, `${item.title} — время`, score.time),
+        num(section, `${item.title} — цена ошибки`, score.errorCost),
       );
-    });
+    }
+    lines.push('');
   }
 
   if (readiness) {
+    const section = 'Готовность';
     const yesCount = READINESS_ITEMS.filter((item) => readiness.inputs[item.id] === 'yes').length;
-    lines.push('Готовность');
-    lines.push(num('Баллы', readiness.results.score), pair('Вердикт', readiness.results.bandLabel));
+    lines.push(
+      num(section, 'Баллы', readiness.results.score),
+      csvRow(section, 'Вердикт', readiness.results.bandLabel),
+    );
     if (readiness.results.unclosedTitles.length > 0) {
-      lines.push(pair('Не закрыто', readiness.results.unclosedTitles.join('; ')));
+      lines.push(csvRow(section, 'Не закрыто', readiness.results.unclosedTitles.join('; ')));
     }
     for (const item of READINESS_ITEMS) {
       const status = readiness.inputs[item.id];
       const label = status === 'yes' ? 'Да' : status === 'partial' ? 'Частично' : 'Нет';
-      lines.push(pair(item.title, label));
+      lines.push(csvRow(section, item.title, label));
     }
-    lines.push(
-      pair('Итого «Да»', `${String(yesCount)} из ${String(READINESS_ITEMS.length)}`),
-      num('Итого баллов', readiness.results.score),
-      '',
-    );
+    lines.push(csvRow(section, 'Итого «Да»', `${String(yesCount)} из ${String(READINESS_ITEMS.length)}`), '');
   }
 
   const plan = buildWeekPlan(sources);
   if (plan.length > 0) {
-    lines.push('Что сделать на этой неделе');
     plan.forEach((step, index) => {
       lines.push(stepLine(index + 1, step.text));
     });

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PriorityProcessId } from '../../lib/types';
 import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import type { ReportSources } from './summary';
-import { buildEfimReport, buildReportCsv } from './export';
+import { buildEfimReport, buildReportCsv, reportCsvFilename } from './export';
 import { buildFinalSummary } from './summary';
 
 const sources: ReportSources = {
@@ -74,16 +74,18 @@ describe('report export', () => {
     expect(csv).toContain('Раздел;Показатель;Значение');
     expect(csv).not.toContain('Предыдущее');
     expect(csv).not.toContain('Изменение');
-    expect(csv).toContain('Итого риск, ₽;31500');
-    expect(csv).toContain('Итого потенциал, ₽;22050');
-    expect(csv).toContain('Итого баллов;1,5');
-    expect(csv).toContain('Коридор от, ₽;');
-    expect(csv).toContain('Профиль точности;');
+    expect(csv).toContain('Выручка;Итого риск, ₽;31500');
+    expect(csv).toContain('Выручка;Итого потенциал, ₽;22050');
+    expect(csv).toContain('Готовность;Баллы;1,5');
+    expect(csv).not.toContain('Итого баллов');
+    expect(csv).toContain('Выручка;Коридор от, ₽;');
+    expect(csv).toContain('Выручка;Коридор до, ₽;');
+    expect(csv).toContain('Выручка;Профиль точности;');
     expect(csv).toContain('доля возврата — наугад');
     expect(csv).not.toContain('Покрытие ботом');
-    expect(csv).toContain('Вердикт;Рано');
+    expect(csv).toContain('Готовность;Вердикт;Рано');
     expect(csv).toContain('"Правила ответа; Один сценарий"');
-    expect(csv).toContain('Понятно, что отвечать в типовых ситуациях;Частично');
+    expect(csv).toContain('Готовность;Понятно, что отвечать в типовых ситуациях;Частично');
     expect(csv).toContain('Что сделать на этой неделе');
     expect(csv).not.toContain('---История изменений---');
     expect(csv).not.toContain('Контакты;');
@@ -105,7 +107,7 @@ describe('report export', () => {
     expect(compared).toContain('Выручка;Риск в месяц, ₽;31500;15000;+110%');
     expect(compared).not.toContain('Рутина;Часов в месяц;');
     const mainRisk = compared.split('---История изменений---')[0] ?? '';
-    expect(mainRisk).toContain('Итого риск, ₽;31500');
+    expect(mainRisk).toContain('Выручка;Итого риск, ₽;31500');
     expect(mainRisk).not.toContain('Предыдущее');
   });
 
@@ -133,8 +135,8 @@ describe('report export', () => {
         updatedAt: 1,
       },
     });
-    expect(csv).toContain('Итого экономия, ₽/мес;');
-    expect(csv).toContain('Часов в месяц;0');
+    expect(csv).toContain('Рутина;Итого экономия, ₽/мес;');
+    expect(csv).toContain('Рутина;Часов в месяц;0');
     expect(csv).not.toContain('Итого часов');
   });
 
@@ -183,9 +185,13 @@ describe('report export', () => {
     };
     const csv = buildReportCsv(full, [], stamp);
     expect(csv).toContain('# Сгенерировано: 31 октября 2026, 14:32');
-    expect(csv).toContain('Итого риск, ₽;31500');
-    expect(csv).toContain('Часов в месяц;1,08');
+    expect(csv).toContain('Выручка;Итого риск, ₽;31500');
+    expect(csv).toContain('Рутина;Часов в месяц;1,08');
     expect(csv).not.toContain('Итого часов');
+    expect(reportCsvFilename(stamp)).toBe('business-game-report-2026-10-31.csv');
+    expect(reportCsvFilename(Date.parse('2026-10-31T21:30:00Z'))).toBe(
+      'business-game-report-2026-11-01.csv',
+    );
     const precise = buildReportCsv(
       {
         ...sources,
@@ -203,19 +209,19 @@ describe('report export', () => {
       [],
       stamp,
     );
-    expect(precise).toContain('Коридор;Точка (все входы точные);');
+    expect(precise).toContain('Выручка;Точка (все входы точные);22050');
     expect(precise).not.toContain('Коридор от');
     expect(precise).not.toContain('Коридор до');
-    expect(csv).toContain('Итого баллов;1,5');
+    expect(csv).toContain('Готовность;Баллы;1,5');
+    expect(csv).not.toContain('Итого баллов');
     expect(csv).not.toContain('---История изменений---');
-    const main = csv.split('Детализация процесса №1')[0] ?? '';
-    expect(main).toContain('Процесс №1;Приём обращений;балл 5');
-    expect(main.match(/Приём обращений/g)).toEqual(['Приём обращений']);
-    expect(main).not.toContain('Приём обращений;5');
-    expect(csv).toContain('Детализация процесса №1: Приём обращений');
-    expect(csv).toContain('Частота;5');
-    expect(csv).toContain('Время;4');
-    expect(csv).toContain('Цена ошибки;3');
+    expect(csv).toContain('Приоритет;Приём обращений, балл;5');
+    expect(csv).not.toContain('Процесс №');
+    expect(csv).not.toContain('Детализация');
+    expect(csv).not.toContain('Оплата');
+    expect(csv).toContain('Приоритет;Приём обращений — частота;5');
+    expect(csv).toContain('Приоритет;Приём обращений — время;4');
+    expect(csv).toContain('Приоритет;Приём обращений — цена ошибки;3');
     const now = 40 * 86_400_000;
     const compared = buildReportCsv(
       full,
@@ -233,5 +239,24 @@ describe('report export', () => {
     expect(history[0]).toBe('Раздел;Показатель;Значение;Предыдущее;Изменение');
     expect(history.slice(1).every((row) => row.split(';').length === 5)).toBe(true);
     expect(compared).toContain('Готовность;Баллы;1,5;1;+50%');
+  });
+
+  it('writes a percent that rounds to zero as 0', () => {
+    const now = 40 * 86_400_000;
+    const csv = buildReportCsv(
+      sources,
+      [
+        {
+          savedAt: now - 30 * 86_400_000,
+          revenueAtRiskPerMonth: 31626,
+          routineHoursPerMonth: null,
+          readinessScore: null,
+        },
+      ],
+      now,
+    );
+    expect(csv).toContain('Выручка;Риск в месяц, ₽;31500;31626;0');
+    const history = csv.split('---История изменений---')[1] ?? '';
+    expect(history).not.toContain('0%');
   });
 });
