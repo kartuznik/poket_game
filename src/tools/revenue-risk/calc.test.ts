@@ -10,8 +10,11 @@ import {
   computeCorridor,
   computeWhatIf,
   defaultUncertainty,
+  botShareLabel,
   formatCorridorLine,
   isAllPrecise,
+  resolvedBotCoverage,
+  segmentedButtonClass,
   lossFactorFromPercent,
   lossFactorFromRecoveryPercent,
   shouldShowMeasureFirst,
@@ -378,6 +381,17 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
     expect(formatCorridorLine(corridor, tags)).toBe(
       '22\u00A0050\u00A0₽/мес. Коридор схлопнулся: во всех входах вы уверены',
     );
+    expect(botShareLabel(0.3)).toBe('3 из 10');
+    expect(botShareLabel(0.5)).toBe('5 из 10');
+    expect(botShareLabel(0.7)).toBe('7 из 10');
+    expect(resolvedBotCoverage(null)).toBe(0.5);
+    expect(resolvedBotCoverage(undefined)).toBe(0.5);
+    expect(resolvedBotCoverage(0.3)).toBe(0.3);
+    expect(resolvedBotCoverage(0.7)).toBe(0.7);
+    expect(segmentedButtonClass(resolvedBotCoverage(null) === 0.5)).toBe(
+      'segmented-control__btn segmented-control__btn--active',
+    );
+    expect(segmentedButtonClass(false)).toBe('segmented-control__btn');
     expect(shouldShowMeasureFirst(corridor)).toBe(false);
   });
 

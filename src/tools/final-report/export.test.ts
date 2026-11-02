@@ -265,4 +265,34 @@ describe('report export', () => {
     const history = csv.split('---История изменений---')[1] ?? '';
     expect(history).not.toContain('0%');
   });
+
+  it('writes one priority row when frequency, time and error cost match', () => {
+    const ranking = PRIORITY_PROCESSES.map((process) => ({
+      id: process.id,
+      title: process.title,
+      score: 5,
+    }));
+    const inputs = Object.fromEntries(
+      PRIORITY_PROCESSES.map((process) => [process.id, { frequency: 5, time: 5, errorCost: 5 }]),
+    ) as Record<PriorityProcessId, { frequency: number; time: number; errorCost: number }>;
+    const csv = buildReportCsv({
+      ...sources,
+      priority: {
+        toolId: 'priority-diag',
+        inputs,
+        results: {
+          topProcessId: 'inquiries',
+          topTitle: 'Приём обращений',
+          topScore: 5,
+          tied: true,
+          ranking,
+        },
+        updatedAt: 1,
+      },
+    });
+    expect(csv).toContain('Приоритет;Приём обращений, балл;5');
+    expect(csv).not.toContain('Приём обращений — частота');
+    expect(csv).not.toContain('Приём обращений — время');
+    expect(csv).not.toContain('Приём обращений — цена ошибки');
+  });
 });

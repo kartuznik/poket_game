@@ -87,6 +87,24 @@ describe('format utilities & pluralization', () => {
   it('formats integer grouping and counts with nouns', () => {
     expect(formatIntegerGrouping(10000)).toBe('10\u00A0000');
     expect(formatCountWithNoun(3, ['день', 'дня', 'дней'])).toBe('3\u00A0дня');
+    const hours = ['час', 'часа', 'часов'] as const;
+    expect(formatCountWithNoun(1, hours)).toBe('1\u00A0час');
+    expect(formatCountWithNoun(2, hours)).toBe('2\u00A0часа');
+    expect(formatCountWithNoun(5, hours)).toBe('5\u00A0часов');
+    expect(formatCountWithNoun(1.5, hours)).toBe('1,5\u00A0часа');
+    expect(formatCountWithNoun(13.4, hours)).toBe('13,4\u00A0часа');
+    expect(formatCountWithNoun(1.04, hours)).toBe('1\u00A0час');
+    expect(formatCountWithNoun(101, hours)).toBe('101\u00A0час');
+    expect(formatCountWithNoun(112, hours)).toBe('112\u00A0часов');
+    expect(formatCountWithNoun(122, hours)).toBe('122\u00A0часа');
+    expect(formatCountWithNoun(125, hours)).toBe('125\u00A0часов');
+    const days = ['рабочий день', 'рабочих дня', 'рабочих дней'] as const;
+    expect(formatCountWithNoun(1.62, days)).toBe('1,6\u00A0рабочих дня');
+    const leads = ['обращение', 'обращения', 'обращений'] as const;
+    expect(formatCountWithNoun(1, leads)).toBe('1\u00A0обращение');
+    expect(formatCountWithNoun(2, leads)).toBe('2\u00A0обращения');
+    expect(formatCountWithNoun(5, leads)).toBe('5\u00A0обращений');
+    expect(formatCountWithNoun(42, leads)).toBe('42\u00A0обращения');
   });
 });
 
