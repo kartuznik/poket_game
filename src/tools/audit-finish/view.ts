@@ -1,3 +1,4 @@
+import { ICON_DOWNLOAD, ICON_EDIT, paintLabeledButton } from '../../components/action-icon';
 import { celebrate } from '../../components/confetti';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
@@ -280,7 +281,7 @@ export function renderAuditFinish(
         const edit = document.createElement('button');
         edit.type = 'button';
         edit.className = 'action-btn action-btn--secondary summary-block__edit';
-        edit.textContent = 'Изменить';
+        paintLabeledButton(edit, 'Изменить', ICON_EDIT);
         const toolId = block.sourceToolId;
         const step = block.editStep;
         edit.addEventListener('click', () => onNavigateTool(toolId, step));
@@ -310,15 +311,15 @@ export function renderAuditFinish(
   const csvBtn = document.createElement('button');
   csvBtn.type = 'button';
   csvBtn.className = 'action-btn action-btn--secondary';
-  csvBtn.textContent = 'Скачать таблицу (.csv)';
+  paintLabeledButton(csvBtn, 'Скачать таблицу (.csv)', ICON_DOWNLOAD);
   const htmlBtn = document.createElement('button');
   htmlBtn.type = 'button';
   htmlBtn.className = 'action-btn action-btn--secondary';
-  htmlBtn.textContent = 'Скачать HTML-отчёт';
+  paintLabeledButton(htmlBtn, 'Скачать HTML-отчёт', ICON_DOWNLOAD);
   const pdfBtn = document.createElement('button');
   pdfBtn.type = 'button';
   pdfBtn.className = 'action-btn action-btn--secondary';
-  pdfBtn.textContent = 'Скачать PDF';
+  paintLabeledButton(pdfBtn, 'Скачать PDF', ICON_DOWNLOAD);
   actions.append(share, csvBtn, htmlBtn, pdfBtn);
 
   csvBtn.disabled = !summary.hasData;

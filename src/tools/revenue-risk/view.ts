@@ -1,3 +1,10 @@
+import {
+  ICON_ARROW,
+  ICON_COPY,
+  ICON_PIN,
+  paintDisclosure,
+  paintLabeledButton,
+} from '../../components/action-icon';
 import { mountNicheMenu } from '../../components/niche-menu';
 import { createResultBanner } from '../../components/result-banner';
 import { createHelpTip, releaseHelpTipsWithin, setHelpTipText } from '../../components/tooltip';
@@ -595,7 +602,7 @@ export function renderRevenueRiskTool(
   certaintyDetails.className = 'certainty-details';
   const certaintySummary = document.createElement('summary');
   certaintySummary.className = 'certainty-details__summary';
-  certaintySummary.textContent = 'Насколько вы уверены в цифрах';
+  paintDisclosure(certaintySummary, 'Насколько вы уверены в цифрах');
   const certaintyBody = document.createElement('div');
   certaintyBody.className = 'certainty-details__body';
   const tagButtons = new Map<UncertaintyInputId, Map<UncertaintyTag, HTMLButtonElement>>();
@@ -675,7 +682,7 @@ export function renderRevenueRiskTool(
   const routineFill = document.createElement('button');
   routineFill.type = 'button';
   routineFill.className = 'action-btn action-btn--secondary what-if__routine';
-  routineFill.textContent = 'подставить из рутины';
+  paintLabeledButton(routineFill, 'подставить из рутины', ICON_ARROW);
   routineFill.addEventListener('click', () => {
     const share = answersAutomationPercent(bridge.getRoutineResult());
     if (share === null) return;
@@ -740,13 +747,13 @@ export function renderRevenueRiskTool(
   copyBtn.type = 'button';
   copyBtn.className = 'action-btn action-btn--secondary';
   copyBtn.id = 'rr-copy-btn';
-  copyBtn.textContent = 'Скопировать в Threads';
+  paintLabeledButton(copyBtn, 'Скопировать в Threads', ICON_COPY);
 
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
   saveBtn.id = 'rr-save-btn';
-  saveBtn.textContent = 'Запомнить «До»';
+  paintLabeledButton(saveBtn, 'Запомнить «До»', ICON_PIN);
 
   actions.append(copyBtn, saveBtn);
 
@@ -780,7 +787,7 @@ export function renderRevenueRiskTool(
 
   const howSummary = document.createElement('summary');
   howSummary.className = 'info-details__summary';
-  howSummary.innerHTML = `<span>Как посчитано (формула и ваши цифры)</span><span aria-hidden="true">▾</span>`;
+  paintDisclosure(howSummary, 'Как посчитано (формула и ваши цифры)');
 
   const howBody = document.createElement('div');
   howBody.className = 'info-details__body';

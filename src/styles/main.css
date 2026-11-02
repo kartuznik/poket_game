@@ -447,23 +447,30 @@ body {
 .prior-context__row {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 8px;
+  align-items: baseline;
+  column-gap: 0.35em;
+  row-gap: 0;
   font-size: 0.8125rem;
   line-height: 1.35;
 }
 
 .prior-context__label {
+  flex: none;
   font-weight: 800;
   color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .prior-context__label::after {
   content: ':';
 }
 
-.prior-context__text {
-  font-weight: 600;
+/* A clause stays whole. The row wraps only before the next clause. */
+.prior-context__clause {
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
+  font-weight: 600;
 }
 
 .handoff-banner {
@@ -567,6 +574,11 @@ body {
 
 .report-blocks .metric-box {
   gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
 }
 
 .tool-card > .rank-list,
@@ -680,10 +692,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 12px;
-  border: var(--border-width) solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
 }
 
 .finish-card__label {
@@ -878,8 +892,10 @@ a.action-btn {
   justify-content: center;
   gap: 8px;
   border-radius: var(--radius-sm);
-  border: var(--border-width) solid transparent;
-  box-shadow: var(--shadow-button);
+  border: 1px solid var(--border-color);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 700;
@@ -888,16 +904,15 @@ a.action-btn {
   cursor: pointer;
 }
 
-.share-brand__btn--threads {
-  background: var(--brand-threads);
-  color: var(--brand-threads-ink);
-  border-color: var(--brand-threads-ink);
+.share-brand__btn:hover {
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
+.share-brand__btn--threads,
 .share-brand__btn--telegram {
-  background: var(--brand-telegram);
-  color: var(--brand-telegram-ink);
-  border-color: var(--brand-telegram);
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-color);
 }
 
 .share-brand__icon {
@@ -921,11 +936,11 @@ a.action-btn {
 /* Result Card (Screenshot & Share friendly) */
 .result-card {
   scroll-margin-top: 24px;
-  padding: 16px;
-  background: var(--bg-result);
-  border: var(--border-width) solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-result);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -985,26 +1000,71 @@ a.action-btn {
   color: var(--text-accent);
 }
 
-.certainty-details {
-  /* Grow into the result-card padding so the 12px inset does not shrink «примерно». */
-  margin-inline: -12px;
-  border: var(--border-width) solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-subtle);
+.certainty-details,
+#rr-how-calculated.info-details {
+  margin-inline: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
 }
 
-.certainty-details__summary {
+.certainty-details__summary,
+#rr-how-calculated .info-details__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 8px 0;
+  background: transparent;
   font-weight: 800;
   cursor: pointer;
+  list-style: none;
+}
+
+.certainty-details__summary::-webkit-details-marker,
+#rr-how-calculated .info-details__summary::-webkit-details-marker {
+  display: none;
+}
+
+.certainty-details__summary:hover,
+#rr-how-calculated .info-details__summary:hover {
+  background: transparent;
+  color: var(--text-accent);
+}
+
+.disclosure__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.disclosure__chev {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.certainty-details__summary:hover .disclosure__chev,
+#rr-how-calculated .info-details__summary:hover .disclosure__chev {
+  color: var(--text-accent);
+}
+
+.certainty-details[open] .disclosure__chev,
+#rr-how-calculated[open] .disclosure__chev {
+  transform: rotate(180deg);
 }
 
 .certainty-details__body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 0 12px 12px;
+  padding: 0 0 12px;
+}
+
+#rr-how-calculated .info-details__body {
+  border-top: 0;
+  padding-inline: 0;
 }
 
 .certainty-row {
@@ -1021,7 +1081,9 @@ a.action-btn {
 .segmented-control.segmented-control--triple {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
-  padding: 4px;
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 
 .segmented-control--triple .segmented-control__btn {
@@ -1124,6 +1186,30 @@ a.action-btn {
   grid-column: 1 / -1;
   width: 100%;
   text-wrap: balance;
+}
+
+.result-card__actions .action-btn--secondary,
+.what-if .action-btn,
+.audit-actions .action-btn--secondary,
+.report-blocks .summary-block__edit {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.result-card__actions .action-btn--secondary:hover:not(:disabled),
+.what-if .action-btn:hover:not(:disabled),
+.audit-actions .action-btn--secondary:hover:not(:disabled),
+.report-blocks .summary-block__edit:hover {
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  box-shadow: none;
+}
+
+.action-btn__icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
 .action-btn {
@@ -1424,10 +1510,10 @@ a:focus-visible {
 
 .segmented-control__btn--active,
 .segmented-control__btn[aria-pressed="true"] {
-  background: var(--accent-primary);
-  color: var(--text-on-accent);
+  background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+  color: var(--text-primary);
   border-color: var(--accent-primary);
-  box-shadow: var(--shadow-button);
+  box-shadow: none;
 }
 
 /* Range Slider + Input Pair */
@@ -1694,6 +1780,15 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.result-card .metric-box,
+.what-if__table {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
 }
 
 .metric-box__label {

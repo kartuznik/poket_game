@@ -116,11 +116,11 @@ h1 strong { font-weight: 800; }
 .handle { font-weight: 800; }
 .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
 .metric, .panel {
-  background: var(--bg-surface);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  padding: 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
   min-width: 0;
 }
 .metric p, .metric span { color: var(--text-secondary); font-size: 0.8125rem; }
