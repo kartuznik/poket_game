@@ -1226,7 +1226,7 @@ export function renderRevenueRiskTool(
         15,
         Math.round(calcResult.normalizedInput.leadsPerMonth * 2),
       ),
-      note: `${formatIntegerGrouping(calcResult.normalizedInput.leadsPerMonth)} обращений в месяц, из них поздних ${Math.round(calcResult.lateLeads)}`,
+      note: `${formatCountWithNoun(calcResult.normalizedInput.leadsPerMonth, ['обращение', 'обращения', 'обращений'])} в месяц, из них ${formatCountWithNoun(Math.round(calcResult.lateLeads), ['позднее обращение', 'поздних обращения', 'поздних обращений'])}`,
       revenueRiskSnapshot: bridgeSnapshot,
     });
     window.location.hash = meta.nextToolId;

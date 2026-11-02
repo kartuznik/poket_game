@@ -77,10 +77,11 @@ export function formatIntegerGrouping(value: number): string {
  */
 export function formatCountWithNoun(count: number, forms: PluralForms): string {
   const safe = normalizeFiniteNumber(count, 0);
-  const rounded = Number.isInteger(safe)
-    ? formatIntegerGrouping(safe)
-    : safe.toFixed(1).replace('.', ',');
-  return `${rounded}${NBSP}${pluralize(safe, forms)}`;
+  const rounded = Math.round(safe * 10) / 10;
+  const shown = Number.isInteger(rounded)
+    ? formatIntegerGrouping(rounded)
+    : rounded.toFixed(1).replace('.', ',');
+  return `${shown}${NBSP}${pluralize(rounded, forms)}`;
 }
 
 export interface FormatRublesOptions {
