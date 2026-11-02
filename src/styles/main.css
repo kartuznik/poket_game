@@ -910,9 +910,37 @@ a.action-btn {
 
 .share-brand__btn--threads,
 .share-brand__btn--telegram {
-  background: transparent;
-  color: var(--text-primary);
-  border-color: var(--border-color);
+  box-shadow: none;
+  transition: filter 160ms ease;
+}
+
+.share-brand__btn--threads {
+  background: var(--brand-threads);
+  color: var(--brand-threads-ink);
+  border-color: var(--brand-threads);
+}
+
+.share-brand__btn--telegram {
+  background: var(--brand-telegram);
+  color: var(--brand-telegram-ink);
+  border-color: var(--brand-telegram);
+}
+
+.share-brand__btn--threads:hover,
+.share-brand__btn--telegram:hover {
+  filter: brightness(0.9);
+}
+
+.share-brand__btn--threads:hover {
+  background: var(--brand-threads);
+  color: var(--brand-threads-ink);
+  border-color: var(--brand-threads);
+}
+
+.share-brand__btn--telegram:hover {
+  background: var(--brand-telegram);
+  color: var(--brand-telegram-ink);
+  border-color: var(--brand-telegram);
 }
 
 .share-brand__icon {

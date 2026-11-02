@@ -84,9 +84,9 @@
   --disclaimer-border: rgba(243, 180, 180, 0.55);
   --prior-bg: rgba(183, 201, 247, 0.14);
 
-  /* White Threads sticker; Telegram stays the same blue. */
-  --brand-threads: #ffffff;
-  --brand-threads-ink: #000000;
+  /* Threads stays a black brand button with white ink; Telegram stays blue. */
+  --brand-threads: #000000;
+  --brand-threads-ink: #ffffff;
   --brand-telegram: #2aabee;
   --brand-telegram-ink: #ffffff;
 }
