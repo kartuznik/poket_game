@@ -43,6 +43,8 @@ import {
   defaultUncertainty,
   botShareLabel,
   formatCorridorLine,
+  resolvedBotCoverage,
+  segmentedButtonClass,
   formatUncertaintyProfile,
   getNichePresetById,
   lossFactorFromRecoveryPercent,
@@ -195,16 +197,17 @@ export function renderRevenueRiskTool(
   let selectedPresetId: NichePresetId = restoredPreset;
   let tags: UncertaintyProfile =
     draft?.uncertainty ?? saved?.uncertainty ?? defaultUncertainty(mode);
-  let botCoverage: number | null = draft?.botCoverage ?? saved?.botCoverage ?? null;
+  const storedCoverage = draft?.botCoverage ?? saved?.botCoverage ?? null;
   let botFromRoutine = false;
   const suggestedCoverage = answersAutomationPercent(bridge.getRoutineResult());
   if (
-    botCoverage !== null &&
+    storedCoverage !== null &&
     suggestedCoverage !== null &&
-    Math.abs(botCoverage - suggestedCoverage / 100) < 0.001
+    Math.abs(storedCoverage - suggestedCoverage / 100) < 0.001
   ) {
     botFromRoutine = true;
   }
+  let botCoverage = resolvedBotCoverage(storedCoverage);
 
   let leadsRaw =
     draft?.leadsPerMonth ??
@@ -368,14 +371,14 @@ export function renderRevenueRiskTool(
 
   const modeCustomBtn = document.createElement('button');
   modeCustomBtn.type = 'button';
-  modeCustomBtn.className = 'segmented-control__btn';
+  modeCustomBtn.className = segmentedButtonClass(mode === 'custom');
   modeCustomBtn.id = 'rr-mode-custom';
   modeCustomBtn.textContent = 'Моя конверсия';
   modeCustomBtn.setAttribute('aria-pressed', 'true');
 
   const modePresetBtn = document.createElement('button');
   modePresetBtn.type = 'button';
-  modePresetBtn.className = 'segmented-control__btn';
+  modePresetBtn.className = segmentedButtonClass(mode === 'preset');
   modePresetBtn.id = 'rr-mode-preset';
   modePresetBtn.textContent = 'Сценарное допущение';
   modePresetBtn.setAttribute('aria-pressed', 'false');
@@ -616,7 +619,7 @@ export function renderRevenueRiskTool(
     for (const tag of ['precise', 'rough', 'guess'] as const) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'segmented-control__btn';
+      button.className = segmentedButtonClass(tags[inputId] === tag);
       button.textContent = UNCERTAINTY_TAG_LABELS[tag];
       button.setAttribute('aria-pressed', String(tags[inputId] === tag));
       button.addEventListener('click', () => {
@@ -658,7 +661,7 @@ export function renderRevenueRiskTool(
   for (const choice of BOT_COVERAGE_CHOICES) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'segmented-control__btn';
+    button.className = segmentedButtonClass(botCoverage === choice);
     button.textContent = botShareLabel(choice);
     button.addEventListener('click', () => {
       botCoverage = choice;
@@ -848,6 +851,8 @@ export function renderRevenueRiskTool(
   function syncConversionFieldWithMode(): void {
     const isPreset = mode === 'preset';
     setHelpTipText(convHeading.tip, isPreset ? HELP.presetMode : HELP.customMode);
+    modeCustomBtn.className = segmentedButtonClass(!isPreset);
+    modePresetBtn.className = segmentedButtonClass(isPreset);
     modeCustomBtn.setAttribute('aria-pressed', String(!isPreset));
     modePresetBtn.setAttribute('aria-pressed', String(isPreset));
     presetsWrap.hidden = !isPreset;
@@ -984,7 +989,9 @@ export function renderRevenueRiskTool(
     corridorEl.textContent = formatCorridorLine(corridor, tags);
     for (const [inputId, buttons] of tagButtons) {
       for (const [tag, button] of buttons) {
-        button.setAttribute('aria-pressed', String(tags[inputId] === tag));
+        const active = tags[inputId] === tag;
+        button.className = segmentedButtonClass(active);
+        button.setAttribute('aria-pressed', String(active));
       }
     }
     const showMeasure = shouldShowMeasureFirst(corridor);
@@ -1000,13 +1007,14 @@ export function renderRevenueRiskTool(
     const share = answersAutomationPercent(bridge.getRoutineResult());
     routineFill.hidden = share === null;
     for (const [choice, button] of coverageButtons) {
-      button.setAttribute('aria-pressed', String(botCoverage === choice));
+      const active = botCoverage === choice;
+      button.className = segmentedButtonClass(active);
+      button.setAttribute('aria-pressed', String(active));
     }
-    const chosen = botCoverage !== null;
-    whatIfOutcome.hidden = !chosen;
-    whatIfSource.hidden = !chosen || !botFromRoutine;
-    whatIfTable.hidden = !chosen;
-    if (!chosen || !latestResult || botCoverage === null) return;
+    whatIfOutcome.hidden = false;
+    whatIfSource.hidden = !botFromRoutine;
+    whatIfTable.hidden = false;
+    if (!latestResult) return;
     whatIfOutcome.textContent = `Бот закроет ${botShareLabel(botCoverage)} таких потерь`;
     const coverage = botCoverage;
     const outcome = computeWhatIf(

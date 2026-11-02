@@ -1020,13 +1020,16 @@ a.action-btn {
 
 .segmented-control.segmented-control--triple {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2px;
-  padding: 2px;
+  gap: 6px;
+  padding: 4px;
 }
 
 .segmented-control--triple .segmented-control__btn {
-  padding: 4px;
-  font-size: 12px;
+  min-height: 44px;
+  padding: 6px 4px;
+  font-size: 0.8125rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .measure-first {
@@ -1411,18 +1414,19 @@ a:focus-visible {
   font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1.2;
-  color: var(--text-primary);
+  color: var(--text-muted);
   background: transparent;
-  border: var(--border-width) solid transparent;
+  border: var(--border-width) solid var(--border-color);
   border-radius: var(--radius-sm);
   cursor: pointer;
   text-align: center;
 }
 
+.segmented-control__btn--active,
 .segmented-control__btn[aria-pressed="true"] {
   background: var(--accent-primary);
   color: var(--text-on-accent);
-  border-color: var(--border-strong);
+  border-color: var(--accent-primary);
   box-shadow: var(--shadow-button);
 }
 

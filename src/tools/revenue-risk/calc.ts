@@ -433,6 +433,17 @@ export function botShareLabel(coverage: number): string {
   return `${tenths} из 10`;
 }
 
+/** An unset share opens on 5 из 10. A saved 30% or 70% stays. */
+export function resolvedBotCoverage(stored: number | null | undefined): number {
+  return typeof stored === 'number' && Number.isFinite(stored) ? stored : 0.5;
+}
+
+export function segmentedButtonClass(active: boolean): string {
+  return active
+    ? 'segmented-control__btn segmented-control__btn--active'
+    : 'segmented-control__btn';
+}
+
 export interface WhatIfResult {
   readonly lostNow: number;
   readonly lostWithBot: number;
