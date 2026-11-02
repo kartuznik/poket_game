@@ -9,6 +9,7 @@ import {
 import { READINESS_ITEMS } from '../readiness-check/calc';
 import { getRoutinePresetById } from '../routine-calc/calc';
 import type { MetricSnapshot } from '../../lib/dossier';
+import { nicheTitle, type BusinessNicheId } from '../../lib/niche-presets';
 import { buildProgress, metricDelta } from '../audit-finish/progress';
 import { buildWeekPlan } from '../audit-finish/week-plan';
 import type { ReportSources } from './summary';
@@ -144,6 +145,7 @@ export function buildReportCsv(
   sources: ReportSources,
   history: readonly MetricSnapshot[] = [],
   now = Date.now(),
+  niche: BusinessNicheId | null = null,
 ): string {
   const lines = [
     '# Игра в бизнес · Бизнес-аудит',
@@ -155,6 +157,7 @@ export function buildReportCsv(
 
   if (revenue) {
     const section = 'Выручка';
+    lines.push(csvRow(section, 'Ниша', nicheTitle(niche)));
     lines.push(
       num(section, 'Обращений в месяц', revenue.inputs.leadsPerMonth),
       num(section, 'Доля поздних, %', revenue.inputs.lateSharePercent),

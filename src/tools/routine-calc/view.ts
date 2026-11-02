@@ -1,4 +1,5 @@
 import { createFieldHeading } from '../../components/field-heading';
+import { mountNicheMenu } from '../../components/niche-menu';
 import { createResultBanner } from '../../components/result-banner';
 import { appendPriorContext } from '../../components/prior-context';
 import { createHelpTip, releaseHelpTipsWithin } from '../../components/tooltip';
@@ -6,6 +7,14 @@ import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { recordMetricSnapshot } from '../../lib/dossier';
+import {
+  NICHE_CAPTION,
+  nicheById,
+  nicheCaptionVisible,
+  routineNicheFields,
+  type BusinessNicheId,
+  type NichePreset as BusinessNichePreset,
+} from '../../lib/niche-presets';
 import { isRoutineStartChosen, isRoutineStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
   formatCountWithNoun,
@@ -235,17 +244,21 @@ export function renderRoutineCalcTool(
 
   const operationsGroup = document.createElement('div');
   operationsGroup.className = 'field-group';
+  const operationsNote = nicheNote();
   operationsGroup.append(
     createFieldHeading('rc-ops-input', 'Операций в неделю', 'раз/нед', HELP.operations, () => operationsInput).row,
     operationsInput,
+    operationsNote,
     operationsError,
   );
 
   const minutesGroup = document.createElement('div');
   minutesGroup.className = 'field-group';
+  const minutesNote = nicheNote();
   minutesGroup.append(
     createFieldHeading('rc-minutes-input', 'Минут на операцию', 'мин', HELP.minutes, () => minutesInput).row,
     minutesInput,
+    minutesNote,
     minutesError,
   );
 
@@ -446,6 +459,7 @@ export function renderRoutineCalcTool(
     } else {
       diffBox.hidden = true;
     }
+    paintNicheNotes();
     refreshSteps();
   }
 
@@ -573,7 +587,83 @@ export function renderRoutineCalcTool(
     },
     onFinish: finishRoutine,
   });
+  function nicheNote(): HTMLParagraphElement {
+    const note = document.createElement('p');
+    note.className = 'field-note';
+    note.hidden = true;
+    return note;
+  }
+
+  interface RoutineUndo {
+    readonly operations: string;
+    readonly minutes: string;
+    readonly customEntry: boolean;
+    readonly presetId: RoutinePresetId | null;
+    readonly niche: BusinessNicheId | null;
+  }
+  let routineUndo: RoutineUndo | null = null;
+  let refreshNicheMenu = (): void => {};
+
+  function paintNicheNotes(): void {
+    const preset = nicheById(dossier.read().niche);
+    const rows: readonly [HTMLParagraphElement, string, number | undefined][] = [
+      [operationsNote, operationsRaw, preset?.operationsPerWeek],
+      [minutesNote, minutesRaw, preset?.minutesPerOperation],
+    ];
+    for (const [note, raw, value] of rows) {
+      const show = value !== undefined && nicheCaptionVisible(raw, value);
+      note.hidden = !show;
+      note.textContent = show ? NICHE_CAPTION : '';
+    }
+    refreshNicheMenu();
+  }
+
+  function applyRoutineNiche(preset: BusinessNichePreset): void {
+    routineUndo = {
+      operations: operationsRaw,
+      minutes: minutesRaw,
+      customEntry,
+      presetId,
+      niche: dossier.read().niche,
+    };
+    operationsRaw = String(preset.operationsPerWeek);
+    minutesRaw = String(preset.minutesPerOperation);
+    operationsInput.value = operationsRaw;
+    minutesInput.value = minutesRaw;
+    if (!isRoutineStartChosen(presetId !== null, customEntry)) customEntry = true;
+    markPreset(presetId);
+    dossier.update((current) => ({ ...current, niche: preset.id }));
+    recalculate();
+    persistRoutineDraft(wizard.currentStep());
+  }
+
   refreshSteps = () => wizard.refresh();
+  const nicheMenu = mountNicheMenu({
+    dossier,
+    readFields: (preset) => routineNicheFields({ operations: operationsRaw, minutes: minutesRaw }, preset),
+    applyNumbers: applyRoutineNiche,
+    applyLabel: (id) => {
+      dossier.update((current) => ({ ...current, niche: id }));
+      paintNicheNotes();
+    },
+    undo: () => {
+      if (!routineUndo) return;
+      const previous = routineUndo;
+      routineUndo = null;
+      operationsRaw = previous.operations;
+      minutesRaw = previous.minutes;
+      customEntry = previous.customEntry;
+      operationsInput.value = operationsRaw;
+      minutesInput.value = minutesRaw;
+      markPreset(previous.presetId);
+      dossier.update((current) => ({ ...current, niche: previous.niche }));
+      recalculate();
+      persistRoutineDraft(wizard.currentStep());
+    },
+    hasUndo: () => routineUndo !== null,
+  });
+  refreshNicheMenu = () => nicheMenu.refresh();
+  presetStep.prepend(nicheMenu.element);
   inputCard.append(
     wizard.progress,
     presetStep,

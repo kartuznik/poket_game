@@ -1,3 +1,5 @@
+import type { BusinessNicheId } from './niche-presets';
+import { nicheById } from './niche-presets';
 import type { ToolBridge } from './bridge';
 import type { KeyValueStorage } from './storage';
 import { resolveKeyValueStorage } from './storage';
@@ -97,6 +99,8 @@ export interface BusinessDossier {
   readonly routine: RoutineBridgeSnapshot | null;
   readonly priority: PriorityBridgeSnapshot | null;
   readonly readiness: ReadinessBridgeSnapshot | null;
+  /** Absent in an older record. Unknown ids are read as null, «своя». */
+  readonly niche: BusinessNicheId | null;
   readonly contacts: ContactDraft;
 }
 
@@ -151,6 +155,7 @@ export function emptyDossier(now = 0): BusinessDossier {
     routine: null,
     priority: null,
     readiness: null,
+    niche: null,
     contacts: emptyContacts(),
   };
 }
@@ -298,6 +303,10 @@ function readBotCoverage(value: unknown): number | null | undefined {
   if (value === null) return null;
   if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1) return value;
   return undefined;
+}
+
+function readNiche(value: unknown): BusinessNicheId | null {
+  return typeof value === 'string' ? (nicheById(value)?.id ?? null) : null;
 }
 
 function readRevenueDraft(value: unknown): RevenueDraft | null {
@@ -698,6 +707,7 @@ export function parseDossier(value: unknown): BusinessDossier | null {
     routine: readRoutine(value.routine),
     priority: readPriority(value.priority),
     readiness: readReadiness(value.readiness),
+    niche: readNiche(value.niche),
     contacts: readContacts(value.contacts),
   };
 }

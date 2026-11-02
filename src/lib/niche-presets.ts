@@ -1,0 +1,159 @@
+import type { UncertaintyProfile } from './types';
+
+export type BusinessNicheId = 'cafe-food' | 'beauty' | 'school' | 'freelance' | 'retail';
+
+export interface NichePreset {
+  readonly id: BusinessNicheId;
+  readonly title: string;
+  readonly leadsPerMonth: number;
+  readonly lateSharePercent: number;
+  readonly avgCheck: number;
+  readonly operationsPerWeek: number;
+  readonly minutesPerOperation: number;
+}
+
+/** The three revenue inputs a niche fills. Conversion and recovery stay as they were. */
+export const NICHE_REVENUE_TAGS = {
+  leads: 'guess',
+  lateShare: 'guess',
+  check: 'guess',
+} as const;
+
+export const NICHE_CAPTION = 'значение ниши, сценарное допущение — замените своим замером';
+
+const PRESETS: readonly NichePreset[] = [
+  {
+    id: 'cafe-food',
+    title: 'Кафе и еда',
+    leadsPerMonth: 180,
+    lateSharePercent: 40,
+    avgCheck: 900,
+    operationsPerWeek: 25,
+    minutesPerOperation: 10,
+  },
+  {
+    id: 'beauty',
+    title: 'Бьюти-услуги',
+    leadsPerMonth: 60,
+    lateSharePercent: 25,
+    avgCheck: 2500,
+    operationsPerWeek: 20,
+    minutesPerOperation: 8,
+  },
+  {
+    id: 'school',
+    title: 'Онлайн-школа и коуч',
+    leadsPerMonth: 40,
+    lateSharePercent: 45,
+    avgCheck: 12000,
+    operationsPerWeek: 40,
+    minutesPerOperation: 6,
+  },
+  {
+    id: 'freelance',
+    title: 'Фрилансер и консультант',
+    leadsPerMonth: 15,
+    lateSharePercent: 30,
+    avgCheck: 7000,
+    operationsPerWeek: 15,
+    minutesPerOperation: 12,
+  },
+  {
+    id: 'retail',
+    title: 'Розница и товарка',
+    leadsPerMonth: 120,
+    lateSharePercent: 30,
+    avgCheck: 2200,
+    operationsPerWeek: 25,
+    minutesPerOperation: 10,
+  },
+];
+
+const PRESET_IDS = new Set<string>(PRESETS.map((preset) => preset.id));
+
+export function listNichePresets(): readonly NichePreset[] {
+  return PRESETS;
+}
+
+export function nicheById(id: string | null | undefined): NichePreset | null {
+  if (!id || !PRESET_IDS.has(id)) return null;
+  return PRESETS.find((preset) => preset.id === id) ?? null;
+}
+
+/** `null` is the visitor's own numbers, stored and printed as «своя». */
+export function nicheTitle(id: BusinessNicheId | null): string {
+  return nicheById(id)?.title ?? 'своя';
+}
+
+export function scenarioLine(id: BusinessNicheId | null): string {
+  return `Сценарий: ${nicheTitle(id)}`;
+}
+
+export function applyNicheGuess(tags: UncertaintyProfile): UncertaintyProfile {
+  return {
+    ...tags,
+    leads: NICHE_REVENUE_TAGS.leads,
+    lateShare: NICHE_REVENUE_TAGS.lateShare,
+    check: NICHE_REVENUE_TAGS.check,
+  };
+}
+
+/** Caption stays only while the typed number is still the niche number. */
+export function nicheCaptionVisible(raw: string, presetValue: number): boolean {
+  if (raw.trim() === '') return false;
+  const value = Number(raw);
+  return Number.isFinite(value) && value === presetValue;
+}
+
+export interface NumberField {
+  readonly label: string;
+  readonly current: string;
+  readonly next: string;
+}
+
+export function revenueNicheFields(
+  current: { readonly leads: string; readonly late: string; readonly check: string },
+  preset: NichePreset,
+): readonly NumberField[] {
+  return [
+    { label: 'Обращения в месяц', current: current.leads, next: String(preset.leadsPerMonth) },
+    { label: 'Доля поздних, %', current: current.late, next: String(preset.lateSharePercent) },
+    { label: 'Средний чек, ₽', current: current.check, next: String(preset.avgCheck) },
+  ];
+}
+
+export function routineNicheFields(
+  current: { readonly operations: string; readonly minutes: string },
+  preset: NichePreset,
+): readonly NumberField[] {
+  return [
+    { label: 'Операций в неделю', current: current.operations, next: String(preset.operationsPerWeek) },
+    { label: 'Минут на операцию', current: current.minutes, next: String(preset.minutesPerOperation) },
+  ];
+}
+
+function sameNumber(current: string, next: string): boolean {
+  if (current.trim() === '') return false;
+  const value = Number(current);
+  return Number.isFinite(value) && value === Number(next);
+}
+
+export type NicheApplyPlan = 'noop' | 'label' | 'fill' | 'confirm';
+
+/** Empty fields fill quietly. Different filled numbers ask first. The same preset twice does nothing. */
+export function planNicheApply(
+  currentId: BusinessNicheId | null,
+  presetId: BusinessNicheId,
+  fields: readonly NumberField[],
+): NicheApplyPlan {
+  const sameNumbers = fields.every((field) => sameNumber(field.current, field.next));
+  if (sameNumbers && currentId === presetId) return 'noop';
+  if (sameNumbers) return 'label';
+  const overwrites = fields.some((field) => field.current.trim() !== '' && !sameNumber(field.current, field.next));
+  return overwrites ? 'confirm' : 'fill';
+}
+
+export function formatFieldChange(field: NumberField): string {
+  const from = field.current.trim() === '' ? 'пусто' : field.current;
+  return `${field.label}: ${from} → ${field.next}`;
+}

@@ -125,7 +125,7 @@ export function renderFinalReportTool(
     const filename = reportCsvFilename(savedAt);
     downloadTextFile(
       filename,
-      buildReportCsv(collectReportSources(ctx.bridge), [], savedAt),
+      buildReportCsv(collectReportSources(ctx.bridge), [], savedAt, ctx.dossier.read().niche),
       'text/csv;charset=utf-8',
     );
     showStatusToast(toast, `Таблица скачана: ${filename}.`);

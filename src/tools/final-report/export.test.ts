@@ -74,6 +74,11 @@ describe('report export', () => {
     expect(csv).toContain('Раздел;Показатель;Значение');
     expect(csv).not.toContain('Предыдущее');
     expect(csv).not.toContain('Изменение');
+    expect(csv).toContain('Выручка;Ниша;своя');
+    const nicheLine = buildReportCsv(sources, [], 1, 'school')
+      .split('\r\n')
+      .find((line) => line.startsWith('Выручка;Ниша;'));
+    expect(nicheLine?.split(';')).toEqual(['Выручка', 'Ниша', 'Онлайн-школа и коуч']);
     expect(csv).toContain('Выручка;Итого риск, ₽;31500');
     expect(csv).toContain('Выручка;Итого потенциал, ₽;22050');
     expect(csv).toContain('Готовность;Баллы;1,5');
@@ -136,6 +141,7 @@ describe('report export', () => {
       },
     });
     expect(csv).toContain('Рутина;Итого экономия, ₽/мес;');
+    expect(csv).not.toContain('Ниша');
     expect(csv).toContain('Рутина;Часов в месяц;0');
     expect(csv).not.toContain('Итого часов');
   });

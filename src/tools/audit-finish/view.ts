@@ -17,6 +17,7 @@ import {
   buildAuditHandoff,
   buildTelegramSummary,
 } from './report';
+import { scenarioLine } from '../../lib/niche-presets';
 import { buildDashboard } from './dashboard';
 import { buildInsights } from './insights';
 import { buildProgress, progressChart } from './progress';
@@ -182,7 +183,10 @@ export function renderAuditFinish(
     tile.append(label, value, note);
     dashboardGrid.append(tile);
   }
-  dashboard.append(dashboardGrid);
+  const scenario = document.createElement('p');
+  scenario.className = 'finish-dashboard__scenario';
+  scenario.textContent = scenarioLine(dossier.read().niche);
+  dashboard.append(scenario, dashboardGrid);
   card.append(dashboard);
 
   const insights = buildInsights(sources);
@@ -318,7 +322,7 @@ export function renderAuditFinish(
     const filename = reportCsvFilename(savedAt);
     downloadTextFile(
       filename,
-      buildReportCsv(collectReportSources(bridge), dossier.read().history, savedAt),
+      buildReportCsv(collectReportSources(bridge), dossier.read().history, savedAt, dossier.read().niche),
       'text/csv;charset=utf-8',
     );
     showStatusToast(toast, `Таблица скачана: ${filename}.`);

@@ -1,9 +1,19 @@
+import { mountNicheMenu } from '../../components/niche-menu';
 import { createResultBanner } from '../../components/result-banner';
 import { createHelpTip, releaseHelpTipsWithin, setHelpTipText } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { recordMetricSnapshot } from '../../lib/dossier';
+import {
+  NICHE_CAPTION,
+  applyNicheGuess,
+  nicheById,
+  nicheCaptionVisible,
+  revenueNicheFields,
+  type BusinessNicheId,
+  type NichePreset as BusinessNichePreset,
+} from '../../lib/niche-presets';
 import type { RevenueRiskFieldErrors } from './calc';
 import { isRevenueStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
@@ -284,7 +294,8 @@ export function renderRevenueRiskTool(
   leadsError.id = 'rr-leads-error';
   leadsError.hidden = true;
 
-  leadsGroup.append(leadsHeading.row, leadsInput, leadsError);
+  const leadsNote = nicheNote();
+  leadsGroup.append(leadsHeading.row, leadsInput, leadsNote, leadsError);
 
   // Field 2: Late / missed share (slider 0-100% + numeric input)
   const lateGroup = document.createElement('div');
@@ -332,7 +343,8 @@ export function renderRevenueRiskTool(
   lateError.id = 'rr-late-error';
   lateError.hidden = true;
 
-  lateGroup.append(lateHeading.row, lateSliderRow, lateError);
+  const lateNote = nicheNote();
+  lateGroup.append(lateHeading.row, lateSliderRow, lateNote, lateError);
 
   // Field 3: Conversion Mode Segmented Control + Input / Presets
   const convGroup = document.createElement('div');
@@ -538,7 +550,8 @@ export function renderRevenueRiskTool(
   checkError.id = 'rr-check-error';
   checkError.hidden = true;
 
-  checkGroup.append(checkHeading.row, checkInput, checkError);
+  const checkNote = nicheNote();
+  checkGroup.append(checkHeading.row, checkInput, checkNote, checkError);
 
   const leadStep = document.createElement('div');
   leadStep.className = 'step-panel';
@@ -969,6 +982,7 @@ export function renderRevenueRiskTool(
 
     latestResult = calcResult;
     paintCertainty();
+    paintNicheNotes();
     refreshSteps();
     return { calcResult, validation };
   }
@@ -1238,6 +1252,60 @@ export function renderRevenueRiskTool(
     mode,
   }).errors;
 
+  function nicheNote(): HTMLParagraphElement {
+    const note = document.createElement('p');
+    note.className = 'field-note';
+    note.hidden = true;
+    return note;
+  }
+
+  interface RevenueUndo {
+    readonly leads: string;
+    readonly late: string;
+    readonly check: string;
+    readonly tags: UncertaintyProfile;
+    readonly niche: BusinessNicheId | null;
+  }
+  let revenueUndo: RevenueUndo | null = null;
+  let refreshNicheMenu = (): void => {};
+
+  function paintNicheNotes(): void {
+    const preset = nicheById(dossier.read().niche);
+    const rows: readonly [HTMLParagraphElement, string, number | undefined][] = [
+      [leadsNote, leadsRaw, preset?.leadsPerMonth],
+      [lateNote, lateShareRaw, preset?.lateSharePercent],
+      [checkNote, avgCheckRaw, preset?.avgCheck],
+    ];
+    for (const [note, raw, value] of rows) {
+      const show = value !== undefined && nicheCaptionVisible(raw, value);
+      note.hidden = !show;
+      note.textContent = show ? NICHE_CAPTION : '';
+    }
+    refreshNicheMenu();
+  }
+
+  function applyRevenueNiche(preset: BusinessNichePreset): void {
+    revenueUndo = {
+      leads: leadsRaw,
+      late: lateShareRaw,
+      check: avgCheckRaw,
+      tags,
+      niche: dossier.read().niche,
+    };
+    leadsRaw = String(preset.leadsPerMonth);
+    lateShareRaw = String(preset.lateSharePercent);
+    avgCheckRaw = String(preset.avgCheck);
+    leadsInput.value = leadsRaw;
+    lateInput.value = lateShareRaw;
+    lateSlider.value = lateShareRaw;
+    lateSlider.removeAttribute('aria-valuetext');
+    checkInput.value = avgCheckRaw;
+    tags = applyNicheGuess(tags);
+    dossier.update((current) => ({ ...current, niche: preset.id }));
+    recalculateAndRender();
+    persistRevenueDraft(wizard.currentStep());
+  }
+
   let refreshSteps = (): void => {};
   const wizard = createWizard({
     toolId: 'revenue-risk',
@@ -1257,6 +1325,35 @@ export function renderRevenueRiskTool(
     onFinish: finishRevenue,
   });
   refreshSteps = () => wizard.refresh();
+  const nicheMenu = mountNicheMenu({
+    dossier,
+    readFields: (preset) => revenueNicheFields({ leads: leadsRaw, late: lateShareRaw, check: avgCheckRaw }, preset),
+    applyNumbers: applyRevenueNiche,
+    applyLabel: (id) => {
+      dossier.update((current) => ({ ...current, niche: id }));
+      paintNicheNotes();
+    },
+    undo: () => {
+      if (!revenueUndo) return;
+      const previous = revenueUndo;
+      revenueUndo = null;
+      leadsRaw = previous.leads;
+      lateShareRaw = previous.late;
+      avgCheckRaw = previous.check;
+      tags = previous.tags;
+      leadsInput.value = leadsRaw;
+      lateInput.value = lateShareRaw;
+      lateSlider.value = lateShareRaw === '' ? '0' : lateShareRaw;
+      if (lateShareRaw.trim() === '') lateSlider.setAttribute('aria-valuetext', 'Не задано');
+      checkInput.value = avgCheckRaw;
+      dossier.update((current) => ({ ...current, niche: previous.niche }));
+      recalculateAndRender();
+      persistRevenueDraft(wizard.currentStep());
+    },
+    hasUndo: () => revenueUndo !== null,
+  });
+  refreshNicheMenu = () => nicheMenu.refresh();
+  leadStep.prepend(nicheMenu.element);
   inputCard.append(
     wizard.progress,
     leadStep,

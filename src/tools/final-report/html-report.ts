@@ -11,6 +11,7 @@ import {
   formatCorridorLine,
   formatUncertaintyProfile,
 } from '../revenue-risk/calc';
+import { nicheTitle } from '../../lib/niche-presets';
 import { formatGeneratedAt, reportFileDay } from './export';
 import { EMPTY_REPORT_TEXT } from './summary';
 
@@ -203,6 +204,7 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
     const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
     const band = computeCorridor(revenue.inputs, tags);
     const rows = [
+      `<tr><th>Ниша</th><td>${esc(nicheTitle(dossier.niche))}</td></tr>`,
       `<tr><th>Коридор</th><td>${esc(formatCorridorLine(band, tags))}</td></tr>`,
       `<tr><th>Точность</th><td>${esc(formatUncertaintyProfile(tags))}</td></tr>`,
     ];

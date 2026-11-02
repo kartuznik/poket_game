@@ -98,6 +98,11 @@ describe('html report', () => {
   it('is a self-contained page with the four headline numbers', () => {
     const html = buildHtmlReport(visit(), Date.parse('2026-10-31T11:32:00Z'));
     expect(html.startsWith('<!DOCTYPE html>')).toBe(true);
+    expect(html).toContain('>Ниша<');
+    expect(html).toContain('>своя<');
+    expect(buildHtmlReport({ ...visit(), niche: 'cafe-food' }, Date.parse('2026-10-31T11:32:00Z'))).toContain(
+      '>Кафе и еда<',
+    );
     expect(html).toContain('>Риск<');
     expect(html).toContain('>Потенциал<');
     expect(html).toContain('>Часы<');

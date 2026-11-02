@@ -436,6 +436,56 @@ describe('business dossier', () => {
     expect(saved.revenue.results.revenueAtRiskMax).toBe(800);
   });
 
+  it('reads a missing or unknown niche as своя and keeps the visit', () => {
+    const revenue = {
+      toolId: 'revenue-risk',
+      updatedAt: 4,
+      inputs: {
+        leadsPerMonth: 80,
+        lateSharePercent: 10,
+        conversionPercent: 20,
+        avgCheck: 500,
+        lossFactor: 0.3,
+        mode: 'custom',
+      },
+      results: {
+        lateLeads: 8,
+        revenueAtRiskMax: 800,
+        recoverableRevenue: 560,
+        revenueAtRiskPerYear: 9600,
+        costPerMissedDialog: 100,
+      },
+    };
+    const missing = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      contacts: { name: 'Анна', telegram: '', phone: '', business: '' },
+      revenue,
+    });
+    expect(missing?.niche).toBeNull();
+    expect(missing?.revenue?.results.revenueAtRiskMax).toBe(800);
+    expect(missing?.contacts.name).toBe('Анна');
+
+    const unknown = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      niche: 'not-a-niche',
+      contacts: { name: 'Анна', telegram: '', phone: '', business: '' },
+      revenue,
+    });
+    expect(unknown?.niche).toBeNull();
+    expect(unknown?.revenue?.results.revenueAtRiskMax).toBe(800);
+
+    const known = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      niche: 'cafe-food',
+      contacts: { name: 'Анна', telegram: '', phone: '', business: '' },
+    });
+    expect(known?.niche).toBe('cafe-food');
+    expect(known?.version).toBe(2);
+  });
+
   it('does not overwrite a dossier whose version it does not know', () => {
     const raw = JSON.stringify({ version: 99, updatedAt: 1, contacts: { name: 'Анна' } });
     const storage = memoryStorage(new Map([[DOSSIER_STORAGE_KEY, raw]]));

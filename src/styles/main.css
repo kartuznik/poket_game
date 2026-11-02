@@ -579,6 +579,48 @@ body {
   min-width: 0;
 }
 
+.finish-dashboard__scenario {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.niche-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.niche-menu__toggle,
+.niche-menu__list .action-btn,
+.niche-menu > .action-btn {
+  width: 100%;
+}
+
+.niche-menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-note {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.confirm-dialog__lines {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
 .finish-dashboard__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
