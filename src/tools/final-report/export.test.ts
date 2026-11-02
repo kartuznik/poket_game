@@ -53,11 +53,11 @@ const sources: ReportSources = {
 describe('report export', () => {
   it('writes a note for Efim from the same summary', () => {
     const text = buildEfimReport(sources);
-    expect(text.startsWith('Игра в бизнес — отчёт для Ефима')).toBe(true);
+    expect(text.startsWith('Риск выручки:')).toBe(true);
     expect(text).toContain('• Правила ответа');
     expect(text).toContain('• Один сценарий');
     expect(text).toContain(buildFinalSummary(sources).lead);
-    expect(text).toContain('Рано');
+    expect(text).not.toContain('Рано');
     expect(text).toContain('https://kartuznik.github.io/poket_game/');
     expect(buildEfimReport({ revenue: null, routine: null, priority: null, readiness: null })).toContain(
       'Заполните хотя бы один инструмент',
@@ -80,12 +80,12 @@ describe('report export', () => {
       .find((line) => line.startsWith('Выручка;Ниша;'));
     expect(nicheLine?.split(';')).toEqual(['Выручка', 'Ниша', 'Онлайн-школа и коуч']);
     expect(csv).toContain('Выручка;Итого риск, ₽;31500');
-    expect(csv).toContain('Выручка;Итого потенциал, ₽;22050');
+    expect(csv).toContain('Выручка;Можно вернуть, ₽;22050');
     expect(csv).toContain('Готовность;Баллы;1,5');
     expect(csv).not.toContain('Итого баллов');
     expect(csv).toContain('Выручка;Коридор от, ₽;');
     expect(csv).toContain('Выручка;Коридор до, ₽;');
-    expect(csv).toContain('Выручка;Профиль точности;');
+    expect(csv).toContain('Выручка;Насколько вы уверены в цифрах;');
     expect(csv).toContain('доля возврата — наугад');
     expect(csv).not.toContain('Покрытие ботом');
     expect(csv).toContain('Готовность;Вердикт;Рано');

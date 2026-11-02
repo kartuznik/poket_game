@@ -1,12 +1,11 @@
 import { formatRubles, formatWorkHours } from '../../lib/format';
 import {
-  computeCorridor,
-  defaultUncertainty,
-  formatCorridorLine,
-  isAllPrecise,
-} from '../revenue-risk/calc';
-import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from '../final-report/summary';
-import type { RevenueRiskBridgeSnapshot } from '../../lib/types';
+  EMPTY_REPORT_TEXT,
+  buildFinalSummary,
+  buildThesisPieces,
+  thesisText,
+  type ReportSources,
+} from '../final-report/summary';
 import type { MetricSnapshot } from '../../lib/dossier';
 import { buildWeekPlan } from './week-plan';
 import { buildProgress, formatDayMonth } from './progress';
@@ -73,7 +72,7 @@ export function buildAuditHandoff(
   now = Date.now(),
 ): string {
   const summary = buildFinalSummary(sources);
-  const lines = ['Игра в бизнес — отчёт для Ефима', ''];
+  const lines: string[] = [];
 
   if (!summary.hasData) {
     lines.push(
@@ -99,8 +98,6 @@ export function buildAuditHandoff(
   if (plan.length > 0) {
     lines.push('Что сделать на этой неделе');
     for (const step of plan) lines.push(`• ${step.text}`);
-    const due = formatRemeasureBy(sources);
-    if (due) lines.push(due);
     lines.push('');
   }
   const progress = progressSentence(sources, history, now);
@@ -123,27 +120,22 @@ export function formatRemeasureBy(sources: ReportSources): string | null {
   return `Повторить замер до ${formatDayMonth(latest + 7 * DAY_MS)}.`;
 }
 
-function telegramRevenueLine(revenue: RevenueRiskBridgeSnapshot): string {
-  const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
-  if (isAllPrecise(tags)) {
-    return `Возврат: ${formatRubles(revenue.results.recoverableRevenue)}/мес`;
-  }
-  const corridor = computeCorridor(revenue.inputs, tags);
-  return `Возврат: ${formatCorridorLine(corridor, tags)}`;
-}
-
 /**
  * Messenger-sized summary. A later lead bot can send this same text.
- * Round 1 only copies it into Telegram. At most six lines.
+ * At most six lines. Four confirmed tools fit in five.
  */
 export function buildTelegramSummary(sources: ReportSources): string {
-  const lines = ['Игра в бизнес'];
-  if (sources.revenue) lines.push(telegramRevenueLine(sources.revenue));
-  if (sources.routine) {
-    lines.push(`Рутина: ${formatWorkHours(sources.routine.results.savedHoursPerMonth)}`);
+  const thesis = buildThesisPieces(sources);
+  const lines = [thesis.length > 0 ? thesisText(thesis) : EMPTY_REPORT_TEXT];
+  if (sources.routine && sources.revenue) {
+    lines.push(`Ручная работа: ${formatWorkHours(sources.routine.results.hoursPerMonth)}`);
   }
-  if (sources.priority) lines.push(`Первым: ${sources.priority.results.topTitle}`);
-  if (sources.readiness) lines.push(`Готовность: ${sources.readiness.results.bandLabel}`);
+  if (sources.priority && (sources.revenue || sources.routine)) {
+    lines.push(`Первым: ${sources.priority.results.topTitle}`);
+  }
+  if (sources.readiness && (sources.revenue || sources.routine || sources.priority)) {
+    lines.push(`Чек-лист: ${sources.readiness.results.bandLabel}`);
+  }
   lines.push('https://kartuznik.github.io/poket_game/');
   return lines.join('\n');
 }

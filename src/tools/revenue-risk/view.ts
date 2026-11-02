@@ -35,13 +35,13 @@ import {
   type NichePresetId,
   REVENUE_RISK_DEFAULTS,
   BOT_COVERAGE_CHOICES,
-  CORRIDOR_WIDTH_NOTE,
   UNCERTAINTY_INPUT_LABELS,
   UNCERTAINTY_TAG_LABELS,
   calculateRevenueRisk,
   computeCorridor,
   computeWhatIf,
   defaultUncertainty,
+  botShareLabel,
   formatCorridorLine,
   formatUncertaintyProfile,
   getNichePresetById,
@@ -148,8 +148,8 @@ export function buildRevenueRiskShareText(params: {
     `• Средний чек: ${formatRubles(params.avgCheck)}`,
     '',
     'Результаты:',
-    `• Потенциал возврата: ${formatRubles(params.recoverableRevenue)}/мес`,
-    `• Коридор: ${formatCorridorLine(
+    `• Можно вернуть: ${formatRubles(params.recoverableRevenue)}/мес`,
+    `• ${formatCorridorLine(
       computeCorridor(
         {
           leadsPerMonth: params.leadsPerMonth,
@@ -161,8 +161,8 @@ export function buildRevenueRiskShareText(params: {
         params.tags,
       ),
       params.tags,
-    )} при моём профиле точности`,
-    `• Профиль точности: ${formatUncertaintyProfile(params.tags)}`,
+    )}`,
+    `• Насколько вы уверены в цифрах: ${formatUncertaintyProfile(params.tags)}`,
     `• Выручка под риском в месяц: ${formatRubles(params.revenueAtRiskMax)}`,
     `• Поздних обращений: ${formatCountWithNoun(Math.round(params.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес`,
     `• Выручка под риском в год: ${formatRubles(params.revenueAtRiskPerYear)}`,
@@ -578,7 +578,7 @@ export function renderRevenueRiskTool(
 
   const eyebrow = document.createElement('div');
   eyebrow.className = 'result-card__eyebrow';
-  eyebrow.innerHTML = `<span>ПОТЕНЦИАЛ ВОЗВРАТА</span><span>@_kartuzzz</span>`;
+  eyebrow.innerHTML = `<span>МОЖНО ВЕРНУТЬ</span><span>@_kartuzzz</span>`;
 
   const mainValueEl = document.createElement('p');
   mainValueEl.className = 'result-card__value';
@@ -592,7 +592,7 @@ export function renderRevenueRiskTool(
   certaintyDetails.className = 'certainty-details';
   const certaintySummary = document.createElement('summary');
   certaintySummary.className = 'certainty-details__summary';
-  certaintySummary.textContent = 'Точность входов';
+  certaintySummary.textContent = 'Насколько вы уверены в цифрах';
   const certaintyBody = document.createElement('div');
   certaintyBody.className = 'certainty-details__body';
   const tagButtons = new Map<UncertaintyInputId, Map<UncertaintyTag, HTMLButtonElement>>();
@@ -640,10 +640,7 @@ export function renderRevenueRiskTool(
   measureTitle.textContent = 'Что замерить первым';
   const measureTargets = document.createElement('p');
   measureTargets.className = 'measure-first__targets';
-  const measureNote = document.createElement('p');
-  measureNote.className = 'measure-first__note';
-  measureNote.textContent = CORRIDOR_WIDTH_NOTE;
-  measureBlock.append(measureTitle, measureTargets, measureNote);
+  measureBlock.append(measureTitle, measureTargets);
 
   const whatIf = document.createElement('section');
   whatIf.className = 'what-if';
@@ -652,17 +649,17 @@ export function renderRevenueRiskTool(
   whatIfTitle.textContent = 'Что если первый ответ — бот';
   const whatIfCaption = document.createElement('p');
   whatIfCaption.className = 'what-if__caption';
-  whatIfCaption.textContent = 'Какую долю этих потерь закроет бот';
+  whatIfCaption.textContent = 'Доля потерь, которую закроет бот';
   const whatIfControl = document.createElement('div');
   whatIfControl.className = 'segmented-control segmented-control--triple';
   whatIfControl.setAttribute('role', 'group');
-  whatIfControl.setAttribute('aria-label', 'Какую долю этих потерь закроет бот');
+  whatIfControl.setAttribute('aria-label', 'Доля потерь, которую закроет бот');
   const coverageButtons = new Map<number, HTMLButtonElement>();
   for (const choice of BOT_COVERAGE_CHOICES) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'segmented-control__btn';
-    button.textContent = `${Math.round(choice * 100)}%`;
+    button.textContent = botShareLabel(choice);
     button.addEventListener('click', () => {
       botCoverage = choice;
       botFromRoutine = false;
@@ -684,10 +681,8 @@ export function renderRevenueRiskTool(
     paintWhatIf();
     persistRevenueDraft(wizard.currentStep());
   });
-  const whatIfHint = document.createElement('p');
-  whatIfHint.className = 'what-if__hint';
-  whatIfHint.textContent =
-    'Это ваша оценка, не замер. 70% значит: бот снимает семь из десяти таких потерь.';
+  const whatIfOutcome = document.createElement('p');
+  whatIfOutcome.className = 'what-if__outcome';
   const whatIfSource = document.createElement('p');
   whatIfSource.className = 'what-if__source';
   whatIfSource.textContent = 'подставили из вашей рутины, можно менять';
@@ -701,16 +696,12 @@ export function renderRevenueRiskTool(
   whatIf.append(
     whatIfTitle,
     whatIfCaption,
-    whatIfHint,
     whatIfControl,
     routineFill,
     whatIfSource,
+    whatIfOutcome,
     whatIfTable,
   );
-
-  const subNoteEl = document.createElement('p');
-  subNoteEl.className = 'result-card__note';
-  subNoteEl.id = 'rr-result-late-leads';
 
   const metricsGrid = document.createElement('div');
   metricsGrid.className = 'metrics-grid';
@@ -771,7 +762,6 @@ export function renderRevenueRiskTool(
     certaintyDetails,
     measureBlock,
     whatIf,
-    subNoteEl,
     metricsGrid,
     triggerBanner,
     resultDisclaimerEl,
@@ -943,8 +933,6 @@ export function renderRevenueRiskTool(
 
     riskLineEl.textContent = `Выручка под риском: ${formatRubles(calcResult.revenueAtRiskMax)}/мес`;
     mainValueEl.textContent = `${formatRubles(calcResult.recoverableRevenue)}/мес`;
-    subNoteEl.textContent = `В зоне риска ${formatCountWithNoun(Math.round(calcResult.lateLeads), ['позднее обращение', 'поздних обращения', 'поздних обращений'])} из ${formatIntegerGrouping(normalizedInput.leadsPerMonth)} в месяц.`;
-
     yearValEl.textContent = formatRubles(calcResult.revenueAtRiskPerYear);
 
     triggerBanner.innerHTML = `Один вовремя отвеченный диалог может принести <span class="trigger-banner__highlight">${formatRubles(calcResult.costPerMissedDialog)}</span>`;
@@ -956,7 +944,7 @@ export function renderRevenueRiskTool(
       <ol class="formula-list">
         <li>Поздние обращения = ${formatIntegerGrouping(normalizedInput.leadsPerMonth)} × ${formatPercent(normalizedInput.lateSharePercent)} = <strong>${formatCountWithNoun(Math.round(calcResult.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес</strong></li>
         <li>Выручка под риском в месяц = ${Math.round(calcResult.lateLeads)} × ${formatPercent(normalizedInput.conversionPercent)} × ${formatRubles(normalizedInput.avgCheck)} = <strong>${formatRubles(calcResult.revenueAtRiskMax)}</strong></li>
-        <li>Потенциал возврата = ${formatRubles(calcResult.revenueAtRiskMax)} × ${formatPercent(recoveryPercent)} = <strong>${formatRubles(calcResult.recoverableRevenue)}/мес</strong></li>
+        <li>Можно вернуть = ${formatRubles(calcResult.revenueAtRiskMax)} × ${formatPercent(recoveryPercent)} = <strong>${formatRubles(calcResult.recoverableRevenue)}/мес</strong></li>
         <li>Выручка под риском в год = ${formatRubles(calcResult.revenueAtRiskMax)} × 12 = <strong>${formatRubles(calcResult.revenueAtRiskPerYear)}</strong></li>
         <li>Один вовремя отвеченный диалог = ${formatRubles(normalizedInput.avgCheck)} × ${formatPercent(normalizedInput.conversionPercent)} = <strong>${formatRubles(calcResult.costPerMissedDialog)}</strong></li>
       </ol>
@@ -1015,10 +1003,11 @@ export function renderRevenueRiskTool(
       button.setAttribute('aria-pressed', String(botCoverage === choice));
     }
     const chosen = botCoverage !== null;
-    whatIfHint.hidden = false;
+    whatIfOutcome.hidden = !chosen;
     whatIfSource.hidden = !chosen || !botFromRoutine;
     whatIfTable.hidden = !chosen;
     if (!chosen || !latestResult || botCoverage === null) return;
+    whatIfOutcome.textContent = `Бот закроет ${botShareLabel(botCoverage)} таких потерь`;
     const coverage = botCoverage;
     const outcome = computeWhatIf(
       {

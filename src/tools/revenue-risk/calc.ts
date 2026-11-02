@@ -303,7 +303,7 @@ export const UNCERTAINTY_SPREAD: Readonly<Record<UncertaintyTag, number>> = {
 };
 
 export const CORRIDOR_POINT_LINE =
-  'вы уверены во всех входах — коридор схлопнулся в точку';
+  'Коридор схлопнулся: во всех входах вы уверены';
 
 export const CORRIDOR_WIDTH_NOTE =
   'Ширина коридора показывает вашу неопределённость во всех входах. Чтобы сузить — уточните теги на самые важные для вас параметры';
@@ -423,8 +423,14 @@ export function formatUncertaintyProfile(tags: UncertaintyProfile): string {
 }
 
 export function formatCorridorLine(corridor: RevenueCorridor, tags: UncertaintyProfile): string {
-  if (isAllPrecise(tags)) return `${formatRubles(corridor.base)}, ${CORRIDOR_POINT_LINE}`;
-  return `от ${formatRubles(corridor.low)} до ${formatRubles(corridor.high)}/мес`;
+  if (isAllPrecise(tags)) return `${formatRubles(corridor.base)}/мес. ${CORRIDOR_POINT_LINE}`;
+  return `От ${formatRubles(corridor.low)} до ${formatRubles(corridor.high)}/мес — входы ещё не точные`;
+}
+
+/** «3 из 10», «5 из 10», «7 из 10». Other shares round to the nearest tenth. */
+export function botShareLabel(coverage: number): string {
+  const tenths = Math.round(Math.min(1, Math.max(0, normalizeFiniteNumber(coverage, 0))) * 10);
+  return `${tenths} из 10`;
 }
 
 export interface WhatIfResult {

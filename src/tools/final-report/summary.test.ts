@@ -107,24 +107,28 @@ describe('buildFinalSummary', () => {
     const summary = buildFinalSummary({ ...empty, revenue });
     expect(summary.hasData).toBe(true);
     expect(summary.lead).toContain('22');
-    expect(summary.lead).toContain('Потенциал возврата');
+    expect(summary.lead).toContain('Можно вернуть:');
+    expect(summary.lead).not.toContain('Потенциал');
     expect(summary.blocks).toHaveLength(1);
-    expect(summary.blocks[0]?.text).toContain('Профиль точности');
-    expect(summary.blocks[0]?.text).toContain('от ');
+    expect(summary.blocks[0]?.text).toContain('Насколько вы уверены в цифрах');
+    expect(summary.blocks[0]?.text).toContain('От ');
   });
 
   it('joins priority, savings and revenue into one lead', () => {
     const summary = buildFinalSummary({ revenue, routine, priority, readiness });
     expect(summary.lead).toBe(
-      'Ваш главный приоритет: Приём обращений. Можно вернуть 12,1\u00A0часа в месяц. Потенциал возврата: 22\u00A0050\u00A0₽. Готовность: Рано.',
+      'Риск выручки: 31\u00A0500\u00A0₽/мес. Можно вернуть: 22\u00A0050\u00A0₽ при быстрых ответах.',
     );
     expect(summary.headline).toBe('Приём обращений');
     expect(summary.blocks.map((block) => block.title)).toEqual([
       'Что первым',
       'Рутина',
-      'Потенциал возврата',
+      'Насколько цифра плавает',
       'Готовность',
     ]);
+    expect(summary.blocks[1]?.text).not.toContain('час');
+    expect(summary.blocks[3]?.text).toBe('Не закрыто:');
+    expect(summary.blocks[3]?.text).not.toContain('Рано');
   });
 
   it('says when the hourly rate was not given', () => {

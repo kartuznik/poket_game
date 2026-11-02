@@ -197,7 +197,6 @@ export function renderReadinessCheckTool(
     'Меньше 4 — «Рано».',
     'От 4 до 6,5 — «Закройте пробелы».',
     '7 и выше — «Можно начинать».',
-    'В списке ниже всё, где ответ не «Да».',
   ]) {
     const item = document.createElement('li');
     item.textContent = line;

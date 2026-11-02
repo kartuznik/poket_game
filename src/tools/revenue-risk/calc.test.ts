@@ -376,7 +376,7 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
     expect(corridor.high).toBeCloseTo(base, 5);
     expect(corridor.base).toBeCloseTo(22050, 5);
     expect(formatCorridorLine(corridor, tags)).toBe(
-      '22\u00A0050\u00A0₽, вы уверены во всех входах — коридор схлопнулся в точку',
+      '22\u00A0050\u00A0₽/мес. Коридор схлопнулся: во всех входах вы уверены',
     );
     expect(shouldShowMeasureFirst(corridor)).toBe(false);
   });

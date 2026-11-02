@@ -1,7 +1,6 @@
 import { metricsFromDossier, type BusinessDossier, type MetricSnapshot } from '../../lib/dossier';
 import { formatNumber, formatWorkHours } from '../../lib/format';
 import { buildProgress, progressChart } from '../audit-finish/progress';
-import { formatRemeasureBy } from '../audit-finish/report';
 import { buildWeekPlan } from '../audit-finish/week-plan';
 import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import {
@@ -13,7 +12,7 @@ import {
 } from '../revenue-risk/calc';
 import { nicheTitle } from '../../lib/niche-presets';
 import { formatGeneratedAt, reportFileDay } from './export';
-import { EMPTY_REPORT_TEXT } from './summary';
+import { EMPTY_REPORT_TEXT, buildThesisPieces } from './summary';
 
 const PRODUCT_URL = 'https://kartuznik.github.io/poket_game/';
 
@@ -111,7 +110,8 @@ a { color: var(--text-accent); }
 h1, h2, h3, p { margin: 0; }
 header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
 .mark { width: 32px; height: 32px; border: 2px solid var(--accent-primary); border-radius: 8px; background: var(--bg-result); }
-h1 { font-size: 1.35rem; line-height: 1.25; }
+h1 { font-size: 1.15rem; line-height: 1.3; font-weight: 650; }
+h1 strong { font-weight: 800; }
 .muted { color: var(--text-secondary); }
 .handle { font-weight: 800; }
 .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
@@ -178,22 +178,22 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
 
   const cards = [
     metricCard(
-      'Риск',
+      'Под риском за месяц',
       revenue ? rubles(revenue.results.revenueAtRiskMax) : 'нет замера',
-      revenue ? 'в месяц' : '',
+      '',
     ),
     metricCard(
-      'Потенциал',
+      'Можно вернуть за месяц',
       revenue ? rubles(revenue.results.recoverableRevenue) : 'нет замера',
-      revenue ? 'можно вернуть' : '',
+      '',
     ),
     metricCard(
-      'Часы',
+      'Часы ручной работы',
       routine ? formatWorkHours(routine.results.hoursPerMonth) : 'нет замера',
-      routine ? 'рутина в месяц' : '',
+      '',
     ),
     metricCard(
-      'Готовность',
+      'Чек-лист из 9',
       readiness ? String(readiness.results.score).replace('.', ',') : 'нет замера',
       readiness ? readiness.results.bandLabel : '',
     ),
@@ -205,8 +205,8 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
     const band = computeCorridor(revenue.inputs, tags);
     const rows = [
       `<tr><th>Ниша</th><td>${esc(nicheTitle(dossier.niche))}</td></tr>`,
-      `<tr><th>Коридор</th><td>${esc(formatCorridorLine(band, tags))}</td></tr>`,
-      `<tr><th>Точность</th><td>${esc(formatUncertaintyProfile(tags))}</td></tr>`,
+      `<tr><th>Разброс</th><td>${esc(formatCorridorLine(band, tags))}</td></tr>`,
+      `<tr><th>Насколько вы уверены в цифрах</th><td>${esc(formatUncertaintyProfile(tags))}</td></tr>`,
     ];
     if (typeof revenue.botCoverage === 'number') {
       const whatIf = computeWhatIf(
@@ -219,7 +219,7 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
         `<tr><th>Предотвращено</th><td>${esc(rubles(whatIf.prevented))}</td></tr>`,
       );
     }
-    corridor = `<section><h2>Коридор и бот</h2><div class="panel"><table>${rows.join('')}</table></div></section>`;
+    corridor = `<section><h2>Насколько цифра плавает</h2><div class="panel"><table>${rows.join('')}</table></div></section>`;
   }
 
   let top = '';
@@ -243,15 +243,18 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
   }
 
   const plan = buildWeekPlan(sources);
-  const due = formatRemeasureBy(sources);
   const planHtml =
     plan.length === 0
       ? ''
       : `<section class="week-plan"><h2>Что сделать на этой неделе</h2><ol>${plan
           .map((step) => `<li>${esc(step.text)}</li>`)
-          .join('')}</ol>${due ? `<p>${esc(due)}</p>` : ''}</section>`;
+          .join('')}</ol></section>`;
 
-  const empty = hasData ? '' : `<p class="panel">${esc(EMPTY_REPORT_TEXT)}</p>`;
+  const thesis = hasData
+    ? buildThesisPieces(sources)
+        .map((piece) => (piece.strong ? `<strong>${esc(piece.text)}</strong>` : esc(piece.text)))
+        .join('')
+    : esc(EMPTY_REPORT_TEXT);
 
   return `<!DOCTYPE html>
 <html lang="ru">
@@ -265,12 +268,9 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
 <main>
 <header>
 <span class="mark" aria-hidden="true"></span>
-<h1>Игра в бизнес · Бизнес-аудит</h1>
-<p class="muted">${esc(stamp)}</p>
+<h1>${thesis}</h1>
 <p class="handle">@_kartuzzz</p>
-<p><a href="${PRODUCT_URL}">Открыть расчёт</a></p>
 </header>
-${empty}
 <section class="metrics" aria-label="Сводка">${cards}</section>
 ${corridor}
 ${top}

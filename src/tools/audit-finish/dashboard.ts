@@ -18,25 +18,25 @@ export function buildDashboard(sources: ReportSources): readonly DashboardCard[]
   return [
     {
       id: 'risk',
-      label: 'Риск выручки',
+      label: 'Под риском за месяц',
       value: revenue ? formatRubles(revenue.results.revenueAtRiskMax) : '—',
-      note: revenue ? 'в месяц' : UNMEASURED,
+      note: revenue ? '' : UNMEASURED,
     },
     {
       id: 'recoverable',
-      label: 'Можно вернуть',
+      label: 'Можно вернуть за месяц',
       value: revenue ? formatRubles(revenue.results.recoverableRevenue) : '—',
-      note: revenue ? 'в месяц' : UNMEASURED,
+      note: revenue ? '' : UNMEASURED,
     },
     {
       id: 'hours',
-      label: 'Рутина',
+      label: 'Часы ручной работы',
       value: routine ? formatWorkHours(routine.results.hoursPerMonth) : '—',
-      note: routine ? 'в месяц' : UNMEASURED,
+      note: routine ? '' : UNMEASURED,
     },
     {
       id: 'readiness',
-      label: 'Готовность',
+      label: 'Чек-лист из 9',
       value: readiness ? `${formatNumber(readiness.results.score)}/9` : '—',
       note: readiness ? readiness.results.bandLabel : UNMEASURED,
     },

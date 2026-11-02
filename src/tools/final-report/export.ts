@@ -35,7 +35,7 @@ export function buildEfimReport(sources: ReportSources): string {
   const summary = buildFinalSummary(sources);
   if (!summary.hasData) return EMPTY_REPORT_TEXT;
 
-  const lines = ['Игра в бизнес — отчёт для Ефима', '', summary.lead, ''];
+  const lines = [summary.lead, ''];
   for (const block of summary.blocks) {
     lines.push(block.title);
     lines.push(block.text);
@@ -179,7 +179,7 @@ export function buildReportCsv(
         num(section, 'Коридор до, ₽', corridor.high),
       );
     }
-    lines.push(csvRow(section, 'Профиль точности', formatUncertaintyProfile(tags)));
+    lines.push(csvRow(section, 'Насколько вы уверены в цифрах', formatUncertaintyProfile(tags)));
     if (typeof revenue.botCoverage === 'number') {
       const whatIf = computeWhatIf(
         { risk: revenue.results.revenueAtRiskMax, lossFactor: revenue.inputs.lossFactor },
@@ -194,7 +194,7 @@ export function buildReportCsv(
     }
     lines.push(
       num(section, 'Итого риск, ₽', revenue.results.revenueAtRiskMax),
-      num(section, 'Итого потенциал, ₽', revenue.results.recoverableRevenue),
+      num(section, 'Можно вернуть, ₽', revenue.results.recoverableRevenue),
       '',
     );
   }
@@ -236,6 +236,7 @@ export function buildReportCsv(
     lines.push(num(section, 'Итого процессов в топе', Math.min(TOP_PROCESS_COUNT, priority.results.ranking.length)));
     for (const item of top) {
       const score = priority.inputs[item.id];
+      if (score.frequency === score.time && score.time === score.errorCost) continue;
       lines.push(
         num(section, `${item.title} — частота`, score.frequency),
         num(section, `${item.title} — время`, score.time),

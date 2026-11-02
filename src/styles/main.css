@@ -575,6 +575,17 @@ body {
   margin-bottom: 2px;
 }
 
+.finish-thesis {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.finish-thesis strong {
+  font-weight: 800;
+}
+
 .finish-dashboard {
   min-width: 0;
 }

@@ -26,20 +26,12 @@ function formatScore(score: number): string {
 }
 
 export function buildPriorityShareText(result: PriorityResult): string {
-  const top = result.ranked
-    .slice(0, 3)
-    .map((item, index) => `${index + 1}. ${item.title} — ${formatScore(item.score)}`)
-    .join('\n');
   const lines = result.ranked
     .map((item, index) => `${index + 1}. ${item.title} — ${formatScore(item.score)}`)
     .join('\n');
   return [
-    'Ваши приоритеты:',
-    top,
-    '',
     result.top.recommendation,
     '',
-    'Полный порядок:',
     lines,
     '',
     'Рассчитать для своего бизнеса: https://kartuznik.github.io/poket_game/#priority-diag',
@@ -178,8 +170,6 @@ export function renderPriorityDiagTool(
   const eyebrow = document.createElement('div');
   eyebrow.className = 'result-card__eyebrow';
   eyebrow.innerHTML = '<span>ВАШИ ПРИОРИТЕТЫ</span><span>@_kartuzzz</span>';
-  const prioritiesEl = document.createElement('ol');
-  prioritiesEl.className = 'result-priorities';
   const noteEl = document.createElement('p');
   noteEl.className = 'result-card__note';
   const list = document.createElement('ol');
@@ -223,7 +213,6 @@ export function renderPriorityDiagTool(
   resultCard.append(
     createResultBanner(),
     eyebrow,
-    prioritiesEl,
     noteEl,
     list,
     diffBox,
@@ -254,7 +243,6 @@ export function renderPriorityDiagTool(
     const ready = completedScores();
     if (!ready) {
       latest = null;
-      prioritiesEl.replaceChildren();
       noteEl.textContent = '';
       list.replaceChildren();
       diffBox.hidden = true;
@@ -263,12 +251,6 @@ export function renderPriorityDiagTool(
     }
     const result = rankProcesses(ready);
     latest = result;
-    prioritiesEl.replaceChildren();
-    for (const item of result.ranked.slice(0, 3)) {
-      const row = document.createElement('li');
-      row.textContent = item.title;
-      prioritiesEl.append(row);
-    }
     const tieNote = result.tied
       ? ' Такой же балл есть ещё у одного процесса: выше поставлен тот, где дороже ошибка.'
       : '';

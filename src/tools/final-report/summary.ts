@@ -38,8 +38,49 @@ export interface FinalSummary {
   readonly blocks: readonly SummaryBlock[];
 }
 
-function sentence(parts: readonly string[]): string {
-  return parts.filter((part) => part.length > 0).join(' ');
+export interface ThesisPiece {
+  readonly text: string;
+  readonly strong?: boolean;
+}
+
+/** One conclusion. Revenue leads. A missing tool is skipped, not invented. */
+export function buildThesisPieces(sources: ReportSources): readonly ThesisPiece[] {
+  const { revenue, routine, priority, readiness } = sources;
+  if (revenue) {
+    return [
+      { text: 'Риск выручки: ' },
+      { text: formatRubles(revenue.results.revenueAtRiskMax), strong: true },
+      { text: '/мес. Можно вернуть: ' },
+      { text: formatRubles(revenue.results.recoverableRevenue), strong: true },
+      { text: ' при быстрых ответах.' },
+    ];
+  }
+  if (routine) {
+    return [
+      { text: 'Ручная работа: ' },
+      { text: formatWorkHours(routine.results.hoursPerMonth), strong: true },
+      { text: ' в месяц.' },
+    ];
+  }
+  if (priority) {
+    return [
+      { text: 'Первым: ' },
+      { text: priority.results.topTitle, strong: true },
+      { text: '.' },
+    ];
+  }
+  if (readiness) {
+    return [
+      { text: 'Чек-лист: ' },
+      { text: readiness.results.bandLabel, strong: true },
+      { text: '.' },
+    ];
+  }
+  return [];
+}
+
+export function thesisText(pieces: readonly ThesisPiece[]): string {
+  return pieces.map((piece) => piece.text).join('');
 }
 
 /** One short lead plus a block per tool that already has a snapshot. */
@@ -47,22 +88,6 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
   const { revenue, routine, priority, readiness } = sources;
   if (!revenue && !routine && !priority && !readiness) {
     return { hasData: false, lead: '', headline: '', blocks: [] };
-  }
-
-  const parts: string[] = [];
-  if (priority) {
-    parts.push(`Ваш главный приоритет: ${priority.results.topTitle}.`);
-  }
-  if (routine) {
-    parts.push(
-      `Можно вернуть ${formatWorkHours(routine.results.savedHoursPerMonth)} в месяц.`,
-    );
-  }
-  if (revenue) {
-    parts.push(`Потенциал возврата: ${formatRubles(revenue.results.recoverableRevenue)}.`);
-  }
-  if (readiness) {
-    parts.push(`Готовность: ${readiness.results.bandLabel}.`);
   }
 
   const blocks: SummaryBlock[] = [];
@@ -83,7 +108,7 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
     const workDays = Math.round(routine.results.workDaysPerYear * 10) / 10;
     blocks.push({
       title: 'Рутина',
-      text: `На эту работу уходит ${formatWorkHours(routine.results.hoursPerMonth)} в месяц, ${formatCountWithNoun(workDays, ['рабочий день', 'рабочих дня', 'рабочих дней'])} в год. ${money}`,
+      text: `${formatCountWithNoun(workDays, ['рабочий день', 'рабочих дня', 'рабочих дней'])} в год. ${money}`,
       sourceToolId: 'routine-calc',
       editStep: editStepFor('routine-calc'),
     });
@@ -92,26 +117,25 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
     const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
     const corridor = computeCorridor(revenue.inputs, tags);
     blocks.push({
-      title: 'Потенциал возврата',
-      text: `${formatRubles(revenue.results.recoverableRevenue)} в месяц. Выручка под риском: ${formatRubles(revenue.results.revenueAtRiskMax)}. ${formatCorridorLine(corridor, tags)}. Профиль точности: ${formatUncertaintyProfile(tags)}.`,
+      title: 'Насколько цифра плавает',
+      text: `${formatCorridorLine(corridor, tags)}. Насколько вы уверены в цифрах: ${formatUncertaintyProfile(tags)}.`,
       sourceToolId: 'revenue-risk',
       editStep: editStepFor('revenue-risk'),
     });
   }
   if (readiness) {
     const open = readiness.results.unclosedTitles;
-    const scoreText = `${readiness.results.bandLabel}, ${String(readiness.results.score).replace('.', ',')} из 9.`;
     blocks.push(
       open.length === 0
         ? {
             title: 'Готовность',
-            text: `${scoreText} Незакрытых пунктов нет.`,
+            text: 'Незакрытых пунктов нет.',
             sourceToolId: 'readiness-check',
             editStep: editStepFor('readiness-check'),
           }
         : {
             title: 'Готовность',
-            text: `${scoreText} Не закрыто:`,
+            text: 'Не закрыто:',
             lines: open,
             sourceToolId: 'readiness-check',
             editStep: editStepFor('readiness-check'),
@@ -129,7 +153,7 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
 
   return {
     hasData: true,
-    lead: sentence(parts),
+    lead: thesisText(buildThesisPieces(sources)),
     headline,
     blocks,
   };

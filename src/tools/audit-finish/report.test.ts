@@ -72,13 +72,14 @@ describe('audit handoff', () => {
 
   it('puts the confirmed numbers into the copied text and leaves contacts out', () => {
     const text = buildAuditHandoff(sources);
-    expect(text.startsWith('Игра в бизнес — отчёт для Ефима')).toBe(true);
+    expect(text.startsWith('Риск выручки:')).toBe(true);
     expect(text).not.toContain('Имя:');
     expect(text).not.toContain('Telegram:');
     expect(text).not.toContain('Телефон:');
-    expect(text).toContain('Потенциал возврата');
+    expect(text).toContain('Можно вернуть:');
+    expect(text).not.toContain('Потенциал');
     expect(text).toContain('Что сделать на этой неделе');
-    expect(text).toContain('Повторить замер до 8 января.');
+    expect(text).not.toContain('Повторить замер до');
     expect(text).not.toContain('Что сделать дальше');
     expect(text).not.toContain('За 30 дней');
     expect(text).toContain('https://kartuznik.github.io/poket_game/');
@@ -183,22 +184,23 @@ describe('telegram summary', () => {
     const two = buildTelegramSummary({ revenue, routine, priority: null, readiness: null });
     const three = buildTelegramSummary({ revenue, routine, priority, readiness: null });
     const four = buildTelegramSummary({ revenue, routine, priority, readiness });
-    expect(one.split('\n')).toHaveLength(3);
-    expect(two.split('\n')).toHaveLength(4);
-    expect(three.split('\n')).toHaveLength(5);
-    expect(four.split('\n')).toHaveLength(6);
+    expect(one.split('\n')).toHaveLength(2);
+    expect(two.split('\n')).toHaveLength(3);
+    expect(three.split('\n')).toHaveLength(4);
+    expect(four.split('\n')).toHaveLength(5);
     for (const text of [one, two, three, four]) {
       expect(text.split('\n').length).toBeLessThanOrEqual(6);
       expect(text).toContain('https://kartuznik.github.io/poket_game/');
       expect(text).not.toContain('Что сделать на этой неделе');
-      expect(text.startsWith('Игра в бизнес')).toBe(true);
+      expect(text.startsWith('Риск выручки:')).toBe(true);
+      expect(text).not.toContain('Игра в бизнес');
     }
-    expect(one).toContain('Возврат:');
-    expect(one).not.toContain('Рутина:');
-    expect(two).toContain('Рутина:');
+    expect(one).toContain('Можно вернуть:');
+    expect(one).not.toContain('Ручная работа:');
+    expect(two).toContain('Ручная работа:');
     expect(two).not.toContain('Первым:');
     expect(three).toContain('Первым: Приём обращений');
-    expect(three).not.toContain('Готовность:');
-    expect(four).toContain('Готовность: Можно начинать');
+    expect(three).not.toContain('Чек-лист:');
+    expect(four).toContain('Чек-лист: Можно начинать');
   });
 });

@@ -103,22 +103,25 @@ describe('html report', () => {
     expect(buildHtmlReport({ ...visit(), niche: 'cafe-food' }, Date.parse('2026-10-31T11:32:00Z'))).toContain(
       '>Кафе и еда<',
     );
-    expect(html).toContain('>Риск<');
-    expect(html).toContain('>Потенциал<');
-    expect(html).toContain('>Часы<');
-    expect(html).toContain('>Готовность<');
+    expect(html).toContain('>Под риском за месяц<');
+    expect(html).toContain('>Можно вернуть за месяц<');
+    expect(html).toContain('>Часы ручной работы<');
+    expect(html).toContain('>Чек-лист из 9<');
     expect(formatNumber(773500)).toBe('773\u00A0500');
     expect(html).toContain(`${formatNumber(31500)}\u00A0₽`);
     expect(html).toContain(`${formatNumber(22050)}\u00A0₽`);
     expect(html).toContain('Можно начинать');
     expect(html).toContain('Приём обращений');
     expect(html).toContain('Что сделать на этой неделе');
-    expect(html).toContain('Повторить замер до 8 января.');
+    expect(html).not.toContain('Повторить замер до');
     expect(html).toContain('class="week-plan"');
     expect(html).toContain('break-inside: avoid');
     expect(html).not.toContain('break-before: page');
     expect(html).not.toContain('0.1.0');
-    expect(html.match(/Игра в бизнес · Бизнес-аудит/g)).toEqual(['Игра в бизнес · Бизнес-аудит']);
+    expect(html).not.toContain('Игра в бизнес · Бизнес-аудит');
+    expect(html).toContain('<title>Бизнес-аудит</title>');
+    expect(html).toContain('Риск выручки:');
+    expect(html.match(/31 октября 2026, 14:32/g)).toHaveLength(1);
     expect(html).not.toMatch(/версия [0-9a-f]{7}/);
     expect(html).toContain(`Сгенерировано ${'31 октября 2026, 14:32'}`);
     expect(html).toContain('https://kartuznik.github.io/poket_game/');
@@ -147,7 +150,7 @@ describe('html report', () => {
         : base,
       Date.parse('2026-10-31T11:32:00Z'),
     );
-    expect(preciseHtml).toContain(`${formatNumber(22050)}\u00A0₽, вы уверены во всех входах`);
+    expect(preciseHtml).toContain('Коридор схлопнулся: во всех входах вы уверены');
     expect(html).not.toContain('<svg');
     expect(new TextEncoder().encode(html).byteLength).toBeLessThanOrEqual(50 * 1024);
     const urls = html.match(/https?:\/\/[^\s"'<]+/g) ?? [];

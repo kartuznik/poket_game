@@ -9,7 +9,7 @@ import { TOOLS_CATALOG } from '../catalog';
 import { buildReportCsv, reportCsvFilename } from '../final-report/export';
 import { buildHtmlReport, reportHtmlFilename } from '../final-report/html-report';
 import { collectReportSources } from '../final-report/view';
-import { EMPTY_REPORT_TEXT, buildFinalSummary } from '../final-report/summary';
+import { EMPTY_REPORT_TEXT, buildFinalSummary, buildThesisPieces } from '../final-report/summary';
 import type { ToolStubRenderContext } from '../stub-factory';
 import {
   TELEGRAM_PROFILE_URL,
@@ -164,6 +164,22 @@ export function renderAuditFinish(
 
   card.append(header, progress);
 
+  const thesisPieces = buildThesisPieces(sources);
+  if (thesisPieces.length > 0) {
+    const thesis = document.createElement('p');
+    thesis.className = 'finish-thesis';
+    for (const piece of thesisPieces) {
+      if (piece.strong) {
+        const strong = document.createElement('strong');
+        strong.textContent = piece.text;
+        thesis.append(strong);
+      } else {
+        thesis.append(piece.text);
+      }
+    }
+    card.append(thesis);
+  }
+
   const dashboard = document.createElement('section');
   dashboard.className = 'finish-dashboard';
   const dashboardGrid = document.createElement('div');
@@ -177,10 +193,13 @@ export function renderAuditFinish(
     const value = document.createElement('p');
     value.className = 'finish-card__value';
     value.textContent = item.value;
-    const note = document.createElement('p');
-    note.className = 'finish-card__note';
-    note.textContent = item.note;
-    tile.append(label, value, note);
+    tile.append(label, value);
+    if (item.note) {
+      const note = document.createElement('p');
+      note.className = 'finish-card__note';
+      note.textContent = item.note;
+      tile.append(note);
+    }
     dashboardGrid.append(tile);
   }
   const scenario = document.createElement('p');
@@ -235,11 +254,6 @@ export function renderAuditFinish(
   }
 
   if (summary.hasData) {
-    const lead = document.createElement('p');
-    lead.className = 'result-card__note';
-    lead.textContent = summary.lead;
-    card.append(lead);
-
     const blocks = document.createElement('div');
     blocks.className = 'report-blocks';
     for (const block of summary.blocks) {
