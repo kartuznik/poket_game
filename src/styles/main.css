@@ -594,6 +594,43 @@ body {
   margin-bottom: 12px;
 }
 
+.niche-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-result);
+}
+
+.niche-intro__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.niche-intro__text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.niche-intro__btn {
+  width: 100%;
+  min-height: 44px;
+}
+
+.niche-intro__btn svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
 .niche-menu__toggle,
 .niche-menu__list .action-btn,
 .niche-menu > .action-btn {

@@ -21,6 +21,17 @@ export const NICHE_REVENUE_TAGS = {
 
 export const NICHE_CAPTION = 'значение ниши, сценарное допущение — замените своим замером';
 
+export const NICHE_ACCENT_TITLE = 'Первый раз? Начните с ниши';
+export const NICHE_ACCENT_TEXT =
+  'Подставим пример вашей ниши — цифры сценарные, поправите под себя';
+export const NICHE_ACCENT_BUTTON = 'Выбрать нишу';
+export const NICHE_QUIET_BUTTON = 'Подставить значения ниши';
+
+/** Empty niche fields get the accent prompt. A saved number keeps the quiet button. Fixed for the visit. */
+export function nichePromptKind(values: readonly string[]): 'accent' | 'quiet' {
+  return values.some((value) => value.trim() !== '') ? 'quiet' : 'accent';
+}
+
 const PRESETS: readonly NichePreset[] = [
   {
     id: 'cafe-food',

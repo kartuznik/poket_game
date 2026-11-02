@@ -10,6 +10,7 @@ import {
   applyNicheGuess,
   nicheById,
   nicheCaptionVisible,
+  nichePromptKind,
   revenueNicheFields,
   type BusinessNicheId,
   type NichePreset as BusinessNichePreset,
@@ -1331,6 +1332,7 @@ export function renderRevenueRiskTool(
   refreshSteps = () => wizard.refresh();
   const nicheMenu = mountNicheMenu({
     dossier,
+    prompt: nichePromptKind([leadsRaw, lateShareRaw, avgCheckRaw]),
     readFields: (preset) => revenueNicheFields({ leads: leadsRaw, late: lateShareRaw, check: avgCheckRaw }, preset),
     applyNumbers: applyRevenueNiche,
     applyLabel: (id) => {

@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { defaultUncertainty } from '../tools/revenue-risk/calc';
 import {
+  NICHE_ACCENT_BUTTON,
+  NICHE_ACCENT_TEXT,
+  NICHE_ACCENT_TITLE,
   NICHE_CAPTION,
+  NICHE_QUIET_BUTTON,
   applyNicheGuess,
   formatFieldChange,
   listNichePresets,
   nicheById,
   nicheCaptionVisible,
+  nichePromptKind,
   nicheTitle,
   planNicheApply,
   revenueNicheFields,
@@ -52,6 +57,30 @@ describe('niche presets', () => {
     expect(nicheCaptionVisible('', 180)).toBe(false);
     expect(tags.leads).toBe('guess');
     expect(NICHE_CAPTION).toContain('сценарное допущение');
+  });
+
+  it('uses the accent prompt only while every niche field is empty', () => {
+    expect(nichePromptKind(['', '  ', ''])).toBe('accent');
+    expect(nichePromptKind(['10', '', ''])).toBe('quiet');
+    expect(nichePromptKind(['', '40', ''])).toBe('quiet');
+    expect(NICHE_ACCENT_TITLE).toBe('Первый раз? Начните с ниши');
+    expect(NICHE_ACCENT_TEXT).toContain('сценарные');
+    expect(NICHE_ACCENT_BUTTON).toBe('Выбрать нишу');
+    expect(NICHE_QUIET_BUTTON).toBe('Подставить значения ниши');
+  });
+
+  it('keeps the same apply plan for an accent prompt and a quiet button', () => {
+    const cafe = listNichePresets()[0];
+    if (!cafe) throw new Error('missing cafe preset');
+    const empty = revenueNicheFields({ leads: '', late: '', check: '' }, cafe);
+    const filled = revenueNicheFields({ leads: '10', late: '20', check: '1000' }, cafe);
+    expect(nichePromptKind([empty[0]!.current, empty[1]!.current, empty[2]!.current])).toBe('accent');
+    expect(nichePromptKind([filled[0]!.current, filled[1]!.current, filled[2]!.current])).toBe('quiet');
+    expect(planNicheApply(null, cafe.id, empty)).toBe('fill');
+    expect(planNicheApply(null, cafe.id, filled)).toBe('confirm');
+    expect(planNicheApply(cafe.id, cafe.id, revenueNicheFields({ leads: '180', late: '40', check: '900' }, cafe))).toBe(
+      'noop',
+    );
   });
 
   it('asks before overwriting filled numbers and stays quiet on an empty draft', () => {

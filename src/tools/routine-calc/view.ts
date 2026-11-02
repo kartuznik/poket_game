@@ -11,6 +11,7 @@ import {
   NICHE_CAPTION,
   nicheById,
   nicheCaptionVisible,
+  nichePromptKind,
   routineNicheFields,
   type BusinessNicheId,
   type NichePreset as BusinessNichePreset,
@@ -640,6 +641,7 @@ export function renderRoutineCalcTool(
   refreshSteps = () => wizard.refresh();
   const nicheMenu = mountNicheMenu({
     dossier,
+    prompt: nichePromptKind([operationsRaw, minutesRaw]),
     readFields: (preset) => routineNicheFields({ operations: operationsRaw, minutes: minutesRaw }, preset),
     applyNumbers: applyRoutineNiche,
     applyLabel: (id) => {
