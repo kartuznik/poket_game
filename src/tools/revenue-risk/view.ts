@@ -1172,6 +1172,8 @@ export function renderRevenueRiskTool(
     );
   });
 
+  let holdConfirmedRevenue = false;
+
   function persistRevenueDraft(step: number): void {
     const written = dossier.update((current) => ({
       ...current,
@@ -1190,11 +1192,11 @@ export function renderRevenueRiskTool(
         uncertainty: tags,
         botCoverage,
       },
-      ...(current.revenue
+      ...(!holdConfirmedRevenue && current.revenue
         ? { revenue: { ...current.revenue, uncertainty: tags, botCoverage } }
         : {}),
     }));
-    if (written.dossier.revenue) {
+    if (!holdConfirmedRevenue && written.dossier.revenue) {
       bridge.saveRevenueRiskResult(written.dossier.revenue);
     }
   }
@@ -1202,6 +1204,7 @@ export function renderRevenueRiskTool(
   function finishRevenue(): void {
     const { calcResult, validation } = recalculateAndRender();
     if (!validation.isValid) return;
+    holdConfirmedRevenue = false;
     const bridgeSnapshot = bridge.saveRevenueRiskResult({
       inputs: {
         leadsPerMonth: calcResult.normalizedInput.leadsPerMonth,
@@ -1301,6 +1304,7 @@ export function renderRevenueRiskTool(
     lateSlider.removeAttribute('aria-valuetext');
     checkInput.value = avgCheckRaw;
     tags = applyNicheGuess(tags);
+    holdConfirmedRevenue = true;
     dossier.update((current) => ({ ...current, niche: preset.id }));
     recalculateAndRender();
     persistRevenueDraft(wizard.currentStep());
@@ -1346,6 +1350,7 @@ export function renderRevenueRiskTool(
       lateSlider.value = lateShareRaw === '' ? '0' : lateShareRaw;
       if (lateShareRaw.trim() === '') lateSlider.setAttribute('aria-valuetext', 'Не задано');
       checkInput.value = avgCheckRaw;
+      holdConfirmedRevenue = false;
       dossier.update((current) => ({ ...current, niche: previous.niche }));
       recalculateAndRender();
       persistRevenueDraft(wizard.currentStep());
