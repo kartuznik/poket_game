@@ -17,6 +17,8 @@ import {
   buildAuditHandoff,
   buildTelegramSummary,
 } from './report';
+import { buildDashboard } from './dashboard';
+import { buildInsights } from './insights';
 import { buildProgress, progressChart } from './progress';
 import { buildWeekPlan } from './week-plan';
 
@@ -161,6 +163,73 @@ export function renderAuditFinish(
 
   card.append(header, progress);
 
+  const dashboard = document.createElement('section');
+  dashboard.className = 'finish-dashboard';
+  const dashboardGrid = document.createElement('div');
+  dashboardGrid.className = 'finish-dashboard__grid';
+  for (const item of buildDashboard(sources)) {
+    const tile = document.createElement('article');
+    tile.className = 'finish-card';
+    const label = document.createElement('h3');
+    label.className = 'finish-card__label';
+    label.textContent = item.label;
+    const value = document.createElement('p');
+    value.className = 'finish-card__value';
+    value.textContent = item.value;
+    const note = document.createElement('p');
+    note.className = 'finish-card__note';
+    note.textContent = item.note;
+    tile.append(label, value, note);
+    dashboardGrid.append(tile);
+  }
+  dashboard.append(dashboardGrid);
+  card.append(dashboard);
+
+  const insights = buildInsights(sources);
+  if (insights.length > 0) {
+    const insightBlock = document.createElement('section');
+    insightBlock.className = 'finish-insights';
+    const insightTitle = document.createElement('h3');
+    insightTitle.className = 'finish-insights__title';
+    insightTitle.textContent = 'Перекрёстные выводы';
+    const insightList = document.createElement('ul');
+    insightList.className = 'finish-insights__list';
+    for (const line of insights) {
+      const item = document.createElement('li');
+      item.textContent = line;
+      insightList.append(item);
+    }
+    insightBlock.append(insightTitle, insightList);
+    card.append(insightBlock);
+  }
+
+  const progressCard = progressView(dossier.read(), Date.now());
+  if (progressCard) card.append(progressCard);
+
+  if (weekPlan.length > 0) {
+    const plan = document.createElement('section');
+    plan.className = 'week-plan';
+    const planTitle = document.createElement('h3');
+    planTitle.className = 'week-plan__title';
+    planTitle.textContent = 'Что сделать на этой неделе';
+    const planList = document.createElement('ol');
+    planList.className = 'week-plan__list';
+    weekPlan.forEach((step, index) => {
+      const item = document.createElement('li');
+      item.className = 'week-plan__item';
+      const mark = document.createElement('span');
+      mark.className = 'week-plan__index';
+      mark.textContent = String(index + 1);
+      const text = document.createElement('p');
+      text.className = 'week-plan__text';
+      text.textContent = step.text;
+      item.append(mark, text);
+      planList.append(item);
+    });
+    plan.append(planTitle, planList);
+    card.append(plan);
+  }
+
   if (summary.hasData) {
     const lead = document.createElement('p');
     lead.className = 'result-card__note';
@@ -203,33 +272,6 @@ export function renderAuditFinish(
     }
     card.append(blocks);
   }
-
-  if (weekPlan.length > 0) {
-    const plan = document.createElement('section');
-    plan.className = 'week-plan';
-    const planTitle = document.createElement('h3');
-    planTitle.className = 'week-plan__title';
-    planTitle.textContent = 'Что сделать на этой неделе';
-    const planList = document.createElement('ol');
-    planList.className = 'week-plan__list';
-    weekPlan.forEach((step, index) => {
-      const item = document.createElement('li');
-      item.className = 'week-plan__item';
-      const mark = document.createElement('span');
-      mark.className = 'week-plan__index';
-      mark.textContent = String(index + 1);
-      const text = document.createElement('p');
-      text.className = 'week-plan__text';
-      text.textContent = step.text;
-      item.append(mark, text);
-      planList.append(item);
-    });
-    plan.append(planTitle, planList);
-    card.append(plan);
-  }
-
-  const progressCard = progressView(dossier.read(), Date.now());
-  if (progressCard) card.append(progressCard);
 
   const actions = document.createElement('div');
   actions.className = 'audit-actions';

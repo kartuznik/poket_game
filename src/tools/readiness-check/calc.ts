@@ -108,10 +108,13 @@ export function pointsFor(status: ReadinessStatus): number {
   return READINESS_POINTS[status];
 }
 
-/** Fewer than 4 points is early, 4 up to 7 is gaps, 7 and above can start. */
+/** Below this score the band is still gaps. Insights use the same edge. */
+export const READINESS_READY_SCORE = 7;
+
+/** Fewer than 4 points is early, 4 up to the ready edge is gaps, the ready edge and above can start. */
 export function bandForScore(score: number): ReadinessBand {
   if (score < 4) return 'early';
-  if (score < 7) return 'gaps';
+  if (score < READINESS_READY_SCORE) return 'gaps';
   return 'ready';
 }
 
