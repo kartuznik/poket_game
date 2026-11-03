@@ -17,6 +17,7 @@ import {
   applyNicheGuess,
   nicheById,
   nicheCaptionVisible,
+  nicheIdFromConversionPreset,
   nichePromptKind,
   revenueNicheFields,
   type BusinessNicheId,
@@ -202,6 +203,7 @@ export function renderRevenueRiskTool(
 
   let mode: ConversionInputMode = draft?.mode ?? saved?.inputs.mode ?? 'custom';
   let selectedPresetId: NichePresetId = restoredPreset;
+  let nicheConversionId: BusinessNicheId | null = nicheIdFromConversionPreset(savedPreset);
   let tags: UncertaintyProfile =
     draft?.uncertainty ?? saved?.uncertainty ?? defaultUncertainty(mode);
   const storedCoverage = draft?.botCoverage ?? saved?.botCoverage ?? null;
@@ -446,10 +448,9 @@ export function renderRevenueRiskTool(
     `;
 
     btn.addEventListener('click', () => {
+      nicheConversionId = null;
       selectedPresetId = preset.id;
-      for (const [id, b] of presetButtons.entries()) {
-        b.setAttribute('aria-pressed', String(id === selectedPresetId));
-      }
+      dossier.update((current) => ({ ...current, niche: null }));
       syncConversionFieldWithMode();
       applyPresetRecovery();
       recalculateAndRender();
@@ -460,6 +461,23 @@ export function renderRevenueRiskTool(
       withHelp(btn, HELP.preset, 'preset-card-wrap', () => btn),
     );
   }
+
+  const nicheCard = document.createElement('button');
+  nicheCard.type = 'button';
+  nicheCard.className = 'preset-card';
+  nicheCard.hidden = true;
+  nicheCard.setAttribute('aria-pressed', 'true');
+  const nicheCardTitle = document.createElement('span');
+  nicheCardTitle.className = 'preset-card__title';
+  const nicheCardConv = document.createElement('span');
+  nicheCardConv.className = 'preset-card__conv';
+  const nicheCardCaption = document.createElement('span');
+  nicheCardCaption.className = 'preset-card__desc';
+  const nicheCardTop = document.createElement('span');
+  nicheCardTop.className = 'preset-card__top';
+  nicheCardTop.append(nicheCardTitle, nicheCardConv);
+  nicheCard.append(nicheCardTop, nicheCardCaption);
+  presetsGrid.append(nicheCard);
 
   presetsWrap.append(scenarioNote, presetsGrid);
 
@@ -828,10 +846,32 @@ export function renderRevenueRiskTool(
   panel.append(inputCard);
   container.appendChild(panel);
 
+  function activeNiche() {
+    return nicheConversionId ? nicheById(nicheConversionId) : null;
+  }
+
+  function storedPresetId(): string | null {
+    if (mode !== 'preset') return null;
+    return nicheConversionId ? `niche:${nicheConversionId}` : selectedPresetId;
+  }
+
+  function paintConversionChoice(): void {
+    const niche = activeNiche();
+    for (const [id, button] of presetButtons) {
+      button.setAttribute('aria-pressed', String(!niche && id === selectedPresetId));
+    }
+    nicheCard.hidden = !niche;
+    if (!niche) return;
+    nicheCardTitle.textContent = niche.title;
+    nicheCardConv.textContent = `${String(niche.conversionPercent)}%`;
+    nicheCardCaption.textContent = niche.conversionCaption;
+  }
+
   function getActiveConversionRaw(): string {
     if (mode === 'preset') {
-      const preset = getNichePresetById(selectedPresetId);
-      return String(preset.defaultConversionPercent);
+      const niche = activeNiche();
+      if (niche) return String(niche.conversionPercent);
+      return String(getNichePresetById(selectedPresetId).defaultConversionPercent);
     }
     return customConversionRaw;
   }
@@ -867,12 +907,14 @@ export function renderRevenueRiskTool(
 
     const unitSpan = convLabel.querySelector('#rr-conv-unit');
     if (unitSpan) unitSpan.textContent = '1–95%';
+    paintConversionChoice();
     if (isPreset) {
+      const niche = activeNiche();
       const preset = getNichePresetById(selectedPresetId);
-      convInput.value = String(preset.defaultConversionPercent);
+      convInput.value = niche ? String(niche.conversionPercent) : String(preset.defaultConversionPercent);
       convInput.readOnly = true;
       convInput.setAttribute('aria-readonly', 'true');
-      applyPresetRecovery();
+      if (!niche) applyPresetRecovery();
     } else {
       convInput.readOnly = false;
       convInput.removeAttribute('aria-readonly');
@@ -1193,7 +1235,7 @@ export function renderRevenueRiskTool(
             ? ''
             : String(Math.round(100 - Math.min(100, Math.max(0, Number(recoveryRaw))))),
         mode,
-        presetId: mode === 'preset' ? selectedPresetId : null,
+        presetId: storedPresetId(),
         uncertainty: tags,
         botCoverage,
       },
@@ -1218,7 +1260,7 @@ export function renderRevenueRiskTool(
         avgCheck: calcResult.normalizedInput.avgCheck,
         lossFactor: calcResult.normalizedInput.lossFactor,
         mode,
-        ...(mode === 'preset' ? { presetId: selectedPresetId } : {}),
+        ...(storedPresetId() ? { presetId: storedPresetId() as string } : {}),
       },
       results: {
         lateLeads: calcResult.lateLeads,
@@ -1251,10 +1293,7 @@ export function renderRevenueRiskTool(
   lastErrors = validateRevenueRiskDraft({
     leadsPerMonthRaw: leadsRaw,
     lateSharePercentRaw: lateShareRaw,
-    conversionPercentRaw:
-      mode === 'preset'
-        ? String(getNichePresetById(selectedPresetId).defaultConversionPercent)
-        : customConversionRaw,
+    conversionPercentRaw: getActiveConversionRaw(),
     avgCheckRaw,
     lossFactorPercentRaw: recoveryRaw,
     mode,
@@ -1273,6 +1312,9 @@ export function renderRevenueRiskTool(
     readonly check: string;
     readonly tags: UncertaintyProfile;
     readonly niche: BusinessNicheId | null;
+    readonly mode: ConversionInputMode;
+    readonly nicheConversionId: BusinessNicheId | null;
+    readonly recovery: string;
   }
   let revenueUndo: RevenueUndo | null = null;
   let refreshNicheMenu = (): void => {};
@@ -1299,6 +1341,9 @@ export function renderRevenueRiskTool(
       check: avgCheckRaw,
       tags,
       niche: dossier.read().niche,
+      mode,
+      nicheConversionId,
+      recovery: recoveryRaw,
     };
     leadsRaw = String(preset.leadsPerMonth);
     lateShareRaw = String(preset.lateSharePercent);
@@ -1308,7 +1353,10 @@ export function renderRevenueRiskTool(
     lateSlider.value = lateShareRaw;
     lateSlider.removeAttribute('aria-valuetext');
     checkInput.value = avgCheckRaw;
+    mode = 'preset';
+    nicheConversionId = preset.id;
     tags = applyNicheGuess(tags);
+    syncConversionFieldWithMode();
     holdConfirmedRevenue = true;
     dossier.update((current) => ({ ...current, niche: preset.id }));
     recalculateAndRender();
@@ -1351,11 +1399,16 @@ export function renderRevenueRiskTool(
       lateShareRaw = previous.late;
       avgCheckRaw = previous.check;
       tags = previous.tags;
+      mode = previous.mode;
+      nicheConversionId = previous.nicheConversionId;
+      recoveryRaw = previous.recovery;
       leadsInput.value = leadsRaw;
       lateInput.value = lateShareRaw;
       lateSlider.value = lateShareRaw === '' ? '0' : lateShareRaw;
       if (lateShareRaw.trim() === '') lateSlider.setAttribute('aria-valuetext', 'Не задано');
       checkInput.value = avgCheckRaw;
+      lossInput.value = recoveryRaw;
+      syncConversionFieldWithMode();
       holdConfirmedRevenue = false;
       dossier.update((current) => ({ ...current, niche: previous.niche }));
       recalculateAndRender();

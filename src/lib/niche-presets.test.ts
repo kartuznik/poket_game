@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultUncertainty } from '../tools/revenue-risk/calc';
+import { UNCERTAINTY_SPREAD, computeCorridor, defaultUncertainty } from '../tools/revenue-risk/calc';
 import {
   NICHE_ACCENT_BUTTON,
   NICHE_ACCENT_TEXT,
@@ -11,6 +11,7 @@ import {
   listNichePresets,
   nicheById,
   nicheCaptionVisible,
+  nicheIdFromConversionPreset,
   nichePromptKind,
   nicheTitle,
   planNicheApply,
@@ -37,17 +38,61 @@ describe('niche presets', () => {
     expect(nicheTitle(null)).toBe('своя');
     expect(nicheById('unknown')).toBeNull();
     expect(scenarioLine('beauty')).toBe('Сценарий: Бьюти-услуги');
-    expect(listNichePresets().every((preset) => !('conversionPercent' in preset))).toBe(true);
+    expect(nicheIdFromConversionPreset('niche:cafe-food')).toBe('cafe-food');
+    expect(nicheIdFromConversionPreset('beauty-local')).toBeNull();
+    const byId = Object.fromEntries(listNichePresets().map((preset) => [preset.id, preset]));
+    expect(byId['cafe-food']).toMatchObject({
+      conversionPercent: 25,
+      conversionCaption: 'Сценарное допущение для заказов еды. Не замер.',
+      routinePresetIds: ['orders', 'booking'],
+    });
+    expect(byId['beauty']).toMatchObject({
+      conversionPercent: 30,
+      routinePresetIds: ['booking', 'answers'],
+    });
+    expect(byId['school']).toMatchObject({
+      conversionPercent: 12,
+      routinePresetIds: ['answers', 'sheets'],
+    });
+    expect(byId['freelance']).toMatchObject({
+      conversionPercent: 10,
+      conversionCaption: 'Сценарное допущение редких консультаций. Не замер.',
+      routinePresetIds: ['answers', 'sheets'],
+    });
+    expect(byId['retail']).toMatchObject({
+      conversionPercent: 20,
+      routinePresetIds: ['orders', 'answers'],
+    });
+    expect(
+      listNichePresets().every(
+        (preset) =>
+          preset.conversionCaption.includes('Не замер') &&
+          preset.routinePresetIds.length >= 1 &&
+          preset.routinePresetIds.length <= 3,
+      ),
+    ).toBe(true);
   });
 
-  it('marks the three revenue inputs as a guess and leaves conversion tags alone', () => {
+  it('marks revenue inputs and conversion as a guess and leaves the recovery tag', () => {
     const before = defaultUncertainty('custom');
     const after = applyNicheGuess(before);
     expect(after.leads).toBe('guess');
     expect(after.lateShare).toBe('guess');
     expect(after.check).toBe('guess');
-    expect(after.conversion).toBe(before.conversion);
+    expect(after.conversion).toBe('guess');
     expect(after.recoveryShare).toBe(before.recoveryShare);
+    expect(UNCERTAINTY_SPREAD.guess).toBe(0.35);
+    const input = {
+      leadsPerMonth: 100,
+      lateSharePercent: 40,
+      conversionPercent: 25,
+      avgCheck: 900,
+      lossFactor: 0.5,
+    };
+    const wide = computeCorridor(input, after);
+    const narrow = computeCorridor(input, { ...after, conversion: 'precise' });
+    expect(wide.high - wide.low).toBeGreaterThan(narrow.high - narrow.low);
+    expect(wide.base).toBe(narrow.base);
   });
 
   it('drops the caption after a manual edit and keeps the guess tag', () => {

@@ -1,4 +1,4 @@
-import type { UncertaintyProfile } from './types';
+import type { RoutinePresetId, UncertaintyProfile } from './types';
 
 export type BusinessNicheId = 'cafe-food' | 'beauty' | 'school' | 'freelance' | 'retail';
 
@@ -10,9 +10,12 @@ export interface NichePreset {
   readonly avgCheck: number;
   readonly operationsPerWeek: number;
   readonly minutesPerOperation: number;
+  readonly conversionPercent: number;
+  readonly conversionCaption: string;
+  readonly routinePresetIds: readonly RoutinePresetId[];
 }
 
-/** The three revenue inputs a niche fills. Conversion and recovery stay as they were. */
+/** Revenue inputs a niche marks as a guess. Recovery stays as it was. */
 export const NICHE_REVENUE_TAGS = {
   leads: 'guess',
   lateShare: 'guess',
@@ -41,6 +44,9 @@ const PRESETS: readonly NichePreset[] = [
     avgCheck: 900,
     operationsPerWeek: 25,
     minutesPerOperation: 10,
+    conversionPercent: 25,
+    conversionCaption: 'Сценарное допущение для заказов еды. Не замер.',
+    routinePresetIds: ['orders', 'booking'],
   },
   {
     id: 'beauty',
@@ -50,6 +56,9 @@ const PRESETS: readonly NichePreset[] = [
     avgCheck: 2500,
     operationsPerWeek: 20,
     minutesPerOperation: 8,
+    conversionPercent: 30,
+    conversionCaption: 'Сценарное допущение записи. Не замер.',
+    routinePresetIds: ['booking', 'answers'],
   },
   {
     id: 'school',
@@ -59,6 +68,9 @@ const PRESETS: readonly NichePreset[] = [
     avgCheck: 12000,
     operationsPerWeek: 40,
     minutesPerOperation: 6,
+    conversionPercent: 12,
+    conversionCaption: 'Сценарное допущение длинной продажи обучения. Не замер.',
+    routinePresetIds: ['answers', 'sheets'],
   },
   {
     id: 'freelance',
@@ -68,6 +80,9 @@ const PRESETS: readonly NichePreset[] = [
     avgCheck: 7000,
     operationsPerWeek: 15,
     minutesPerOperation: 12,
+    conversionPercent: 10,
+    conversionCaption: 'Сценарное допущение редких консультаций. Не замер.',
+    routinePresetIds: ['answers', 'sheets'],
   },
   {
     id: 'retail',
@@ -77,6 +92,9 @@ const PRESETS: readonly NichePreset[] = [
     avgCheck: 2200,
     operationsPerWeek: 25,
     minutesPerOperation: 10,
+    conversionPercent: 20,
+    conversionCaption: 'Сценарное допущение товарной покупки. Не замер.',
+    routinePresetIds: ['orders', 'answers'],
   },
 ];
 
@@ -106,7 +124,18 @@ export function applyNicheGuess(tags: UncertaintyProfile): UncertaintyProfile {
     leads: NICHE_REVENUE_TAGS.leads,
     lateShare: NICHE_REVENUE_TAGS.lateShare,
     check: NICHE_REVENUE_TAGS.check,
+    conversion: 'guess',
   };
+}
+
+/** Stored preset id for a niche conversion. It is not one of the four old scenarios. */
+export function nicheConversionPresetId(id: BusinessNicheId): string {
+  return `niche:${id}`;
+}
+
+export function nicheIdFromConversionPreset(presetId: string | null | undefined): BusinessNicheId | null {
+  if (!presetId?.startsWith('niche:')) return null;
+  return nicheById(presetId.slice('niche:'.length))?.id ?? null;
 }
 
 /** Caption stays only while the typed number is still the niche number. */
