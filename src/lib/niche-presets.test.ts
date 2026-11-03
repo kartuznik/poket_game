@@ -10,7 +10,10 @@ import {
   formatFieldChange,
   listNichePresets,
   nicheById,
+  activeConversionNiche,
+  conversionModeCsvLabel,
   nicheCaptionVisible,
+  nicheConversionCardTitle,
   nicheIdFromConversionPreset,
   nichePromptKind,
   nicheTitle,
@@ -40,6 +43,16 @@ describe('niche presets', () => {
     expect(scenarioLine('beauty')).toBe('Сценарий: Бьюти-услуги');
     expect(nicheIdFromConversionPreset('niche:cafe-food')).toBe('cafe-food');
     expect(nicheIdFromConversionPreset('beauty-local')).toBeNull();
+    expect(activeConversionNiche('cafe-food', 'preset', 'beauty-local')).toBe('cafe-food');
+    expect(activeConversionNiche('cafe-food', 'preset', null)).toBe('cafe-food');
+    expect(activeConversionNiche(null, 'preset', 'beauty-local')).toBeNull();
+    expect(activeConversionNiche('cafe-food', 'custom', null)).toBeNull();
+    const cafe = listNichePresets().find((preset) => preset.id === 'cafe-food');
+    if (!cafe) throw new Error('missing cafe preset');
+    expect(nicheConversionCardTitle(cafe)).toBe('Ваша ниша: Кафе и еда — 25%');
+    expect(conversionModeCsvLabel('preset', 'niche:cafe-food')).toBe('Ниша: Кафе и еда');
+    expect(conversionModeCsvLabel('preset', 'beauty-local')).toBe('Сценарное допущение');
+    expect(conversionModeCsvLabel('custom', 'niche:cafe-food')).toBe('Моя конверсия');
     const byId = Object.fromEntries(listNichePresets().map((preset) => [preset.id, preset]));
     expect(byId['cafe-food']).toMatchObject({
       conversionPercent: 25,

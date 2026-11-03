@@ -76,6 +76,18 @@ describe('report export', () => {
     expect(csv).not.toContain('Предыдущее');
     expect(csv).not.toContain('Изменение');
     expect(csv).toContain('Выручка;Ниша;своя');
+    expect(csv).toContain('Выручка;Режим;Моя конверсия');
+    const nicheMode = buildReportCsv({
+      ...sources,
+      revenue: sources.revenue
+        ? {
+            ...sources.revenue,
+            inputs: { ...sources.revenue.inputs, mode: 'preset', presetId: 'niche:cafe-food' },
+          }
+        : null,
+    });
+    expect(nicheMode).toContain('Выручка;Режим;Ниша: Кафе и еда');
+    expect(nicheMode).not.toContain('Выручка;Режим;Сценарное допущение');
     const nicheLine = buildReportCsv(sources, [], 1, 'school')
       .split('\r\n')
       .find((line) => line.startsWith('Выручка;Ниша;'));

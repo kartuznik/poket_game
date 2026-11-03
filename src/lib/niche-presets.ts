@@ -138,6 +138,36 @@ export function nicheIdFromConversionPreset(presetId: string | null | undefined)
   return nicheById(presetId.slice('niche:'.length))?.id ?? null;
 }
 
+/**
+ * Which niche owns the conversion step. A standing niche wins in scenario mode,
+ * even if an old scenario id is still stored. Custom mode and an explicit old
+ * scenario with an empty niche leave the fifth card off.
+ */
+export function activeConversionNiche(
+  dossierNiche: BusinessNicheId | null,
+  mode: 'preset' | 'custom',
+  explicitOldScenario: string | null,
+): BusinessNicheId | null {
+  if (mode !== 'preset') return null;
+  if (explicitOldScenario && !dossierNiche) return null;
+  return dossierNiche;
+}
+
+/** Card heading: «Ваша ниша: Кафе и еда — 25%». */
+export function nicheConversionCardTitle(niche: NichePreset): string {
+  return `Ваша ниша: ${niche.title} — ${String(niche.conversionPercent)}%`;
+}
+
+/** CSV «Режим». A niche preset names the niche. The four old scenarios stay a scenario. */
+export function conversionModeCsvLabel(
+  mode: 'preset' | 'custom',
+  presetId: string | null | undefined,
+): string {
+  if (mode !== 'preset') return 'Моя конверсия';
+  const nicheId = nicheIdFromConversionPreset(presetId);
+  return nicheId ? `Ниша: ${nicheTitle(nicheId)}` : 'Сценарное допущение';
+}
+
 /** Caption stays only while the typed number is still the niche number. */
 export function nicheCaptionVisible(raw: string, presetValue: number): boolean {
   if (raw.trim() === '') return false;

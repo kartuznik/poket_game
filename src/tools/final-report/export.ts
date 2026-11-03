@@ -10,7 +10,7 @@ import { READINESS_ITEMS } from '../readiness-check/calc';
 import { confirmedPriorityLeader } from '../priority-diag/calc';
 import { calculateRoutine, getRoutinePresetById, routineItems } from '../routine-calc/calc';
 import type { MetricSnapshot } from '../../lib/dossier';
-import { nicheTitle, type BusinessNicheId } from '../../lib/niche-presets';
+import { conversionModeCsvLabel, nicheTitle, type BusinessNicheId } from '../../lib/niche-presets';
 import { buildProgress, metricDelta } from '../audit-finish/progress';
 import { buildWeekPlan } from '../audit-finish/week-plan';
 import type { ReportSources } from './summary';
@@ -163,7 +163,7 @@ export function buildReportCsv(
       num(section, 'Конверсия, %', revenue.inputs.conversionPercent),
       num(section, 'Средний чек, ₽', revenue.inputs.avgCheck),
       num(section, 'Доля возврата, %', (1 - revenue.inputs.lossFactor) * 100),
-      csvRow(section, 'Режим', revenue.inputs.mode === 'preset' ? 'Сценарное допущение' : 'Моя конверсия'),
+      csvRow(section, 'Режим', conversionModeCsvLabel(revenue.inputs.mode, revenue.inputs.presetId)),
       num(section, 'Поздних обращений', revenue.results.lateLeads),
       num(section, 'Риск в год, ₽', revenue.results.revenueAtRiskPerYear),
       num(section, 'Один вовремя отвеченный диалог, ₽', revenue.results.costPerMissedDialog),

@@ -14,10 +14,11 @@ import { copyTextToClipboard } from '../../lib/clipboard';
 import { recordMetricSnapshot } from '../../lib/dossier';
 import {
   NICHE_CAPTION,
+  activeConversionNiche,
   applyNicheGuess,
   nicheById,
   nicheCaptionVisible,
-  nicheIdFromConversionPreset,
+  nicheConversionCardTitle,
   nichePromptKind,
   revenueNicheFields,
   type BusinessNicheId,
@@ -203,7 +204,18 @@ export function renderRevenueRiskTool(
 
   let mode: ConversionInputMode = draft?.mode ?? saved?.inputs.mode ?? 'custom';
   let selectedPresetId: NichePresetId = restoredPreset;
-  let nicheConversionId: BusinessNicheId | null = nicheIdFromConversionPreset(savedPreset);
+  const explicitOldScenario =
+    savedPreset === 'beauty-local' ||
+    savedPreset === 'ecommerce' ||
+    savedPreset === 'experts-edu' ||
+    savedPreset === 'b2b-services'
+      ? savedPreset
+      : null;
+  let nicheConversionId: BusinessNicheId | null = activeConversionNiche(
+    dossier.read().niche,
+    mode,
+    explicitOldScenario,
+  );
   let tags: UncertaintyProfile =
     draft?.uncertainty ?? saved?.uncertainty ?? defaultUncertainty(mode);
   const storedCoverage = draft?.botCoverage ?? saved?.botCoverage ?? null;
@@ -270,6 +282,10 @@ export function renderRevenueRiskTool(
   subtitle.textContent = meta.subtitle;
 
   header.append(badge, title, subtitle);
+  const nicheStrip = document.createElement('p');
+  nicheStrip.className = 'niche-strip';
+  nicheStrip.hidden = true;
+  header.append(nicheStrip);
   inputCard.appendChild(header);
 
   if (incomingHandoff) {
@@ -856,14 +872,23 @@ export function renderRevenueRiskTool(
   }
 
   function paintConversionChoice(): void {
-    const niche = activeNiche();
+    if (mode === 'preset') {
+      nicheConversionId = activeConversionNiche(
+        dossier.read().niche,
+        mode,
+        nicheConversionId === null ? selectedPresetId : null,
+      );
+    }
+    const niche = mode === 'preset' ? activeNiche() : null;
     for (const [id, button] of presetButtons) {
       button.setAttribute('aria-pressed', String(!niche && id === selectedPresetId));
     }
     nicheCard.hidden = !niche;
+    nicheCard.setAttribute('aria-pressed', niche ? 'true' : 'false');
     if (!niche) return;
-    nicheCardTitle.textContent = niche.title;
-    nicheCardConv.textContent = `${String(niche.conversionPercent)}%`;
+    nicheCardTitle.textContent = nicheConversionCardTitle(niche);
+    nicheCardConv.textContent = '';
+    nicheCardConv.hidden = true;
     nicheCardCaption.textContent = niche.conversionCaption;
   }
 
@@ -1321,6 +1346,8 @@ export function renderRevenueRiskTool(
 
   function paintNicheNotes(): void {
     const preset = nicheById(dossier.read().niche);
+    nicheStrip.hidden = preset === null;
+    nicheStrip.textContent = preset ? `Ниша: ${preset.title}` : '';
     const rows: readonly [HTMLParagraphElement, string, number | undefined][] = [
       [leadsNote, leadsRaw, preset?.leadsPerMonth],
       [lateNote, lateShareRaw, preset?.lateSharePercent],
@@ -1389,6 +1416,12 @@ export function renderRevenueRiskTool(
     applyNumbers: applyRevenueNiche,
     applyLabel: (id) => {
       dossier.update((current) => ({ ...current, niche: id }));
+      if (mode === 'preset') {
+        nicheConversionId = activeConversionNiche(id, mode, id ? null : selectedPresetId);
+        syncConversionFieldWithMode();
+        recalculateAndRender();
+        persistRevenueDraft(wizard.currentStep());
+      }
       paintNicheNotes();
     },
     undo: () => {
