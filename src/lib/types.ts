@@ -98,7 +98,7 @@ export interface PriorityBridgeSnapshot {
   readonly toolId: 'priority-diag';
   readonly inputs: Readonly<Record<PriorityProcessId, PriorityScoreInput>>;
   readonly results: {
-    readonly topProcessId: PriorityProcessId;
+    readonly topProcessId: PriorityProcessId | null;
     readonly topTitle: string;
     readonly topScore: number;
     readonly tied: boolean;
@@ -107,6 +107,10 @@ export interface PriorityBridgeSnapshot {
       readonly title: string;
       readonly score: number;
     }[];
+    readonly board?: 'leader' | 'quiet' | 'tied';
+    readonly peerIds?: readonly PriorityProcessId[];
+    readonly resolution?: 'unique' | 'visitor' | 'money' | 'open';
+    readonly resolutionReason?: string;
   };
   readonly updatedAt: number;
 }

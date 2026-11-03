@@ -1737,6 +1737,38 @@ a:focus-visible {
   font-weight: 800;
 }
 
+.priority-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.priority-chip {
+  min-height: 44px;
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  background: transparent;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.priority-chip[aria-pressed='true'] {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
+.rank-badge {
+  margin-left: 0.4em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
 .scenario-disclaimer {
   margin: 0;
   padding: 12px 14px;

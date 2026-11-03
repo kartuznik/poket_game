@@ -7,14 +7,21 @@ import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { recordMetricSnapshot } from '../../lib/dossier';
 import { resolveInitialStep } from '../../lib/wizard';
-import type { PriorityProcessId, PriorityScoreInput } from '../../lib/types';
+import type { PriorityProcessId, PriorityScoreInput, RoutinePresetId } from '../../lib/types';
 import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
 import {
   PRIORITY_PROCESSES,
+  QUIET_TEXT,
+  classifyBoard,
+  composePriorityResults,
   rankProcesses,
+  resolvePriority,
   scoresFromPain,
-  type PriorityResult,
+  tieQuestion,
+  type PriorityBoard,
+  type PriorityResolution,
+  type RankedProcess,
 } from './calc';
 import type { PriorityScoreDraft } from '../../lib/dossier';
 
@@ -25,12 +32,27 @@ function formatScore(score: number): string {
   return Number.isInteger(score) ? String(score) : score.toFixed(1).replace('.', ',');
 }
 
-export function buildPriorityShareText(result: PriorityResult): string {
-  const lines = result.ranked
-    .map((item, index) => `${index + 1}. ${item.title} — ${formatScore(item.score)}`)
+export function buildPriorityShareText(
+  ranked: readonly RankedProcess[],
+  board: PriorityBoard,
+  resolution: PriorityResolution,
+): string {
+  const numbered = board.kind === 'leader';
+  const lines = ranked
+    .map((item, index) =>
+      numbered
+        ? `${index + 1}. ${item.title} — ${formatScore(item.score)}`
+        : `${item.title} — ${formatScore(item.score)}`,
+    )
     .join('\n');
+  const lead =
+    board.kind === 'quiet'
+      ? QUIET_TEXT
+      : board.kind === 'tied' && resolution.source === 'open'
+        ? tieQuestion(board.peers.length)
+        : resolution.reason;
   return [
-    result.top.recommendation,
+    lead,
     '',
     lines,
     '',
@@ -172,6 +194,14 @@ export function renderPriorityDiagTool(
   eyebrow.innerHTML = '<span>ВАШИ ПРИОРИТЕТЫ</span><span>@_kartuzzz</span>';
   const noteEl = document.createElement('p');
   noteEl.className = 'result-card__note';
+  const questionEl = document.createElement('p');
+  questionEl.className = 'result-card__note';
+  questionEl.hidden = true;
+  const chipBox = document.createElement('div');
+  chipBox.className = 'priority-chips';
+  chipBox.setAttribute('role', 'group');
+  chipBox.setAttribute('aria-label', 'Что сгорит первым, если неделю не трогать?');
+  chipBox.hidden = true;
   const list = document.createElement('ol');
   list.className = 'rank-list';
   const diffBox = document.createElement('div');
@@ -206,14 +236,17 @@ export function renderPriorityDiagTool(
   howSummary.textContent = 'Как посчитано';
   const howBody = document.createElement('p');
   howBody.className = 'info-details__body';
-  howBody.textContent =
-    'Цифра «насколько это больно» записывается сразу в частоту, время и цену ошибки. Балл = частота × 0,4 + время × 0,3 + цена ошибки × 0,3. При равном балле выше тот, где дороже ошибка, затем тот, где выше частота.';
+  const howBase =
+    'Цифра «насколько это больно» записывается сразу в частоту, время и цену ошибки. Балл = частота × 0,4 + время × 0,3 + цена ошибки × 0,3. Равный балл сам лидера не выбирает.';
+  howBody.textContent = howBase;
   how.append(howSummary, howBody);
 
   resultCard.append(
     createResultBanner(),
     eyebrow,
     noteEl,
+    questionEl,
+    chipBox,
     list,
     diffBox,
     actions,
@@ -223,7 +256,32 @@ export function renderPriorityDiagTool(
   panel.append(inputCard);
   container.append(panel);
 
-  let latest: PriorityResult | null = null;
+  let latestRanked: readonly RankedProcess[] | null = null;
+  let latestBoard: PriorityBoard | null = null;
+  let latestResolution: PriorityResolution | null = null;
+  let pickedProcessId: PriorityProcessId | null = draft?.pickedProcessId ?? null;
+  let draftStep = openedStep;
+
+  function moneyContext(): { revenue: number | null; routine: number | null } {
+    const revenue = bridge.getRevenueRiskResult();
+    const routine = bridge.getRoutineResult();
+    return {
+      revenue: revenue ? revenue.results.recoverableRevenue : null,
+      routine: routine ? routine.results.savedMoneyPerMonth : null,
+    };
+  }
+
+  function savedRoutinePresets(): readonly RoutinePresetId[] {
+    const routine = bridge.getRoutineResult();
+    if (!routine) return [];
+    const withItems = routine.inputs as typeof routine.inputs & {
+      items?: readonly { presetId: RoutinePresetId | null }[];
+    };
+    if (withItems.items && withItems.items.length > 0) {
+      return withItems.items.flatMap((item) => (item.presetId ? [item.presetId] : []));
+    }
+    return routine.inputs.presetId ? [routine.inputs.presetId] : [];
+  }
 
   function completedScores(): Record<PriorityProcessId, PriorityScoreInput> | null {
     const next = {} as Record<PriorityProcessId, PriorityScoreInput>;
@@ -242,32 +300,84 @@ export function renderPriorityDiagTool(
   function recalculate(): void {
     const ready = completedScores();
     if (!ready) {
-      latest = null;
+      latestRanked = null;
+      latestBoard = null;
+      latestResolution = null;
       noteEl.textContent = '';
+      questionEl.hidden = true;
+      chipBox.hidden = true;
+      chipBox.replaceChildren();
       list.replaceChildren();
       diffBox.hidden = true;
       refreshSteps();
       return;
     }
-    const result = rankProcesses(ready);
-    latest = result;
-    const tieNote = result.tied
-      ? ' Такой же балл есть ещё у одного процесса: выше поставлен тот, где дороже ошибка.'
-      : '';
-    noteEl.textContent = `Балл лидера ${formatScore(result.top.score)} из 5. ${result.top.recommendation}${tieNote}`;
+    const board = classifyBoard(ready);
+    if (pickedProcessId && !board.peers.some((item) => item.id === pickedProcessId)) {
+      pickedProcessId = null;
+    }
+    const resolution = resolvePriority(board, pickedProcessId, moneyContext(), savedRoutinePresets());
+    const ranked = rankProcesses(ready).ranked;
+    latestRanked = ranked;
+    latestBoard = board;
+    latestResolution = resolution;
+    const leader = resolution.processId
+      ? (ranked.find((item) => item.id === resolution.processId) ?? null)
+      : null;
 
-    list.replaceChildren();
-    for (const [index, item] of result.ranked.entries()) {
-      const row = document.createElement('li');
-      row.textContent = `${item.title} — ${formatScore(item.score)}`;
-      if (index < 3) row.className = 'rank-list__top';
-      list.append(row);
+    if (board.kind === 'quiet') {
+      noteEl.textContent = QUIET_TEXT;
+      questionEl.hidden = true;
+      chipBox.hidden = true;
+      chipBox.replaceChildren();
+    } else if (board.kind === 'leader' && leader) {
+      noteEl.textContent = `Балл лидера ${formatScore(leader.score)} из 5. ${leader.recommendation}`;
+      questionEl.hidden = true;
+      chipBox.hidden = true;
+      chipBox.replaceChildren();
+    } else {
+      noteEl.textContent = resolution.reason;
+      questionEl.hidden = false;
+      questionEl.textContent = tieQuestion(board.peers.length);
+      chipBox.hidden = false;
+      chipBox.replaceChildren();
+      for (const peer of PRIORITY_PROCESSES) {
+        if (!board.peers.some((item) => item.id === peer.id)) continue;
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'priority-chip';
+        chip.textContent = peer.title;
+        chip.setAttribute('aria-pressed', String(pickedProcessId === peer.id));
+        chip.addEventListener('click', () => {
+          pickedProcessId = peer.id;
+          recalculate();
+          persistPriorityDraft(draftStep);
+        });
+        chipBox.append(chip);
+      }
     }
 
+    const peerIds = new Set(board.peers.map((item) => item.id));
+    list.replaceChildren();
+    for (const item of ranked) {
+      const row = document.createElement('li');
+      row.textContent = `${item.title} — ${formatScore(item.score)}`;
+      if (board.kind === 'leader' && item.id === leader?.id) row.className = 'rank-list__top';
+      if (board.kind === 'tied' && peerIds.has(item.id)) {
+        const badge = document.createElement('span');
+        badge.className = 'rank-badge';
+        badge.textContent = 'одинаковый балл';
+        row.append(badge);
+      }
+      list.append(row);
+    }
+    howBody.textContent = `${howBase} ${resolution.reason}`;
+
     const stored = store.load('priority-diag');
+    const nowLabel = leader?.title ?? 'Лидер не назначен';
     if (stored) {
       diffBox.hidden = false;
-      diffBox.textContent = `Сравнение «До / После»: было «${stored.label}» → сейчас «${result.top.title}».`;
+      diffBox.textContent = `Сравнение «До / После»: было «${stored.label}» → сейчас «${nowLabel}».`;
     } else {
       diffBox.hidden = true;
     }
@@ -275,23 +385,25 @@ export function renderPriorityDiagTool(
   }
 
   copyBtn.addEventListener('click', async () => {
-    if (!latest) return;
+    if (!latestRanked || !latestBoard || !latestResolution) return;
     const copied = await copyTextToClipboard(
-      buildPriorityShareText(latest),
+      buildPriorityShareText(latestRanked, latestBoard, latestResolution),
       'приоритет для Threads',
     );
     showStatusToast(toast, copied.ok ? 'Скопировано резюме для Threads' : copied.message);
   });
 
   saveBtn.addEventListener('click', () => {
-    if (!latest) return;
+    if (!latestResolution || !latestRanked) return;
+    const leader = latestRanked.find((item) => item.id === latestResolution?.processId) ?? null;
+    const label = leader?.title ?? 'Лидер не назначен';
     store.save('priority-diag', {
-      label: latest.top.title,
-      primaryValue: latest.top.score,
-      formattedValue: `${latest.top.title} (${formatScore(latest.top.score)})`,
+      label,
+      primaryValue: leader?.score ?? 0,
+      formattedValue: leader ? `${leader.title} (${formatScore(leader.score)})` : label,
     });
     recalculate();
-    showStatusToast(toast, `Сохранено «До»: ${latest.top.title}.`);
+    showStatusToast(toast, `Сохранено «До»: ${label}.`);
   });
 
   function persistPriorityDraft(step: number): void {
@@ -307,6 +419,7 @@ export function renderPriorityDiagTool(
           reminders: { ...scores.reminders },
           reports: { ...scores.reports },
         },
+        pickedProcessId,
       },
     }));
   }
@@ -314,20 +427,10 @@ export function renderPriorityDiagTool(
   function finishPriority(): void {
     recalculate();
     const ready = completedScores();
-    if (!latest || !ready) return;
+    if (!ready) return;
     const snapshot = bridge.savePriorityResult({
       inputs: ready,
-      results: {
-        topProcessId: latest.top.id,
-        topTitle: latest.top.title,
-        topScore: latest.top.score,
-        tied: latest.tied,
-        ranking: latest.ranked.map((item) => ({
-          id: item.id,
-          title: item.title,
-          score: item.score,
-        })),
-      },
+      results: composePriorityResults(ready, pickedProcessId, moneyContext(), savedRoutinePresets()),
     });
     dossier.update((current) =>
       recordMetricSnapshot({ ...current, priority: snapshot }, Date.now()),
@@ -345,9 +448,10 @@ export function renderPriorityDiagTool(
     isStepValid: () => completedScores() !== null,
     finishLabel: meta.nextToolCta,
     onStep: (step) => {
+      draftStep = step;
       onWizardStep(step);
       persistPriorityDraft(step);
-      if (!latest) resultCard.hidden = true;
+      if (!latestRanked) resultCard.hidden = true;
     },
     onFinish: finishPriority,
   });

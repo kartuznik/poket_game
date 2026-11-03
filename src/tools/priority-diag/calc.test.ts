@@ -6,9 +6,11 @@ import {
   QUIET_TEXT,
   classifyBoard,
   clampScore,
+  composePriorityResults,
   defaultPriorityInputs,
   rankProcesses,
   resolvePriority,
+  restorePriorityResults,
   scoreProcess,
   scoresFromPain,
   tieQuestion,
@@ -281,6 +283,32 @@ describe('resolvePriority', () => {
     expect(quiet.reason).toBe(QUIET_TEXT);
     expect(quiet.processId).toBeNull();
     expect(quiet.reason).not.toContain('это больше');
+  });
+
+  it('drops a stored chip that left the tie and keeps a chip that is still tied', () => {
+    const moved = restorePriorityResults(boardOf(5, { inquiries: pain(1) }), {
+      topProcessId: 'inquiries',
+      resolution: 'visitor',
+      resolutionReason: 'Лидер — «Приём обращений»: вы выбрали, что сгорит первым.',
+    });
+    expect(moved.topProcessId).not.toBe('inquiries');
+    expect(moved.resolution).not.toBe('visitor');
+    expect(moved.topTitle).not.toBe('Приём обращений');
+
+    const kept = restorePriorityResults(boardOf(5), {
+      topProcessId: 'payment',
+      resolution: 'visitor',
+      resolutionReason: 'старая причина',
+    });
+    expect(kept.topProcessId).toBe('payment');
+    expect(kept.resolution).toBe('visitor');
+    expect(kept.resolutionReason).toContain('Оплата');
+
+    const payment = composePriorityResults(boardOf(5), 'payment', noMoney, []);
+    const answers = composePriorityResults(boardOf(5), 'answers', noMoney, []);
+    expect(payment.topProcessId).toBe('payment');
+    expect(answers.topProcessId).toBe('answers');
+    expect(payment.resolutionReason).not.toBe(answers.resolutionReason);
   });
 
   it('asks which tied process burns first, with a plural for a partial tie', () => {

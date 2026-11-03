@@ -316,3 +316,85 @@ export function resolvePriority(
     winner === null;
   return { source: 'open', processId: null, reason: openReason(money, ambiguous) };
 }
+
+export interface StoredPriorityChoice {
+  readonly topProcessId: PriorityProcessId | null;
+  readonly resolution: RankSource | null;
+  readonly resolutionReason: string | null;
+}
+
+export interface PriorityResultFields {
+  readonly topProcessId: PriorityProcessId | null;
+  readonly topTitle: string;
+  readonly topScore: number;
+  readonly tied: boolean;
+  readonly ranking: readonly {
+    readonly id: PriorityProcessId;
+    readonly title: string;
+    readonly score: number;
+  }[];
+  readonly board: PriorityBoardKind;
+  readonly peerIds: readonly PriorityProcessId[];
+  readonly resolution: RankSource;
+  readonly resolutionReason: string;
+}
+
+/** Saves the board from inputs. A chip outside the current tie does not become the leader. */
+export function composePriorityResults(
+  inputs: Readonly<Record<PriorityProcessId, PriorityScoreInput>>,
+  pick: PriorityProcessId | null,
+  money: PriorityMoney,
+  routinePresetIds: readonly RoutinePresetId[],
+): PriorityResultFields {
+  const board = classifyBoard(inputs);
+  const resolution = resolvePriority(board, pick, money, routinePresetIds);
+  const ranked = rankProcesses(inputs).ranked;
+  const leader = resolution.processId
+    ? (ranked.find((item) => item.id === resolution.processId) ?? null)
+    : null;
+  return {
+    topProcessId: leader?.id ?? null,
+    topTitle: leader?.title ?? '',
+    topScore: leader?.score ?? board.peers[0]?.score ?? 0,
+    tied: board.kind !== 'leader',
+    ranking: ranked.map((item) => ({ id: item.id, title: item.title, score: item.score })),
+    board: board.kind,
+    peerIds: board.peers.map((item) => item.id),
+    resolution: resolution.source,
+    resolutionReason: resolution.reason,
+  };
+}
+
+/**
+ * Rebuilds a saved board from inputs. A visitor chip is kept only while that
+ * process is still tied. A disappeared tie or a process that left the tie
+ * cannot come back as the leader.
+ */
+export function restorePriorityResults(
+  inputs: Readonly<Record<PriorityProcessId, PriorityScoreInput>>,
+  stored: StoredPriorityChoice,
+): PriorityResultFields {
+  const board = classifyBoard(inputs);
+  if (board.kind !== 'tied') {
+    return composePriorityResults(inputs, null, { revenue: null, routine: null }, []);
+  }
+  const stillPeer =
+    stored.topProcessId !== null && board.peers.some((item) => item.id === stored.topProcessId);
+  if (stored.resolution === 'visitor' && stillPeer) {
+    return composePriorityResults(inputs, stored.topProcessId, { revenue: null, routine: null }, []);
+  }
+  if (stored.resolution === 'money' && stillPeer && stored.resolutionReason) {
+    const base = composePriorityResults(inputs, null, { revenue: null, routine: null }, []);
+    const leader = rankProcesses(inputs).ranked.find((item) => item.id === stored.topProcessId);
+    if (!leader) return base;
+    return {
+      ...base,
+      topProcessId: leader.id,
+      topTitle: leader.title,
+      topScore: leader.score,
+      resolution: 'money',
+      resolutionReason: stored.resolutionReason,
+    };
+  }
+  return composePriorityResults(inputs, null, { revenue: null, routine: null }, []);
+}

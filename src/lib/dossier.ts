@@ -1,3 +1,4 @@
+import { restorePriorityResults, type RankSource } from '../tools/priority-diag/calc';
 import type { BusinessNicheId } from './niche-presets';
 import { nicheById } from './niche-presets';
 import type { ToolBridge } from './bridge';
@@ -61,6 +62,8 @@ export interface PriorityScoreDraft {
 export interface PriorityDraft {
   readonly step: number;
   readonly scores: Readonly<Record<PriorityProcessId, PriorityScoreDraft>>;
+  /** Set when the visitor names a tied process. A stale id is dropped on read. */
+  readonly pickedProcessId?: PriorityProcessId | null;
 }
 
 export interface ReadinessDraft {
@@ -403,7 +406,8 @@ function readPriorityDraft(value: unknown): PriorityDraft | null {
     if (frequency === 'bad' || time === 'bad' || errorCost === 'bad') return null;
     scores[id] = { frequency, time, errorCost };
   }
-  return { step, scores };
+  const pickedProcessId = PRIORITY_IDS.find((id) => id === value.pickedProcessId) ?? null;
+  return { step, scores, pickedProcessId };
 }
 
 function readReadinessDraft(value: unknown): ReadinessDraft | null {
@@ -549,32 +553,35 @@ function readPriority(value: unknown): PriorityBridgeSnapshot | null {
       errorCost: row.errorCost,
     };
   }
-  const topProcessId = PRIORITY_IDS.find((id) => id === results.topProcessId);
-  const topTitle = text(results.topTitle);
-  const topScore = finite(results.topScore);
   const updatedAt = finite(value.updatedAt);
-  if (!topProcessId || topTitle === null || topScore === null || updatedAt === null) return null;
-  if (typeof results.tied !== 'boolean' || !Array.isArray(results.ranking)) return null;
-  const ranking: { id: PriorityProcessId; title: string; score: number }[] = [];
-  for (const row of results.ranking) {
-    if (!isRecord(row)) return null;
-    const id = PRIORITY_IDS.find((item) => item === row.id);
-    const title = text(row.title);
-    const rowScore = finite(row.score);
-    if (!id || title === null || rowScore === null) return null;
-    ranking.push({ id, title, score: rowScore });
+  if (updatedAt === null) return null;
+  if (
+    results.topProcessId !== null &&
+    results.topProcessId !== undefined &&
+    !PRIORITY_IDS.some((id) => id === results.topProcessId)
+  ) {
+    return null;
   }
+  const storedTop =
+    results.topProcessId === null || results.topProcessId === undefined
+      ? null
+      : (PRIORITY_IDS.find((id) => id === results.topProcessId) ?? null);
+  const resolution: RankSource | null =
+    results.resolution === 'unique' ||
+    results.resolution === 'visitor' ||
+    results.resolution === 'money' ||
+    results.resolution === 'open'
+      ? results.resolution
+      : null;
   return {
     toolId: 'priority-diag',
     updatedAt,
     inputs: completeScores,
-    results: {
-      topProcessId,
-      topTitle,
-      topScore,
-      tied: results.tied,
-      ranking,
-    },
+    results: restorePriorityResults(completeScores, {
+      topProcessId: storedTop,
+      resolution,
+      resolutionReason: text(results.resolutionReason),
+    }),
   };
 }
 

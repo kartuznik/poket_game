@@ -555,4 +555,109 @@ describe('business dossier', () => {
     expect(ready.errors.name).toBeNull();
     expect(ready.errors.contact).toBeNull();
   });
+
+  it('hides a fake priority leader from an old all-ones or tied record', () => {
+    const scores = {
+      inquiries: { frequency: 1, time: 1, errorCost: 1 },
+      answers: { frequency: 1, time: 1, errorCost: 1 },
+      booking: { frequency: 1, time: 1, errorCost: 1 },
+      payment: { frequency: 1, time: 1, errorCost: 1 },
+      reminders: { frequency: 1, time: 1, errorCost: 1 },
+      reports: { frequency: 1, time: 1, errorCost: 1 },
+    };
+    const quiet = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      priority: {
+        toolId: 'priority-diag',
+        updatedAt: 4,
+        inputs: scores,
+        results: {
+          topProcessId: 'inquiries',
+          topTitle: 'Приём обращений',
+          topScore: 1,
+          tied: true,
+          ranking: [{ id: 'inquiries', title: 'Приём обращений', score: 1 }],
+        },
+      },
+    });
+    expect(quiet?.priority?.results.board).toBe('quiet');
+    expect(quiet?.priority?.results.topProcessId).toBeNull();
+    expect(quiet?.priority?.results.topTitle).not.toBe('Приём обращений');
+    expect(quiet?.priority?.results.resolutionReason).toContain('Ранга нет');
+
+    const tied = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      priority: {
+        toolId: 'priority-diag',
+        updatedAt: 4,
+        inputs: {
+          ...scores,
+          inquiries: { frequency: 5, time: 5, errorCost: 5 },
+          answers: { frequency: 5, time: 5, errorCost: 5 },
+        },
+        results: {
+          topProcessId: 'inquiries',
+          topTitle: 'Приём обращений',
+          topScore: 5,
+          tied: true,
+          ranking: [{ id: 'inquiries', title: 'Приём обращений', score: 5 }],
+        },
+      },
+    });
+    expect(tied?.priority?.results.board).toBe('tied');
+    expect(tied?.priority?.results.topProcessId).toBeNull();
+    expect(tied?.priority?.results.resolution).toBe('open');
+
+    const leader = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      priority: {
+        toolId: 'priority-diag',
+        updatedAt: 4,
+        inputs: { ...scores, payment: { frequency: 5, time: 5, errorCost: 5 } },
+        results: {
+          topProcessId: 'inquiries',
+          topTitle: 'Приём обращений',
+          topScore: 1,
+          tied: false,
+          ranking: [],
+        },
+      },
+    });
+    expect(leader?.priority?.results.topProcessId).toBe('payment');
+    expect(leader?.priority?.results.resolution).toBe('unique');
+  });
+
+  it('does not let a stale visitor chip become the leader again', () => {
+    const restored = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      priority: {
+        toolId: 'priority-diag',
+        updatedAt: 4,
+        inputs: {
+          inquiries: { frequency: 1, time: 1, errorCost: 1 },
+          answers: { frequency: 5, time: 5, errorCost: 5 },
+          booking: { frequency: 5, time: 5, errorCost: 5 },
+          payment: { frequency: 5, time: 5, errorCost: 5 },
+          reminders: { frequency: 5, time: 5, errorCost: 5 },
+          reports: { frequency: 5, time: 5, errorCost: 5 },
+        },
+        results: {
+          topProcessId: 'inquiries',
+          topTitle: 'Приём обращений',
+          topScore: 5,
+          tied: true,
+          ranking: [],
+          board: 'tied',
+          resolution: 'visitor',
+          resolutionReason: 'Лидер — «Приём обращений»: вы выбрали, что сгорит первым.',
+        },
+      },
+    });
+    expect(restored?.priority?.results.topProcessId).not.toBe('inquiries');
+    expect(restored?.priority?.results.resolution).not.toBe('visitor');
+  });
 });
