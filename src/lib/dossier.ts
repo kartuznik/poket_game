@@ -45,6 +45,7 @@ export interface RevenueDraft {
 export interface RoutineDraft {
   readonly step: number;
   readonly presetId: RoutinePresetId | null;
+  readonly presetIds?: readonly RoutinePresetId[];
   /** True after «Введу свои цифры» or a typed number, so step 1 is no longer blank. */
   readonly customEntry: boolean;
   readonly operationsPerWeek: string;
@@ -376,10 +377,16 @@ function readRoutineDraft(value: unknown): RoutineDraft | null {
     minutesPerOperation !== '' ||
     automationSharePercent !== '';
   const customEntry =
-    value.customEntry === true || (presetId === null && typedOwnNumbers);
+    value.customEntry === true || (presetId === null && typedOwnNumbers && !Array.isArray(value.presetIds));
+  const presetIds = Array.isArray(value.presetIds)
+    ? value.presetIds.filter((id): id is RoutinePresetId => ROUTINE_PRESETS.some((item) => item === id))
+    : presetId
+      ? [presetId]
+      : [];
   return {
     step,
-    presetId,
+    presetId: presetIds.length === 1 ? presetIds[0]! : presetId,
+    presetIds,
     customEntry,
     operationsPerWeek,
     minutesPerOperation,
@@ -481,6 +488,37 @@ function readRevenue(value: unknown): RevenueRiskBridgeSnapshot | null {
   };
 }
 
+function readRoutineItems(
+  value: unknown,
+):
+  | readonly {
+      readonly presetId: RoutinePresetId | null;
+      readonly operationsPerWeek: number;
+      readonly minutesPerOperation: number;
+      readonly automationSharePercent: number;
+    }[]
+  | null
+  | 'bad' {
+  if (value === undefined) return null;
+  if (!Array.isArray(value) || value.length === 0) return 'bad';
+  const items = [];
+  for (const row of value) {
+    if (!isRecord(row)) return 'bad';
+    const operationsPerWeek = finite(row.operationsPerWeek);
+    const minutesPerOperation = finite(row.minutesPerOperation);
+    const automationSharePercent = finite(row.automationSharePercent);
+    if (operationsPerWeek === null || minutesPerOperation === null || automationSharePercent === null) {
+      return 'bad';
+    }
+    const presetRaw = row.presetId;
+    const presetId =
+      presetRaw === null ? null : ROUTINE_PRESETS.find((id) => id === presetRaw) ?? null;
+    if (presetRaw !== null && presetId === null) return 'bad';
+    items.push({ presetId, operationsPerWeek, minutesPerOperation, automationSharePercent });
+  }
+  return items;
+}
+
 function readRoutine(value: unknown): RoutineBridgeSnapshot | null {
   if (!isRecord(value) || value.toolId !== 'routine-calc') return null;
   if (!isRecord(value.inputs) || !isRecord(value.results)) return null;
@@ -514,17 +552,24 @@ function readRoutine(value: unknown): RoutineBridgeSnapshot | null {
   }
   const presetRaw = value.inputs.presetId;
   const presetId =
-    presetRaw === null ? null : ROUTINE_PRESETS.find((id) => id === presetRaw) ?? null;
-  if (presetRaw !== null && presetId === null) return null;
+    presetRaw === null || presetRaw === undefined
+      ? null
+      : ROUTINE_PRESETS.find((id) => id === presetRaw) ?? null;
+  if (presetRaw !== null && presetRaw !== undefined && presetId === null) return null;
+  const items = readRoutineItems(value.inputs.items);
+  if (items === 'bad') return null;
   return {
     toolId: 'routine-calc',
     updatedAt,
     inputs: {
-      presetId,
+      presetId: items?.[0]?.presetId ?? presetId,
       operationsPerWeek,
       minutesPerOperation,
       hourlyRate,
       automationSharePercent,
+      items: items ?? [
+        { presetId, operationsPerWeek, minutesPerOperation, automationSharePercent },
+      ],
     },
     results: {
       hoursPerMonth,

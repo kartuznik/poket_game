@@ -3,6 +3,7 @@ import { formatNumber, formatWorkHours } from '../../lib/format';
 import { buildProgress, progressChart } from '../audit-finish/progress';
 import { buildWeekPlan } from '../audit-finish/week-plan';
 import { QUIET_TEXT, confirmedPriorityLeader } from '../priority-diag/calc';
+import { calculateRoutine, getRoutinePresetById, routineItems } from '../routine-calc/calc';
 import {
   computeCorridor,
   computeWhatIf,
@@ -250,6 +251,23 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
     progressHtml = `<section><h2>Ваш прогресс</h2><p>${esc(`${progress.line.label}: ${progress.line.text}`)}</p>${figure}</section>`;
   }
 
+  let routinesHtml = '';
+  if (routine) {
+    const items = routineItems(routine.inputs);
+    const rows = items
+      .map((item) => {
+        const title = item.presetId ? getRoutinePresetById(item.presetId).title : 'свои цифры';
+        const partial = calculateRoutine({ ...item, hourlyRate: null });
+        return `<tr><th>${esc(title)}</th><td>${esc(formatWorkHours(partial.hoursPerMonth))}</td><td>${esc(`${String(item.automationSharePercent)}%`)}</td></tr>`;
+      })
+      .join('');
+    const total =
+      items.length > 1
+        ? `<tr><th>Итого</th><td>${esc(formatWorkHours(routine.results.hoursPerMonth))}</td><td></td></tr>`
+        : '';
+    routinesHtml = `<section><h2>Рутина</h2><table>${rows}${total}</table></section>`;
+  }
+
   const plan = buildWeekPlan(sources);
   const planHtml =
     plan.length === 0
@@ -281,6 +299,7 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
 </header>
 <section class="metrics" aria-label="Сводка">${cards}</section>
 ${corridor}
+${routinesHtml}
 ${top}
 ${progressHtml}
 ${planHtml}

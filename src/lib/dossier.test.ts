@@ -630,6 +630,41 @@ describe('business dossier', () => {
     expect(leader?.priority?.results.resolution).toBe('unique');
   });
 
+  it('reads an old single routine as one list item and keeps the stored numbers', () => {
+    const restored = parseDossier({
+      version: 2,
+      updatedAt: 8,
+      routine: {
+        toolId: 'routine-calc',
+        updatedAt: 8,
+        inputs: {
+          presetId: 'answers',
+          operationsPerWeek: 40,
+          minutesPerOperation: 6,
+          hourlyRate: 500,
+          automationSharePercent: 70,
+        },
+        results: {
+          hoursPerMonth: 99,
+          workDaysPerYear: 1,
+          savedHoursPerMonth: 2,
+          savedWorkDaysPerYear: 3,
+          savedMoneyPerMonth: 4,
+        },
+      },
+    });
+    expect(restored?.routine?.inputs.items).toEqual([
+      {
+        presetId: 'answers',
+        operationsPerWeek: 40,
+        minutesPerOperation: 6,
+        automationSharePercent: 70,
+      },
+    ]);
+    expect(restored?.routine?.results.hoursPerMonth).toBe(99);
+    expect(restored?.routine?.results.savedMoneyPerMonth).toBe(4);
+  });
+
   it('does not let a stale visitor chip become the leader again', () => {
     const restored = parseDossier({
       version: 2,

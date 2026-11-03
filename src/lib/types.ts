@@ -61,6 +61,13 @@ export interface RevenueRiskBridgeSnapshot {
 
 export type RoutinePresetId = 'answers' | 'orders' | 'booking' | 'sheets';
 
+export interface RoutineItemSnapshot {
+  readonly presetId: RoutinePresetId | null;
+  readonly operationsPerWeek: number;
+  readonly minutesPerOperation: number;
+  readonly automationSharePercent: number;
+}
+
 export interface RoutineBridgeSnapshot {
   readonly toolId: 'routine-calc';
   readonly inputs: {
@@ -69,6 +76,7 @@ export interface RoutineBridgeSnapshot {
     readonly minutesPerOperation: number;
     readonly hourlyRate: number | null;
     readonly automationSharePercent: number;
+    readonly items?: readonly RoutineItemSnapshot[];
   };
   readonly results: {
     readonly hoursPerMonth: number;

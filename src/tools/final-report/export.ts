@@ -8,7 +8,7 @@ import {
 } from '../revenue-risk/calc';
 import { READINESS_ITEMS } from '../readiness-check/calc';
 import { confirmedPriorityLeader } from '../priority-diag/calc';
-import { getRoutinePresetById } from '../routine-calc/calc';
+import { calculateRoutine, getRoutinePresetById, routineItems } from '../routine-calc/calc';
 import type { MetricSnapshot } from '../../lib/dossier';
 import { nicheTitle, type BusinessNicheId } from '../../lib/niche-presets';
 import { buildProgress, metricDelta } from '../audit-finish/progress';
@@ -200,24 +200,52 @@ export function buildReportCsv(
 
   if (routine) {
     const section = 'Рутина';
-    lines.push(
-      csvRow(
-        section,
-        'Типовая рутина',
-        routine.inputs.presetId ? getRoutinePresetById(routine.inputs.presetId).title : 'свои цифры',
-      ),
-      num(section, 'Операций в неделю', routine.inputs.operationsPerWeek),
-      num(section, 'Минут на операцию', routine.inputs.minutesPerOperation),
-      num(section, 'Доля автоматизации, %', routine.inputs.automationSharePercent),
-    );
-    if (routine.inputs.hourlyRate !== null) {
-      lines.push(num(section, 'Ставка, ₽/час', routine.inputs.hourlyRate));
+    const items = routineItems(routine.inputs);
+    if (items.length <= 1) {
+      const item = items[0];
+      lines.push(
+        csvRow(
+          section,
+          'Типовая рутина',
+          item?.presetId ? getRoutinePresetById(item.presetId).title : 'свои цифры',
+        ),
+        num(section, 'Операций в неделю', item?.operationsPerWeek ?? routine.inputs.operationsPerWeek),
+        num(section, 'Минут на операцию', item?.minutesPerOperation ?? routine.inputs.minutesPerOperation),
+        num(section, 'Доля автоматизации, %', item?.automationSharePercent ?? routine.inputs.automationSharePercent),
+      );
+      if (routine.inputs.hourlyRate !== null) {
+        lines.push(num(section, 'Ставка, ₽/час', routine.inputs.hourlyRate));
+      }
+      lines.push(
+        num(section, 'Часов в месяц', routine.results.hoursPerMonth),
+        num(section, 'Рабочих дней в год', routine.results.workDaysPerYear),
+        num(section, 'Экономия часов в месяц', routine.results.savedHoursPerMonth),
+      );
+    } else {
+      for (const item of items) {
+        const partial = calculateRoutine({ ...item, hourlyRate: null });
+        lines.push(
+          csvRow(
+            section,
+            'Типовая рутина',
+            item.presetId ? getRoutinePresetById(item.presetId).title : 'свои цифры',
+          ),
+          num(section, 'Операций в неделю', item.operationsPerWeek),
+          num(section, 'Минут на операцию', item.minutesPerOperation),
+          num(section, 'Доля автоматизации, %', item.automationSharePercent),
+          num(section, 'Часов в месяц у рутины', partial.hoursPerMonth),
+          num(section, 'Экономия часов у рутины', partial.savedHoursPerMonth),
+        );
+      }
+      if (routine.inputs.hourlyRate !== null) {
+        lines.push(num(section, 'Ставка, ₽/час', routine.inputs.hourlyRate));
+      }
+      lines.push(
+        num(section, 'Итого часов в месяц', routine.results.hoursPerMonth),
+        num(section, 'Итого рабочих дней в год', routine.results.workDaysPerYear),
+        num(section, 'Итого экономия часов в месяц', routine.results.savedHoursPerMonth),
+      );
     }
-    lines.push(
-      num(section, 'Часов в месяц', routine.results.hoursPerMonth),
-      num(section, 'Рабочих дней в год', routine.results.workDaysPerYear),
-      num(section, 'Экономия часов в месяц', routine.results.savedHoursPerMonth),
-    );
     lines.push(
       routine.results.savedMoneyPerMonth === null
         ? csvRow(section, 'Итого экономия, ₽/мес', '')

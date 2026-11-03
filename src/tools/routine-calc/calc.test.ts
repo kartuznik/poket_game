@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   ROUTINE_PRESETS,
+  aggregateRoutine,
   answersAutomationPercent,
   calculateRoutine,
+  weightedAutomationShare,
   getRoutinePresetById,
   validateRoutineDraft,
 } from './calc';
@@ -159,5 +161,78 @@ describe('routine presets', () => {
         inputs: { presetId: null, automationSharePercent: 70 },
       }),
     ).toBeNull();
+    expect(
+      answersAutomationPercent({
+        inputs: {
+          presetId: null,
+          automationSharePercent: 0,
+          items: [
+            { presetId: 'orders', operationsPerWeek: 25, minutesPerOperation: 10, automationSharePercent: 60 },
+            { presetId: 'booking', operationsPerWeek: 20, minutesPerOperation: 8, automationSharePercent: 75 },
+          ],
+        },
+      }),
+    ).toBeNull();
+    expect(
+      answersAutomationPercent({
+        inputs: {
+          presetId: 'orders',
+          automationSharePercent: 60,
+          items: [
+            { presetId: 'answers', operationsPerWeek: 40, minutesPerOperation: 6, automationSharePercent: 70 },
+            { presetId: 'sheets', operationsPerWeek: 15, minutesPerOperation: 12, automationSharePercent: 80 },
+          ],
+        },
+      }),
+    ).toBe(70);
+  });
+});
+
+describe('aggregateRoutine', () => {
+  const orders = {
+    operationsPerWeek: 25,
+    minutesPerOperation: 10,
+    automationSharePercent: 60,
+    hourlyRate: null as number | null,
+  };
+  const booking = {
+    operationsPerWeek: 20,
+    minutesPerOperation: 8,
+    automationSharePercent: 75,
+    hourlyRate: null as number | null,
+  };
+
+  it('matches a single preset with the old calculation, including an empty rate and a zero rate', () => {
+    const one = {
+      operationsPerWeek: 40,
+      minutesPerOperation: 6,
+      automationSharePercent: 70,
+      hourlyRate: 500 as number | null,
+    };
+    expect(aggregateRoutine([one])).toEqual(calculateRoutine(one));
+    expect(aggregateRoutine([{ ...one, hourlyRate: null }]).savedMoneyPerMonth).toBeNull();
+    expect(aggregateRoutine([{ ...one, hourlyRate: 0 }]).savedMoneyPerMonth).toBe(0);
+    expect(aggregateRoutine([{ ...one, automationSharePercent: 0 }]).savedHoursPerMonth).toBe(0);
+  });
+
+  it('sums two and three presets and weights the share by hours once', () => {
+    const two = aggregateRoutine([orders, booking]);
+    expect(two.hoursPerMonth).toBe(29.59);
+    expect(two.savedHoursPerMonth).toBe(19.49);
+    expect(weightedAutomationShare([orders, booking])).toBe(65.85);
+    const three = aggregateRoutine([
+      { operationsPerWeek: 40, minutesPerOperation: 6, automationSharePercent: 70, hourlyRate: null },
+      orders,
+      booking,
+    ]);
+    expect(three.hoursPerMonth).toBe(46.91);
+    expect(three.savedHoursPerMonth).toBe(31.61);
+    expect(
+      weightedAutomationShare([
+        { operationsPerWeek: 40, minutesPerOperation: 6, automationSharePercent: 70, hourlyRate: null },
+        orders,
+        booking,
+      ]),
+    ).toBe(67.38);
   });
 });

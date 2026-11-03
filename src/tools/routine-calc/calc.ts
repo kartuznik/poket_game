@@ -60,20 +60,48 @@ export function getRoutinePresetById(id: RoutinePresetId): RoutinePreset {
   return ROUTINE_PRESETS.find((preset) => preset.id === id) ?? ROUTINE_PRESETS[0]!;
 }
 
-/** Share from a confirmed routine whose process is «Ответы на вопросы». */
+export interface RoutineItemSnapshot {
+  readonly presetId: RoutinePresetId | null;
+  readonly operationsPerWeek: number;
+  readonly minutesPerOperation: number;
+  readonly automationSharePercent: number;
+}
+
+/** One saved preset becomes a one-element list. A stored list is kept as written. */
+export function routineItems(inputs: {
+  readonly presetId?: RoutinePresetId | null;
+  readonly operationsPerWeek?: number;
+  readonly minutesPerOperation?: number;
+  readonly automationSharePercent?: number;
+  readonly items?: readonly RoutineItemSnapshot[];
+}): readonly RoutineItemSnapshot[] {
+  if (inputs.items && inputs.items.length > 0) return inputs.items;
+  return [
+    {
+      presetId: inputs.presetId ?? null,
+      operationsPerWeek: inputs.operationsPerWeek ?? 0,
+      minutesPerOperation: inputs.minutesPerOperation ?? 0,
+      automationSharePercent: inputs.automationSharePercent ?? 0,
+    },
+  ];
+}
+
+/** Share of the «Ответы на вопросы» item only. Missing answers means there is nothing to copy. */
 export function answersAutomationPercent(
   routine: {
     readonly inputs: {
-      readonly presetId: RoutinePresetId | null;
-      readonly automationSharePercent: number;
+      readonly presetId?: RoutinePresetId | null;
+      readonly automationSharePercent?: number;
+      readonly operationsPerWeek?: number;
+      readonly minutesPerOperation?: number;
+      readonly items?: readonly RoutineItemSnapshot[];
     };
   } | null,
 ): number | null {
-  if (!routine || routine.inputs.presetId === null) return null;
-  const preset = ROUTINE_PRESETS.find((item) => item.id === routine.inputs.presetId);
-  if (!preset || preset.title !== 'Ответы на вопросы') return null;
-  const share = routine.inputs.automationSharePercent;
-  return Number.isFinite(share) ? share : null;
+  if (!routine) return null;
+  const answers = routineItems(routine.inputs).find((item) => item.presetId === 'answers');
+  if (!answers) return null;
+  return Number.isFinite(answers.automationSharePercent) ? answers.automationSharePercent : null;
 }
 
 export interface RoutineInput {
@@ -144,6 +172,59 @@ export function calculateRoutine(input: RoutineInput): RoutineResult {
     savedWorkDaysPerYear,
     savedMoneyPerMonth: rate === null ? null : round2(savedHoursPerMonth * rate),
   };
+}
+
+function rawHours(operations: number, minutes: number): number {
+  return (operations * minutes * WEEKS_PER_MONTH) / 60;
+}
+
+/** Sum of hours, with the automation share weighted by those hours and rounded once. */
+export function aggregateRoutine(items: readonly RoutineInput[]): RoutineResult {
+  if (items.length === 1) return calculateRoutine(items[0] ?? {
+    operationsPerWeek: 0,
+    minutesPerOperation: 0,
+    automationSharePercent: 0,
+    hourlyRate: null,
+  });
+  let hoursSum = 0;
+  let savedSum = 0;
+  for (const item of items) {
+    const operations = clamp(normalizeFiniteNumber(item.operationsPerWeek, 0), 0, 10000);
+    const minutes = clamp(normalizeFiniteNumber(item.minutesPerOperation, 0), 0, 480);
+    const share = clamp(normalizeFiniteNumber(item.automationSharePercent, 0), 0, 100);
+    const hours = rawHours(operations, minutes);
+    hoursSum += hours;
+    savedSum += hours * (share / 100);
+  }
+  const rateSource = items.find((item) => item.hourlyRate !== null)?.hourlyRate ?? null;
+  const rate = rateSource === null ? null : clamp(normalizeFiniteNumber(rateSource, 0), 0, 100000);
+  const hoursPerMonth = round2(hoursSum);
+  const savedHoursPerMonth = round2(savedSum);
+  const workDaysPerYear = round2((hoursPerMonth * 12) / HOURS_PER_WORKDAY);
+  const savedWorkDaysPerYear = round2((savedHoursPerMonth * 12) / HOURS_PER_WORKDAY);
+  return {
+    hoursPerMonth,
+    workDaysPerYear,
+    savedHoursPerMonth,
+    savedWorkDaysPerYear,
+    savedMoneyPerMonth: rate === null ? null : round2(savedHoursPerMonth * rate),
+  };
+}
+
+/** One rounding of (sum of hours × share) / sum of hours. */
+export function weightedAutomationShare(items: readonly RoutineInput[]): number {
+  let hoursSum = 0;
+  let savedSum = 0;
+  for (const item of items) {
+    const operations = clamp(normalizeFiniteNumber(item.operationsPerWeek, 0), 0, 10000);
+    const minutes = clamp(normalizeFiniteNumber(item.minutesPerOperation, 0), 0, 480);
+    const share = clamp(normalizeFiniteNumber(item.automationSharePercent, 0), 0, 100);
+    const hours = rawHours(operations, minutes);
+    hoursSum += hours;
+    savedSum += hours * (share / 100);
+  }
+  if (hoursSum === 0) return 0;
+  return round2((savedSum / hoursSum) * 100);
 }
 
 function readNumber(raw: string): number | null {

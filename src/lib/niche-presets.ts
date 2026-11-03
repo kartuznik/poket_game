@@ -163,17 +163,21 @@ export function revenueNicheFields(
 }
 
 export function routineNicheFields(
-  current: { readonly operations: string; readonly minutes: string },
+  current: { readonly presetIds: readonly string[] },
   preset: NichePreset,
 ): readonly NumberField[] {
   return [
-    { label: 'Операций в неделю', current: current.operations, next: String(preset.operationsPerWeek) },
-    { label: 'Минут на операцию', current: current.minutes, next: String(preset.minutesPerOperation) },
+    {
+      label: 'Рутины',
+      current: current.presetIds.join('+'),
+      next: preset.routinePresetIds.join('+'),
+    },
   ];
 }
 
 function sameNumber(current: string, next: string): boolean {
   if (current.trim() === '') return false;
+  if (current.trim() === next.trim()) return true;
   const value = Number(current);
   return Number.isFinite(value) && value === Number(next);
 }

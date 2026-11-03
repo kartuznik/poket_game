@@ -27,9 +27,11 @@ import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
 import {
   ROUTINE_PRESETS,
+  aggregateRoutine,
   calculateRoutine,
   getRoutinePresetById,
   validateRoutineDraft,
+  weightedAutomationShare,
   type RoutineFieldErrors,
   type RoutineResult,
 } from './calc';
@@ -83,12 +85,16 @@ export function renderRoutineCalcTool(
   const saved = bridge.getRoutineResult();
   const draft = dossier.read().routineDraft;
 
-  let presetId: RoutinePresetId | null = draft
-    ? draft.presetId
-    : (saved?.inputs.presetId ?? null);
+  let presetIds: RoutinePresetId[] = draft?.presetIds
+    ? [...draft.presetIds]
+    : draft?.presetId
+      ? [draft.presetId]
+      : (saved?.inputs.items
+          ?.flatMap((item) => (item.presetId ? [item.presetId] : [])) ??
+        (saved?.inputs.presetId ? [saved.inputs.presetId] : []));
   let customEntry = draft
     ? draft.customEntry
-    : saved !== null && saved.inputs.presetId === null;
+    : saved !== null && presetIds.length === 0;
   let operationsRaw = draft?.operationsPerWeek ?? (saved ? String(saved.inputs.operationsPerWeek) : '');
   let minutesRaw = draft?.minutesPerOperation ?? (saved ? String(saved.inputs.minutesPerOperation) : '');
   let shareRaw = draft?.automationSharePercent ?? (saved ? String(saved.inputs.automationSharePercent) : '');
@@ -190,37 +196,60 @@ export function renderRoutineCalcTool(
   shareRow.append(shareSlider, shareInput);
 
   let ownNumbersBtn: HTMLButtonElement | null = null;
-  function markPreset(next: RoutinePresetId | null): void {
-    presetId = next;
-    if (next !== null) customEntry = false;
+  const checklistCaption = document.createElement('p');
+  checklistCaption.className = 'field-note';
+  checklistCaption.hidden = true;
+
+  function presetLine(id: RoutinePresetId) {
+    const preset = getRoutinePresetById(id);
+    return {
+      presetId: id,
+      operationsPerWeek: preset.operationsPerWeek,
+      minutesPerOperation: preset.minutesPerOperation,
+      automationSharePercent: preset.automationSharePercent,
+      hourlyRate: null as number | null,
+    };
+  }
+
+  function paintPresets(): void {
     for (const [id, button] of presetButtons) {
-      button.setAttribute('aria-pressed', String(id === presetId));
+      button.setAttribute('aria-pressed', String(!customEntry && presetIds.includes(id)));
     }
-    ownNumbersBtn?.setAttribute('aria-pressed', String(customEntry && presetId === null));
+    ownNumbersBtn?.setAttribute('aria-pressed', String(customEntry && presetIds.length === 0));
+    const niche = nicheById(dossier.read().niche);
+    const same =
+      niche !== null &&
+      niche.routinePresetIds.length === presetIds.length &&
+      niche.routinePresetIds.every((id) => presetIds.includes(id));
+    checklistCaption.hidden = !same;
+    checklistCaption.textContent = same && niche ? niche.conversionCaption : '';
+    const locked = presetIds.length > 0 && !customEntry;
+    operationsInput.readOnly = locked;
+    minutesInput.readOnly = locked;
+    shareInput.readOnly = locked;
+    shareSlider.disabled = locked;
   }
 
   for (const preset of ROUTINE_PRESETS) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'preset-card';
-    button.setAttribute('aria-pressed', String(preset.id === presetId));
+    button.setAttribute('aria-pressed', String(!customEntry && presetIds.includes(preset.id)));
     button.innerHTML = `
       <span class="preset-card__top">
         <span class="preset-card__title">${preset.title}</span>
         <span class="preset-card__conv">${preset.operationsPerWeek}/нед</span>
       </span>
       <span class="preset-card__desc">${preset.description}</span>
-      <span class="preset-card__range">${preset.minutesPerOperation} мин · автоматизация ${preset.automationSharePercent}%</span>
+        <span class="preset-card__range">${preset.minutesPerOperation} мин · ${formatWorkHours(calculateRoutine({ operationsPerWeek: preset.operationsPerWeek, minutesPerOperation: preset.minutesPerOperation, automationSharePercent: preset.automationSharePercent, hourlyRate: null }).hoursPerMonth)}</span>
     `;
     button.addEventListener('click', () => {
-      markPreset(preset.id);
-      operationsRaw = String(preset.operationsPerWeek);
-      minutesRaw = String(preset.minutesPerOperation);
-      shareRaw = String(preset.automationSharePercent);
-      operationsInput.value = operationsRaw;
-      minutesInput.value = minutesRaw;
-      shareInput.value = shareRaw;
-      shareSlider.value = shareRaw;
+      customEntry = false;
+      presetIds = presetIds.includes(preset.id)
+        ? presetIds.filter((id) => id !== preset.id)
+        : [...presetIds, preset.id];
+      presetIds = ROUTINE_PRESETS.map((item) => item.id).filter((id) => presetIds.includes(id));
+      paintPresets();
       recalculate();
     });
     presetButtons.set(preset.id, button);
@@ -283,16 +312,30 @@ export function renderRoutineCalcTool(
   ownNumbersBtn.type = 'button';
   ownNumbersBtn.className = 'action-btn action-btn--secondary';
   ownNumbersBtn.textContent = 'Введу свои цифры';
-  ownNumbersBtn.setAttribute('aria-pressed', String(customEntry && presetId === null));
+  ownNumbersBtn.setAttribute('aria-pressed', String(customEntry && presetIds.length === 0));
   ownNumbersBtn.addEventListener('click', () => {
+    if (presetIds.length > 0) {
+      const lines = presetIds.map(presetLine);
+      const result = aggregateRoutine(lines);
+      const ops = lines.reduce((sum, item) => sum + item.operationsPerWeek, 0);
+      const minutes = ops === 0 ? 0 : Math.round((result.hoursPerMonth * 60) / (ops * 4.33) * 100) / 100;
+      operationsRaw = String(ops);
+      minutesRaw = String(minutes);
+      shareRaw = String(weightedAutomationShare(lines));
+      operationsInput.value = operationsRaw;
+      minutesInput.value = minutesRaw;
+      shareInput.value = shareRaw;
+      shareSlider.value = shareRaw;
+    }
     customEntry = true;
-    markPreset(null);
+    presetIds = [];
+    paintPresets();
     recalculate();
   });
 
   const presetStep = document.createElement('div');
   presetStep.className = 'step-panel';
-  presetStep.append(presetsGrid, ownNumbersBtn);
+  presetStep.append(checklistCaption, presetsGrid, ownNumbersBtn);
   const operationsStep = document.createElement('div');
   operationsStep.className = 'step-panel';
   operationsStep.append(operationsGroup);
@@ -403,24 +446,51 @@ export function renderRoutineCalcTool(
       shareInput,
       visibleError(shareRaw, validated.errors.automationSharePercent),
     );
-    lastErrors = validated.errors;
+    const usingPresets = presetIds.length > 0 && !customEntry;
+    const rateBroken = Boolean(validated.errors.hourlyRate) && rateRaw.trim() !== '';
+    if (usingPresets) {
+      lastErrors = rateBroken && validated.errors.hourlyRate ? { hourlyRate: validated.errors.hourlyRate } : {};
+      showError(operationsError, operationsInput, undefined);
+      showError(minutesError, minutesInput, undefined);
+      showError(shareError, shareInput, undefined);
+    } else {
+      lastErrors = validated.errors;
+    }
 
-    if (!validated.isValid || !validated.input) {
+    if ((!usingPresets && (!validated.isValid || !validated.input)) || (usingPresets && rateBroken)) {
       latest = null;
       valueEl.textContent = 'Проверьте поля';
       noteEl.textContent = 'Расчёт появится, когда числа будут в допустимых границах.';
       metrics.replaceChildren();
       howBody.replaceChildren();
+      paintPresets();
       refreshSteps();
       return;
     }
 
-    const result = calculateRoutine(validated.input);
+    const hourlyRate = rateRaw.trim() === '' ? null : Number(rateRaw);
+    const lines = usingPresets
+      ? presetIds.map((id) => ({
+          ...presetLine(id),
+          hourlyRate: Number.isFinite(hourlyRate) ? hourlyRate : null,
+        }))
+      : null;
+    const result = lines ? aggregateRoutine(lines) : calculateRoutine(validated.input!);
     latest = result;
-    const presetTitle = presetId ? getRoutinePresetById(presetId).title : null;
+    const presetTitle = lines
+      ? lines.map((line) => getRoutinePresetById(line.presetId).title).join(', ')
+      : null;
+    const shareText = lines
+      ? `${lines
+          .map(
+            (line) =>
+              `${String(line.automationSharePercent)}% у ${getRoutinePresetById(line.presetId).title}`,
+          )
+          .join(', ')}, вместе ${String(weightedAutomationShare(lines)).replace('.', ',')}%`
+      : null;
     valueEl.textContent = formatWorkHours(result.hoursPerMonth);
     noteEl.textContent = presetTitle
-      ? `«${presetTitle}». Это ${formatWorkDays(result.workDaysPerYear)} в год.`
+      ? `«${presetTitle}». Это ${formatWorkDays(result.workDaysPerYear)} в год.${shareText ? ` ${shareText}.` : ''}`
       : `Свои цифры. Это ${formatWorkDays(result.workDaysPerYear)} в год.`;
 
     const money =
@@ -436,7 +506,9 @@ export function renderRoutineCalcTool(
     const steps = [
       `Часы в месяц = ${operationsRaw} × ${minutesRaw} мин × 4,33 ÷ 60 = ${formatWorkHours(result.hoursPerMonth)}.`,
       `Рабочие дни в год = часы × 12 ÷ 8 = ${formatWorkDays(result.workDaysPerYear)}.`,
-      `Экономия часов = часы × ${shareRaw}% = ${formatWorkHours(result.savedHoursPerMonth)}.`,
+      shareText
+        ? `Доля: ${shareText}. Экономия часов = ${formatWorkHours(result.savedHoursPerMonth)}.`
+        : `Экономия часов = часы × ${shareRaw}% = ${formatWorkHours(result.savedHoursPerMonth)}.`,
       result.savedMoneyPerMonth === null
         ? 'Ставка не указана, поэтому рубли не считаются.'
         : `Экономия в рублях = часы экономии × ставка = ${formatRubles(result.savedMoneyPerMonth)} в месяц.`,
@@ -461,12 +533,15 @@ export function renderRoutineCalcTool(
       diffBox.hidden = true;
     }
     paintNicheNotes();
+    paintPresets();
     refreshSteps();
   }
 
   function onManualEdit(): void {
+    if (operationsInput.readOnly) return;
     customEntry = true;
-    markPreset(null);
+    presetIds = [];
+    paintPresets();
     recalculate();
   }
 
@@ -498,7 +573,10 @@ export function renderRoutineCalcTool(
       return;
     }
     const text = buildRoutineShareText({
-      presetTitle: presetId ? getRoutinePresetById(presetId).title : null,
+      presetTitle:
+        presetIds.length > 0
+          ? presetIds.map((id) => getRoutinePresetById(id).title).join(', ')
+          : null,
       result: latest,
     });
     const copied = await copyTextToClipboard(text, 'резюме рутины для Threads');
@@ -527,7 +605,8 @@ export function renderRoutineCalcTool(
       ...current,
       routineDraft: {
         step,
-        presetId,
+        presetId: presetIds.length === 1 ? presetIds[0]! : null,
+        presetIds: [...presetIds],
         customEntry,
         operationsPerWeek: operationsRaw,
         minutesPerOperation: minutesRaw,
@@ -545,14 +624,39 @@ export function renderRoutineCalcTool(
       automationSharePercentRaw: shareRaw,
       hourlyRateRaw: rateRaw,
     });
-    if (!validated.isValid || !validated.input || !latest) return;
+    const usingPresets = presetIds.length > 0 && !customEntry;
+    if (!usingPresets && (!validated.isValid || !validated.input)) return;
+    if (!latest) return;
+    const hourlyRate = rateRaw.trim() === '' ? null : Number(rateRaw);
+    const items = usingPresets
+      ? presetIds.map((id) => {
+          const line = presetLine(id);
+          return {
+            presetId: line.presetId,
+            operationsPerWeek: line.operationsPerWeek,
+            minutesPerOperation: line.minutesPerOperation,
+            automationSharePercent: line.automationSharePercent,
+          };
+        })
+      : [
+          {
+            presetId: null,
+            operationsPerWeek: validated.input!.operationsPerWeek,
+            minutesPerOperation: validated.input!.minutesPerOperation,
+            automationSharePercent: validated.input!.automationSharePercent,
+          },
+        ];
+    const first = items[0]!;
     const snapshot = bridge.saveRoutineResult({
       inputs: {
-        presetId,
-        operationsPerWeek: validated.input.operationsPerWeek,
-        minutesPerOperation: validated.input.minutesPerOperation,
-        hourlyRate: validated.input.hourlyRate,
-        automationSharePercent: validated.input.automationSharePercent,
+        presetId: items.length === 1 ? first.presetId : null,
+        operationsPerWeek: first.operationsPerWeek,
+        minutesPerOperation: first.minutesPerOperation,
+        hourlyRate: Number.isFinite(hourlyRate) ? hourlyRate : null,
+        automationSharePercent: usingPresets
+          ? weightedAutomationShare(items.map((item) => ({ ...item, hourlyRate: null })))
+          : first.automationSharePercent,
+        items,
       },
       results: latest,
     });
@@ -578,7 +682,7 @@ export function renderRoutineCalcTool(
     extras: [resultCard],
     isStepValid: (step) =>
       step === 1
-        ? isRoutineStartChosen(presetId !== null, customEntry)
+        ? isRoutineStartChosen(presetIds.length > 0, customEntry)
         : isRoutineStepValid(step, lastErrors),
     finishLabel: meta.nextToolCta,
     onStep: (step) => {
@@ -599,7 +703,7 @@ export function renderRoutineCalcTool(
     readonly operations: string;
     readonly minutes: string;
     readonly customEntry: boolean;
-    readonly presetId: RoutinePresetId | null;
+    readonly presetIds: readonly RoutinePresetId[];
     readonly niche: BusinessNicheId | null;
   }
   let routineUndo: RoutineUndo | null = null;
@@ -624,15 +728,12 @@ export function renderRoutineCalcTool(
       operations: operationsRaw,
       minutes: minutesRaw,
       customEntry,
-      presetId,
+      presetIds: [...presetIds],
       niche: dossier.read().niche,
     };
-    operationsRaw = String(preset.operationsPerWeek);
-    minutesRaw = String(preset.minutesPerOperation);
-    operationsInput.value = operationsRaw;
-    minutesInput.value = minutesRaw;
-    if (!isRoutineStartChosen(presetId !== null, customEntry)) customEntry = true;
-    markPreset(presetId);
+    presetIds = [...preset.routinePresetIds];
+    customEntry = false;
+    paintPresets();
     dossier.update((current) => ({ ...current, niche: preset.id }));
     recalculate();
     persistRoutineDraft(wizard.currentStep());
@@ -642,7 +743,7 @@ export function renderRoutineCalcTool(
   const nicheMenu = mountNicheMenu({
     dossier,
     prompt: nichePromptKind([operationsRaw, minutesRaw]),
-    readFields: (preset) => routineNicheFields({ operations: operationsRaw, minutes: minutesRaw }, preset),
+    readFields: (preset) => routineNicheFields({ presetIds }, preset),
     applyNumbers: applyRoutineNiche,
     applyLabel: (id) => {
       dossier.update((current) => ({ ...current, niche: id }));
@@ -657,7 +758,8 @@ export function renderRoutineCalcTool(
       customEntry = previous.customEntry;
       operationsInput.value = operationsRaw;
       minutesInput.value = minutesRaw;
-      markPreset(previous.presetId);
+      presetIds = [...previous.presetIds];
+      paintPresets();
       dossier.update((current) => ({ ...current, niche: previous.niche }));
       recalculate();
       persistRoutineDraft(wizard.currentStep());

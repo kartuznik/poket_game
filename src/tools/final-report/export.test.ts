@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PriorityProcessId } from '../../lib/types';
 import { PRIORITY_PROCESSES } from '../priority-diag/calc';
+import { aggregateRoutine } from '../routine-calc/calc';
 import type { ReportSources } from './summary';
 import { buildEfimReport, buildReportCsv, reportCsvFilename } from './export';
 import { buildFinalSummary } from './summary';
@@ -302,5 +303,78 @@ describe('report export', () => {
     expect(csv).not.toContain('Приём обращений — частота');
     expect(csv).not.toContain('Приём обращений — время');
     expect(csv).not.toContain('Приём обращений — цена ошибки');
+  });
+
+  it('writes two routine groups, one total and a board state, three cells each', () => {
+    const orders = {
+      presetId: 'orders' as const,
+      operationsPerWeek: 25,
+      minutesPerOperation: 10,
+      automationSharePercent: 60,
+    };
+    const booking = {
+      presetId: 'booking' as const,
+      operationsPerWeek: 20,
+      minutesPerOperation: 8,
+      automationSharePercent: 75,
+    };
+    const totals = aggregateRoutine([
+      { ...orders, hourlyRate: null },
+      { ...booking, hourlyRate: null },
+    ]);
+    const quietInputs = {
+      inquiries: { frequency: 1, time: 1, errorCost: 1 },
+      answers: { frequency: 1, time: 1, errorCost: 1 },
+      booking: { frequency: 1, time: 1, errorCost: 1 },
+      payment: { frequency: 1, time: 1, errorCost: 1 },
+      reminders: { frequency: 1, time: 1, errorCost: 1 },
+      reports: { frequency: 1, time: 1, errorCost: 1 },
+    };
+    const csv = buildReportCsv({
+      revenue: null,
+      routine: {
+        toolId: 'routine-calc',
+        updatedAt: 1,
+        inputs: {
+          presetId: null,
+          operationsPerWeek: orders.operationsPerWeek,
+          minutesPerOperation: orders.minutesPerOperation,
+          hourlyRate: null,
+          automationSharePercent: 65.85,
+          items: [orders, booking],
+        },
+        results: {
+          hoursPerMonth: totals.hoursPerMonth,
+          workDaysPerYear: totals.workDaysPerYear,
+          savedHoursPerMonth: totals.savedHoursPerMonth,
+          savedWorkDaysPerYear: totals.savedWorkDaysPerYear,
+          savedMoneyPerMonth: null,
+        },
+      },
+      priority: {
+        toolId: 'priority-diag',
+        updatedAt: 1,
+        inputs: quietInputs,
+        results: {
+          topProcessId: null,
+          topTitle: '',
+          topScore: 1,
+          tied: true,
+          ranking: [],
+          board: 'quiet',
+          resolution: 'open',
+          resolutionReason: 'Ни один процесс не болит сильнее единицы. Ранга нет. Смотрите риск выручки и часы рутины.',
+        },
+      },
+      readiness: null,
+    });
+    const body = csv.replace(/^\uFEFF/, '').split('\r\n').filter((row) => row.startsWith('Рутина;') || row.startsWith('Приоритет;'));
+    expect(body.filter((row) => row.startsWith('Рутина;Типовая рутина;'))).toEqual([
+      'Рутина;Типовая рутина;Приём заказов',
+      'Рутина;Типовая рутина;Записи',
+    ]);
+    expect(csv).toContain('Рутина;Итого часов в месяц;29,59');
+    expect(csv).toContain('Приоритет;Состояние;Ничего не болит');
+    expect(body.every((row) => row.split(';').length === 3)).toBe(true);
   });
 });
