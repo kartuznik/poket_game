@@ -202,8 +202,8 @@ export function renderPriorityDiagTool(
   chipBox.setAttribute('role', 'group');
   chipBox.setAttribute('aria-label', 'Что сгорит первым, если неделю не трогать?');
   chipBox.hidden = true;
-  const list = document.createElement('ol');
-  list.className = 'rank-list';
+  const list = document.createElement('ul');
+  list.className = 'rank-list priority-rank';
   const diffBox = document.createElement('div');
   diffBox.className = 'scenario-diff';
   diffBox.hidden = true;
@@ -357,6 +357,7 @@ export function renderPriorityDiagTool(
       }
     }
 
+    list.classList.toggle('rank-list--ordered', board.kind === 'leader');
     const peerIds = new Set(board.peers.map((item) => item.id));
     list.replaceChildren();
     for (const item of ranked) {

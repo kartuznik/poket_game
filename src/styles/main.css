@@ -1733,6 +1733,16 @@ a:focus-visible {
   font-weight: 600;
 }
 
+.rank-list.priority-rank {
+  padding-left: 0;
+  list-style: none;
+}
+
+.rank-list.priority-rank.rank-list--ordered {
+  padding-left: 1.2rem;
+  list-style: decimal;
+}
+
 .rank-list__top {
   font-weight: 800;
 }
