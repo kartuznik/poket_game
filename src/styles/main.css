@@ -1799,15 +1799,21 @@ a:focus-visible {
   font-weight: 700;
   line-height: 1.2;
   color: var(--text-primary);
-  background: transparent;
-  border: var(--border-width) solid var(--border-color);
+  background: var(--bg-page);
+  border: var(--border-width) solid var(--border-strong);
   border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-button);
   cursor: pointer;
+}
+
+.priority-chip:hover {
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
 }
 
 .priority-chip[aria-pressed='true'] {
   border-color: var(--accent-primary);
   background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+  box-shadow: none;
 }
 
 .rank-badge {

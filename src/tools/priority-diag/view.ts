@@ -10,6 +10,7 @@ import { resolveInitialStep } from '../../lib/wizard';
 import type { PriorityProcessId, PriorityScoreInput, RoutinePresetId } from '../../lib/types';
 import { TOOLS_CATALOG } from '../catalog';
 import type { ToolStubRenderContext } from '../stub-factory';
+import { chipBoardModel } from './chips';
 import {
   PRIORITY_PROCESSES,
   QUIET_TEXT,
@@ -202,6 +203,9 @@ export function renderPriorityDiagTool(
   chipBox.setAttribute('role', 'group');
   chipBox.setAttribute('aria-label', 'Что сгорит первым, если неделю не трогать?');
   chipBox.hidden = true;
+  const defaultLineEl = document.createElement('p');
+  defaultLineEl.className = 'result-card__note';
+  defaultLineEl.hidden = true;
   const list = document.createElement('ul');
   list.className = 'rank-list priority-rank';
   const diffBox = document.createElement('div');
@@ -247,6 +251,7 @@ export function renderPriorityDiagTool(
     noteEl,
     questionEl,
     chipBox,
+    defaultLineEl,
     list,
     diffBox,
     actions,
@@ -307,6 +312,7 @@ export function renderPriorityDiagTool(
       questionEl.hidden = true;
       chipBox.hidden = true;
       chipBox.replaceChildren();
+      defaultLineEl.hidden = true;
       list.replaceChildren();
       diffBox.hidden = true;
       refreshSteps();
@@ -330,31 +336,40 @@ export function renderPriorityDiagTool(
       questionEl.hidden = true;
       chipBox.hidden = true;
       chipBox.replaceChildren();
+      defaultLineEl.hidden = true;
     } else if (board.kind === 'leader' && leader) {
       noteEl.textContent = `Балл лидера ${formatScore(leader.score)} из 5. ${leader.recommendation}`;
       questionEl.hidden = true;
       chipBox.hidden = true;
       chipBox.replaceChildren();
+      defaultLineEl.hidden = true;
     } else {
+      const chips = chipBoardModel({
+        peers: PRIORITY_PROCESSES.filter((peer) => board.peers.some((item) => item.id === peer.id)),
+        source: resolution.source,
+        processId: resolution.processId,
+        pickedProcessId,
+      });
       noteEl.textContent = resolution.reason;
       questionEl.hidden = false;
       questionEl.textContent = tieQuestion(board.peers.length);
       chipBox.hidden = false;
       chipBox.replaceChildren();
-      for (const peer of PRIORITY_PROCESSES) {
-        if (!board.peers.some((item) => item.id === peer.id)) continue;
+      for (const model of chips.chips) {
         const chip = document.createElement('button');
         chip.type = 'button';
-        chip.className = 'priority-chip';
-        chip.textContent = peer.title;
-        chip.setAttribute('aria-pressed', String(pickedProcessId === peer.id));
+        chip.className = model.classNames.join(' ');
+        chip.textContent = model.label;
+        chip.setAttribute('aria-pressed', String(model.pressed));
         chip.addEventListener('click', () => {
-          pickedProcessId = peer.id;
+          pickedProcessId = model.id;
           recalculate();
           persistPriorityDraft(draftStep);
         });
         chipBox.append(chip);
       }
+      defaultLineEl.hidden = chips.defaultLine === null;
+      defaultLineEl.textContent = chips.defaultLine ?? '';
     }
 
     list.classList.toggle('rank-list--ordered', board.kind === 'leader');
