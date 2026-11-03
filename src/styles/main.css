@@ -311,18 +311,22 @@ body {
 }
 
 .wizard-edit {
-  align-self: flex-start;
+  align-self: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   min-height: 44px;
   margin: 0;
-  padding: 8px 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--accent-primary);
+  padding: 10px 12px;
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-button);
+  color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 700;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -1799,7 +1803,7 @@ a:focus-visible {
   font-weight: 700;
   line-height: 1.2;
   color: var(--text-primary);
-  background: var(--bg-page);
+  background: var(--bg-surface);
   border: var(--border-width) solid var(--border-strong);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-button);

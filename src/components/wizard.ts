@@ -124,7 +124,7 @@ export function createWizard(options: {
   const editBtn = document.createElement('button');
   editBtn.type = 'button';
   editBtn.className = 'wizard-edit';
-  editBtn.textContent = '← Изменить данные';
+  editBtn.textContent = 'Изменить цифры';
 
   function answerCard(): HTMLElement | null {
     for (const extra of options.extras ?? []) {
@@ -146,7 +146,7 @@ export function createWizard(options: {
    * A saved last step that is already valid opens on the result.
    * Typing, or «Дальше» onto a step that has text fields, keeps those fields
    * up. The primary button then says «Показать расчёт» and only reveals the card.
-   * «Изменить данные» brings the fields back. Choice scales still collapse
+   * «Изменить цифры» brings the fields back. Choice scales still collapse
    * on the click that completes the step.
    */
   function applyResultMode(): boolean {
