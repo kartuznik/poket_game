@@ -665,6 +665,33 @@ body {
   gap: 8px;
 }
 
+.routine-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.routine-breakdown__card {
+  padding: 10px 12px;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+}
+
+.routine-breakdown__title,
+.routine-breakdown__total {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.routine-breakdown__detail {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
 .niche-strip {
   margin: 12px 0 0;
   padding: 8px 12px;

@@ -35,6 +35,7 @@ import {
   type RoutineFieldErrors,
   type RoutineResult,
 } from './calc';
+import { SHARE_INPUT_STEP, collapsePresetsToManual, routineStepModel } from './steps';
 
 const HELP = {
   operations:
@@ -129,6 +130,10 @@ export function renderRoutineCalcTool(
   subtitle.className = 'tool-card__subtitle';
   subtitle.textContent = meta.subtitle;
   header.append(badge, title, subtitle);
+  const nicheStrip = document.createElement('p');
+  nicheStrip.className = 'niche-strip';
+  nicheStrip.hidden = true;
+  header.append(nicheStrip);
   inputCard.append(header);
   appendPriorContext(
     inputCard,
@@ -181,7 +186,7 @@ export function renderRoutineCalcTool(
   shareSlider.type = 'range';
   shareSlider.min = '0';
   shareSlider.max = '100';
-  shareSlider.step = '5';
+  shareSlider.step = SHARE_INPUT_STEP;
   shareSlider.value = shareRaw === '' ? '0' : shareRaw;
   shareSlider.setAttribute('aria-label', 'Ползунок доли автоматизации в процентах');
   const shareInput = document.createElement('input');
@@ -191,11 +196,12 @@ export function renderRoutineCalcTool(
   shareInput.inputMode = 'decimal';
   shareInput.min = '0';
   shareInput.max = '100';
-  shareInput.step = '1';
+  shareInput.step = SHARE_INPUT_STEP;
   shareInput.value = shareRaw;
   shareRow.append(shareSlider, shareInput);
 
   let ownNumbersBtn: HTMLButtonElement | null = null;
+  let breakdownHosts: HTMLDivElement[] = [];
   const checklistCaption = document.createElement('p');
   checklistCaption.className = 'field-note';
   checklistCaption.hidden = true;
@@ -223,11 +229,23 @@ export function renderRoutineCalcTool(
       niche.routinePresetIds.every((id) => presetIds.includes(id));
     checklistCaption.hidden = !same;
     checklistCaption.textContent = same && niche ? niche.conversionCaption : '';
-    const locked = presetIds.length > 0 && !customEntry;
-    operationsInput.readOnly = locked;
-    minutesInput.readOnly = locked;
-    shareInput.readOnly = locked;
-    shareSlider.disabled = locked;
+    const model = routineStepModel({
+      presetIds,
+      customEntry,
+      operations: operationsRaw,
+      minutes: minutesRaw,
+      share: shareRaw,
+    });
+    const breakdown = model.kind === 'breakdown';
+    for (const host of breakdownHosts) paintBreakdownHost(host, model);
+    operationsGroup.hidden = breakdown;
+    minutesGroup.hidden = breakdown;
+    shareGroup.hidden = breakdown;
+    operationsInput.readOnly = false;
+    minutesInput.readOnly = false;
+    shareInput.readOnly = false;
+    shareSlider.disabled = false;
+    shareSlider.step = SHARE_INPUT_STEP;
   }
 
   for (const preset of ROUTINE_PRESETS) {
@@ -308,43 +326,83 @@ export function renderRoutineCalcTool(
     shareError,
   );
 
-  ownNumbersBtn = document.createElement('button');
-  ownNumbersBtn.type = 'button';
-  ownNumbersBtn.className = 'action-btn action-btn--secondary';
-  ownNumbersBtn.textContent = 'Введу свои цифры';
-  ownNumbersBtn.setAttribute('aria-pressed', String(customEntry && presetIds.length === 0));
-  ownNumbersBtn.addEventListener('click', () => {
+  function enterManualMode(): void {
     if (presetIds.length > 0) {
-      const lines = presetIds.map(presetLine);
-      const result = aggregateRoutine(lines);
-      const ops = lines.reduce((sum, item) => sum + item.operationsPerWeek, 0);
-      const minutes = ops === 0 ? 0 : Math.round((result.hoursPerMonth * 60) / (ops * 4.33) * 100) / 100;
-      operationsRaw = String(ops);
-      minutesRaw = String(minutes);
-      shareRaw = String(weightedAutomationShare(lines));
+      const collapsed = collapsePresetsToManual(presetIds.map(presetLine));
+      operationsRaw = String(collapsed.operationsPerWeek);
+      minutesRaw = String(collapsed.minutesPerOperation);
+      shareRaw = String(collapsed.automationSharePercent);
       operationsInput.value = operationsRaw;
       minutesInput.value = minutesRaw;
       shareInput.value = shareRaw;
+      shareSlider.step = SHARE_INPUT_STEP;
       shareSlider.value = shareRaw;
     }
     customEntry = true;
     presetIds = [];
     paintPresets();
     recalculate();
-  });
+  }
+
+  function paintBreakdownHost(
+    host: HTMLDivElement,
+    model: ReturnType<typeof routineStepModel>,
+  ): void {
+    host.hidden = model.kind !== 'breakdown';
+    host.replaceChildren();
+    if (model.kind !== 'breakdown') return;
+    for (const card of model.cards) {
+      const row = document.createElement('article');
+      row.className = 'routine-breakdown__card';
+      const name = document.createElement('p');
+      name.className = 'routine-breakdown__title';
+      name.textContent = card.title;
+      const detail = document.createElement('p');
+      detail.className = 'routine-breakdown__detail';
+      detail.textContent = `${String(card.operationsPerWeek)} операций в неделю · ${String(card.minutesPerOperation)} мин · доля ${String(card.automationSharePercent)}%`;
+      row.append(name, detail);
+      host.append(row);
+    }
+    const total = document.createElement('p');
+    total.className = 'routine-breakdown__total';
+    total.textContent =
+      model.totalHours === null ? '' : `Итого ${formatWorkHours(model.totalHours)}`;
+    host.append(total);
+    if (model.manualSwitch) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'action-btn action-btn--secondary';
+      button.textContent = 'Введу свои цифры';
+      button.addEventListener('click', enterManualMode);
+      host.append(button);
+    }
+  }
+
+  ownNumbersBtn = document.createElement('button');
+  ownNumbersBtn.type = 'button';
+  ownNumbersBtn.className = 'action-btn action-btn--secondary';
+  ownNumbersBtn.textContent = 'Введу свои цифры';
+  ownNumbersBtn.setAttribute('aria-pressed', String(customEntry && presetIds.length === 0));
+  ownNumbersBtn.addEventListener('click', enterManualMode);
 
   const presetStep = document.createElement('div');
   presetStep.className = 'step-panel';
   presetStep.append(checklistCaption, presetsGrid, ownNumbersBtn);
   const operationsStep = document.createElement('div');
   operationsStep.className = 'step-panel';
-  operationsStep.append(operationsGroup);
   const minutesStep = document.createElement('div');
   minutesStep.className = 'step-panel';
-  minutesStep.append(minutesGroup);
   const shareStep = document.createElement('div');
   shareStep.className = 'step-panel';
-  shareStep.append(shareGroup, rateGroup);
+  breakdownHosts = [0, 1, 2].map(() => {
+    const host = document.createElement('div');
+    host.className = 'routine-breakdown';
+    host.hidden = true;
+    return host;
+  });
+  operationsStep.append(breakdownHosts[0]!, operationsGroup);
+  minutesStep.append(breakdownHosts[1]!, minutesGroup);
+  shareStep.append(breakdownHosts[2]!, shareGroup, rateGroup);
 
   const resultCard = document.createElement('div');
   resultCard.className = 'result-card';
@@ -711,6 +769,8 @@ export function renderRoutineCalcTool(
 
   function paintNicheNotes(): void {
     const preset = nicheById(dossier.read().niche);
+    nicheStrip.hidden = preset === null;
+    nicheStrip.textContent = preset ? `Ниша: ${preset.title}` : '';
     const rows: readonly [HTMLParagraphElement, string, number | undefined][] = [
       [operationsNote, operationsRaw, preset?.operationsPerWeek],
       [minutesNote, minutesRaw, preset?.minutesPerOperation],
