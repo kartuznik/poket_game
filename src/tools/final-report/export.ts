@@ -7,6 +7,7 @@ import {
   isAllPrecise,
 } from '../revenue-risk/calc';
 import { READINESS_ITEMS } from '../readiness-check/calc';
+import { confirmedPriorityLeader } from '../priority-diag/calc';
 import { getRoutinePresetById } from '../routine-calc/calc';
 import type { MetricSnapshot } from '../../lib/dossier';
 import { nicheTitle, type BusinessNicheId } from '../../lib/niche-presets';
@@ -52,8 +53,6 @@ export function buildEfimReport(sources: ReportSources): string {
 }
 
 const PRODUCT_URL = 'https://kartuznik.github.io/poket_game/';
-const TOP_PROCESS_COUNT = 3;
-
 function cells(values: readonly string[]): string {
   return values.map((value) => escapeCsvCell(value)).join(';');
 }
@@ -229,14 +228,27 @@ export function buildReportCsv(
 
   if (priority) {
     const section = 'Приоритет';
-    const top = priority.results.ranking.slice(0, TOP_PROCESS_COUNT);
-    for (const item of top) {
+    const leader = confirmedPriorityLeader(priority);
+    if (priority.results.board === 'quiet') {
+      lines.push(csvRow(section, 'Состояние', 'Ничего не болит'));
+    } else if (!leader) {
+      lines.push(csvRow(section, 'Состояние', 'Лидер не выбран'));
+    } else {
+      lines.push(csvRow(section, 'Состояние', 'Лидер'));
+      lines.push(csvRow(section, 'Лидер', leader.title));
+      if (priority.results.resolution === 'visitor') lines.push(csvRow(section, 'Причина', 'ваш выбор'));
+      if (priority.results.resolution === 'money') lines.push(csvRow(section, 'Причина', 'деньги'));
+    }
+    if (!leader && priority.results.resolutionReason && priority.results.board !== 'quiet') {
+      lines.push(csvRow(section, 'Причина', priority.results.resolutionReason));
+    }
+    const listed = priority.results.ranking;
+    for (const item of listed) {
       lines.push(num(section, `${item.title}, балл`, item.score));
     }
-    lines.push(num(section, 'Итого процессов в топе', Math.min(TOP_PROCESS_COUNT, priority.results.ranking.length)));
-    for (const item of top) {
+    for (const item of listed) {
       const score = priority.inputs[item.id];
-      if (score.frequency === score.time && score.time === score.errorCost) continue;
+      if (!score || (score.frequency === score.time && score.time === score.errorCost)) continue;
       lines.push(
         num(section, `${item.title} — частота`, score.frequency),
         num(section, `${item.title} — время`, score.time),

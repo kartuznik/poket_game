@@ -2,7 +2,7 @@ import { metricsFromDossier, type BusinessDossier, type MetricSnapshot } from '.
 import { formatNumber, formatWorkHours } from '../../lib/format';
 import { buildProgress, progressChart } from '../audit-finish/progress';
 import { buildWeekPlan } from '../audit-finish/week-plan';
-import { PRIORITY_PROCESSES } from '../priority-diag/calc';
+import { QUIET_TEXT, confirmedPriorityLeader } from '../priority-diag/calc';
 import {
   computeCorridor,
   computeWhatIf,
@@ -224,12 +224,20 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
 
   let top = '';
   if (priority) {
-    const items = priority.results.ranking.slice(0, 3).map((item) => {
-      const process = PRIORITY_PROCESSES.find((entry) => entry.id === item.id);
-      const advice = process?.recommendation ?? '';
-      return `<li><strong>${esc(item.title)}</strong> <span class="muted">балл ${esc(String(item.score).replace('.', ','))}</span><p>${esc(advice)}</p></li>`;
+    const leader = confirmedPriorityLeader(priority);
+    const state =
+      priority.results.board === 'quiet'
+        ? priority.results.resolutionReason || QUIET_TEXT
+        : leader
+          ? `Лидер: ${leader.title}`
+          : 'Лидер не выбран';
+    const peerIds = new Set(priority.results.peerIds ?? []);
+    const items = priority.results.ranking.map((item) => {
+      const equal = priority.results.board === 'tied' && (peerIds.size === 0 || peerIds.has(item.id));
+      const badge = equal ? ' <span class="muted">одинаковый балл</span>' : '';
+      return `<li><strong>${esc(item.title)}</strong> <span class="muted">балл ${esc(String(item.score).replace('.', ','))}</span>${badge}</li>`;
     });
-    top = `<section><h2>Три процесса, с которых начать</h2><ol>${items.join('')}</ol></section>`;
+    top = `<section><h2>Приоритет</h2><p>${esc(state)}</p><ul>${items.join('')}</ul></section>`;
   }
 
   const progress = buildProgress(dossier.history, currentSnapshot(dossier, now), now);

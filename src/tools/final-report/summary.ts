@@ -1,4 +1,5 @@
 import { formatCountWithNoun, formatRubles, formatWorkHours } from '../../lib/format';
+import { QUIET_TEXT, confirmedPriorityLeader } from '../priority-diag/calc';
 import {
   computeCorridor,
   defaultUncertainty,
@@ -62,12 +63,16 @@ export function buildThesisPieces(sources: ReportSources): readonly ThesisPiece[
       { text: ' в месяц.' },
     ];
   }
-  if (priority) {
+  const leader = confirmedPriorityLeader(priority);
+  if (leader) {
     return [
       { text: 'Первым: ' },
-      { text: priority.results.topTitle, strong: true },
+      { text: leader.title, strong: true },
       { text: '.' },
     ];
+  }
+  if (priority?.results.board === 'quiet') {
+    return [{ text: priority.results.resolutionReason || QUIET_TEXT }];
   }
   if (readiness) {
     return [
@@ -91,11 +96,14 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
   }
 
   const blocks: SummaryBlock[] = [];
-  if (priority) {
-    const tie = priority.results.tied ? ' Есть процесс с таким же баллом.' : '';
+  const leader = confirmedPriorityLeader(priority);
+  if (leader && priority) {
+    const reason = priority.results.resolutionReason;
     blocks.push({
       title: 'Что первым',
-      text: `${priority.results.topTitle}, балл ${String(priority.results.topScore).replace('.', ',')}.${tie}`,
+      text: reason && priority.results.resolution !== 'unique'
+        ? reason
+        : `${leader.title}, балл ${String(leader.score).replace('.', ',')}.`,
       sourceToolId: 'priority-diag',
       editStep: editStepFor('priority-diag'),
     });
@@ -143,8 +151,8 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
     );
   }
 
-  const headline = priority
-    ? priority.results.topTitle
+  const headline = leader
+    ? leader.title
     : revenue
       ? formatRubles(revenue.results.recoverableRevenue)
       : routine

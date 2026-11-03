@@ -1,4 +1,5 @@
 import { formatRubles, formatWorkHours } from '../../lib/format';
+import { confirmedPriorityLeader } from '../priority-diag/calc';
 import {
   EMPTY_REPORT_TEXT,
   buildFinalSummary,
@@ -17,8 +18,13 @@ export const TELEGRAM_PROFILE_URL = 'https://t.me/kartuznik';
 /** Two or three concrete next steps. Missing tools are simply absent. */
 export function buildRecommendations(sources: ReportSources): readonly string[] {
   const items: string[] = [];
-  if (sources.priority) {
-    items.push(`Первым разберите «${sources.priority.results.topTitle}».`);
+  const leader = confirmedPriorityLeader(sources.priority);
+  if (leader) {
+    const reason =
+      sources.priority?.results.resolution === 'money' && sources.priority.results.resolutionReason
+        ? ` ${sources.priority.results.resolutionReason}`
+        : '';
+    items.push(`Первым разберите «${leader.title}».${reason}`);
   }
   if (sources.revenue && sources.revenue.results.revenueAtRiskMax > 0) {
     items.push(
@@ -130,8 +136,9 @@ export function buildTelegramSummary(sources: ReportSources): string {
   if (sources.routine && sources.revenue) {
     lines.push(`Ручная работа: ${formatWorkHours(sources.routine.results.hoursPerMonth)}`);
   }
-  if (sources.priority && (sources.revenue || sources.routine)) {
-    lines.push(`Первым: ${sources.priority.results.topTitle}`);
+  const leader = confirmedPriorityLeader(sources.priority);
+  if (leader && (sources.revenue || sources.routine)) {
+    lines.push(`Первым: ${leader.title}`);
   }
   if (sources.readiness && (sources.revenue || sources.routine || sources.priority)) {
     lines.push(`Чек-лист: ${sources.readiness.results.bandLabel}`);

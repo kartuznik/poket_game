@@ -154,7 +154,12 @@ describe('report export', () => {
       score: index === 0 ? 5 : 1,
     }));
     const inputs = Object.fromEntries(
-      PRIORITY_PROCESSES.map((process) => [process.id, { frequency: 5, time: 4, errorCost: 3 }]),
+      PRIORITY_PROCESSES.map((process) => [
+        process.id,
+        process.id === 'inquiries'
+          ? { frequency: 5, time: 4, errorCost: 3 }
+          : { frequency: 1, time: 1, errorCost: 1 },
+      ]),
     ) as Record<PriorityProcessId, { frequency: number; time: number; errorCost: number }>;
     const full: ReportSources = {
       ...sources,
@@ -221,10 +226,11 @@ describe('report export', () => {
     expect(csv).toContain('Готовность;Баллы;1,5');
     expect(csv).not.toContain('Итого баллов');
     expect(csv).not.toContain('---История изменений---');
+    expect(csv).toContain('Приоритет;Состояние;Лидер');
+    expect(csv).toContain('Приоритет;Лидер;Приём обращений');
     expect(csv).toContain('Приоритет;Приём обращений, балл;5');
     expect(csv).not.toContain('Процесс №');
     expect(csv).not.toContain('Детализация');
-    expect(csv).not.toContain('Оплата');
     expect(csv).toContain('Приоритет;Приём обращений — частота;5');
     expect(csv).toContain('Приоритет;Приём обращений — время;4');
     expect(csv).toContain('Приоритет;Приём обращений — цена ошибки;3');
@@ -290,6 +296,8 @@ describe('report export', () => {
         updatedAt: 1,
       },
     });
+    expect(csv).toContain('Приоритет;Состояние;Лидер не выбран');
+    expect(csv).not.toContain('Приоритет;Лидер;');
     expect(csv).toContain('Приоритет;Приём обращений, балл;5');
     expect(csv).not.toContain('Приём обращений — частота');
     expect(csv).not.toContain('Приём обращений — время');

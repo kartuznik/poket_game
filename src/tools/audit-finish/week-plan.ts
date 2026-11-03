@@ -1,3 +1,4 @@
+import { confirmedPriorityLeader } from '../priority-diag/calc';
 import type { ReportSources } from '../final-report/summary';
 import {
   computeCorridor,
@@ -48,7 +49,8 @@ function measureStep(revenue: RevenueRiskBridgeSnapshot): WeekStep | null {
 /** Three concrete actions for the week. Empty when nothing is confirmed yet. */
 export function buildWeekPlan(sources: ReportSources): readonly WeekStep[] {
   const { revenue, routine, priority, readiness } = sources;
-  if (!revenue && !routine && !priority && !readiness) return [];
+  const priorityCounts = confirmedPriorityLeader(priority) !== null;
+  if (!revenue && !routine && !priorityCounts && !readiness) return [];
 
   const steps: WeekStep[] = [];
   if (revenue) {

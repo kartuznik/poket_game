@@ -8,6 +8,7 @@ import {
   buildTelegramSummary,
 } from './report';
 import type { ReadinessBridgeSnapshot, RoutineBridgeSnapshot } from '../../lib/types';
+import { QUIET_TEXT, composePriorityResults } from '../priority-diag/calc';
 import type { ReportSources } from '../final-report/summary';
 import type {
   PriorityBridgeSnapshot,
@@ -200,6 +201,28 @@ describe('telegram summary', () => {
     expect(two).toContain('Ручная работа:');
     expect(two).not.toContain('Первым:');
     expect(three).toContain('Первым: Приём обращений');
+    const quietInputs = {
+      inquiries: { frequency: 1, time: 1, errorCost: 1 },
+      answers: { frequency: 1, time: 1, errorCost: 1 },
+      booking: { frequency: 1, time: 1, errorCost: 1 },
+      payment: { frequency: 1, time: 1, errorCost: 1 },
+      reminders: { frequency: 1, time: 1, errorCost: 1 },
+      reports: { frequency: 1, time: 1, errorCost: 1 },
+    };
+    const quiet = buildTelegramSummary({
+      revenue: null,
+      routine: null,
+      priority: {
+        ...priority,
+        inputs: quietInputs,
+        results: composePriorityResults(quietInputs, null, { revenue: null, routine: null }, []),
+      },
+      readiness: null,
+    });
+    expect(quiet.split('\n').length).toBeLessThanOrEqual(6);
+    expect(quiet.startsWith(QUIET_TEXT)).toBe(true);
+    expect(quiet).not.toContain('Первым');
+    expect(quiet).not.toContain('Заполните хотя бы один инструмент');
     expect(three).not.toContain('Чек-лист:');
     expect(four).toContain('Чек-лист: Можно начинать');
   });

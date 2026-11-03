@@ -398,3 +398,29 @@ export function restorePriorityResults(
   }
   return composePriorityResults(inputs, null, { revenue: null, routine: null }, []);
 }
+
+/** A saved process is a leader only for a strict, chosen, or money resolution. */
+export function confirmedPriorityLeader(priority: {
+  readonly results: {
+    readonly topProcessId: PriorityProcessId | null;
+    readonly topTitle: string;
+    readonly topScore: number;
+    readonly tied: boolean;
+    readonly board?: PriorityBoardKind;
+    readonly resolution?: RankSource;
+  };
+} | null): { readonly id: PriorityProcessId; readonly title: string; readonly score: number } | null {
+  if (!priority) return null;
+  const { results } = priority;
+  if (results.board === 'quiet' || results.resolution === 'open') return null;
+  if (!results.topProcessId || results.topTitle.trim() === '') return null;
+  if (
+    results.resolution === 'unique' ||
+    results.resolution === 'visitor' ||
+    results.resolution === 'money' ||
+    (results.resolution === undefined && results.tied === false)
+  ) {
+    return { id: results.topProcessId, title: results.topTitle, score: results.topScore };
+  }
+  return null;
+}

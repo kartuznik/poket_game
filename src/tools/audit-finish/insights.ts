@@ -1,3 +1,4 @@
+import { confirmedPriorityLeader } from '../priority-diag/calc';
 import type { ReportSources } from '../final-report/summary';
 import { READINESS_READY_SCORE } from '../readiness-check/calc';
 
@@ -22,7 +23,7 @@ export function buildInsights(sources: ReportSources): readonly string[] {
   const risk = sources.revenue?.results.revenueAtRiskMax;
   const score = sources.readiness?.results.score;
   const hours = sources.routine?.results.hoursPerMonth;
-  const topTitle = sources.priority?.results.ranking[0]?.title;
+  const topTitle = confirmedPriorityLeader(sources.priority)?.title;
 
   if (risk !== undefined && risk >= RISK_NOTICE && score !== undefined && score < READINESS_READY_SCORE) {
     lines.push(INSIGHT_CHECKLIST_OPEN);

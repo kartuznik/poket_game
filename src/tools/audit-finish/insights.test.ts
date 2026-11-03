@@ -6,6 +6,7 @@ import type {
   RevenueRiskBridgeSnapshot,
   RoutineBridgeSnapshot,
 } from '../../lib/types';
+import { composePriorityResults } from '../priority-diag/calc';
 import { READINESS_READY_SCORE } from '../readiness-check/calc';
 import {
   INSIGHT_ANSWERS,
@@ -140,6 +141,32 @@ describe('buildInsights', () => {
     expect(
       buildInsights({ ...empty, revenue: revenue(4_999), routine: routine(9.9) }),
     ).toEqual([INSIGHT_QUIET]);
+  });
+
+  it('does not treat the first array row as the leader when the board is open', () => {
+    const inputs = {
+      inquiries: { frequency: 1, time: 1, errorCost: 1 },
+      answers: { frequency: 5, time: 5, errorCost: 5 },
+      booking: { frequency: 5, time: 5, errorCost: 5 },
+      payment: { frequency: 1, time: 1, errorCost: 1 },
+      reminders: { frequency: 1, time: 1, errorCost: 1 },
+      reports: { frequency: 1, time: 1, errorCost: 1 },
+    };
+    const open = priority('Ответы на вопросы');
+    const tied = {
+      ...open,
+      inputs,
+      results: {
+        ...composePriorityResults(inputs, null, { revenue: null, routine: null }, []),
+        ranking: [{ id: 'answers' as const, title: 'Ответы на вопросы', score: 5 }],
+      },
+    };
+    expect(buildInsights({ ...empty, routine: routine(70), priority: tied })).toEqual([]);
+    const chosen = {
+      ...tied,
+      results: composePriorityResults(inputs, 'answers', { revenue: null, routine: null }, []),
+    };
+    expect(buildInsights({ ...empty, routine: routine(70), priority: chosen })).toEqual([INSIGHT_ANSWERS]);
   });
 
   it('does not quote a week-plan step', () => {

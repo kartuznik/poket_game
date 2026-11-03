@@ -1,4 +1,5 @@
 import { formatRubles, formatWorkHours } from '../lib/format';
+import { confirmedPriorityLeader } from '../tools/priority-diag/calc';
 import type {
   PriorityBridgeSnapshot,
   RevenueRiskBridgeSnapshot,
@@ -81,10 +82,9 @@ export function buildPriorContextLines(
   }
 
   if (step === 'readiness-check') {
-    const title = sources.priority?.results.topTitle?.trim() ?? '';
-    const score = sources.priority?.results.topScore;
-    if (title.length > 0 && finite(score)) {
-      lines.push(contextLine('Что первым', [`${title},`, `балл ${scoreText(score)}`]));
+    const leader = confirmedPriorityLeader(sources.priority);
+    if (leader) {
+      lines.push(contextLine('Что первым', [`${leader.title},`, `балл ${scoreText(leader.score)}`]));
     }
   }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ReportSources } from '../final-report/summary';
-import { PRIORITY_PROCESSES } from '../priority-diag/calc';
+import { PRIORITY_PROCESSES, composePriorityResults } from '../priority-diag/calc';
 import type {
   PriorityBridgeSnapshot,
   ReadinessBridgeSnapshot,
@@ -152,6 +152,33 @@ describe('buildWeekPlan', () => {
       'revenue-response',
       'routine-timing',
       'readiness-owner',
+    ]);
+  });
+
+  it('ignores a quiet or open priority and follows a newly chosen chip', () => {
+    const inputs = {
+      inquiries: { frequency: 5, time: 5, errorCost: 5 },
+      answers: { frequency: 5, time: 5, errorCost: 5 },
+      booking: { frequency: 5, time: 5, errorCost: 5 },
+      payment: { frequency: 5, time: 5, errorCost: 5 },
+      reminders: { frequency: 5, time: 5, errorCost: 5 },
+      reports: { frequency: 5, time: 5, errorCost: 5 },
+    };
+    const open = {
+      ...priority,
+      inputs,
+      results: composePriorityResults(inputs, null, { revenue: null, routine: null }, []),
+    };
+    const chosen = {
+      ...priority,
+      inputs,
+      results: composePriorityResults(inputs, 'payment', { revenue: null, routine: null }, []),
+    };
+    expect(buildWeekPlan({ ...none, priority: open })).toEqual([]);
+    expect(buildWeekPlan({ ...none, priority: chosen }).map((step) => step.id)).toEqual([
+      'filler-dialogs',
+      'filler-channel',
+      'filler-remeasure',
     ]);
   });
 });

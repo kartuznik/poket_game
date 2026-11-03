@@ -5,7 +5,8 @@ import type {
   RevenueRiskBridgeSnapshot,
   RoutineBridgeSnapshot,
 } from '../../lib/types';
-import { EMPTY_REPORT_TEXT, buildFinalSummary, type ReportSources } from './summary';
+import { QUIET_TEXT, composePriorityResults } from '../priority-diag/calc';
+import { EMPTY_REPORT_TEXT, buildFinalSummary, buildThesisPieces, thesisText, type ReportSources } from './summary';
 
 const revenue: RevenueRiskBridgeSnapshot = {
   toolId: 'revenue-risk',
@@ -140,5 +141,27 @@ describe('buildFinalSummary', () => {
       },
     });
     expect(summary.blocks[0]?.text).toContain('Ставка не указана');
+  });
+
+  it('uses the quiet sentence itself when revenue and routine are absent', () => {
+    const inputs = {
+      inquiries: { frequency: 1, time: 1, errorCost: 1 },
+      answers: { frequency: 1, time: 1, errorCost: 1 },
+      booking: { frequency: 1, time: 1, errorCost: 1 },
+      payment: { frequency: 1, time: 1, errorCost: 1 },
+      reminders: { frequency: 1, time: 1, errorCost: 1 },
+      reports: { frequency: 1, time: 1, errorCost: 1 },
+    };
+    const quietPriority = {
+      ...priority,
+      inputs,
+      results: composePriorityResults(inputs, 'inquiries', { revenue: null, routine: null }, []),
+    };
+    const summary = buildFinalSummary({ ...empty, priority: quietPriority });
+    expect(summary.hasData).toBe(true);
+    expect(summary.lead).toBe(QUIET_TEXT);
+    expect(thesisText(buildThesisPieces({ ...empty, priority: quietPriority }))).toBe(QUIET_TEXT);
+    expect(summary.lead).not.toContain('Заполните хотя бы один инструмент');
+    expect(summary.blocks.map((block) => block.title)).not.toContain('Что первым');
   });
 });
