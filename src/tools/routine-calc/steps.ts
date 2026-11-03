@@ -10,6 +10,8 @@ import {
 /** Range step that keeps a weighted share such as 65.85. Step 1 still snaps it. */
 export const SHARE_INPUT_STEP = '0.01';
 
+export const EMPTY_RATE_HINT = 'Поставьте ставку, чтобы увидеть экономию в деньгах';
+
 export interface RoutineControlModel {
   readonly id: 'operations' | 'minutes' | 'share' | 'slider';
   readonly visible: boolean;

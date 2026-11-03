@@ -3,6 +3,8 @@ import type { PriorityProcessId } from '../../lib/types';
 import { PRIORITY_PROCESSES } from '../priority-diag/calc';
 import { aggregateRoutine } from '../routine-calc/calc';
 import type { ReportSources } from './summary';
+import { emptyDossier } from '../../lib/dossier';
+import { buildHtmlReport } from './html-report';
 import { buildEfimReport, buildReportCsv, reportCsvFilename } from './export';
 import { buildFinalSummary } from './summary';
 
@@ -129,7 +131,7 @@ describe('report export', () => {
     expect(mainRisk).not.toContain('Предыдущее');
   });
 
-  it('leaves money blank when the routine rate is empty', () => {
+  it('omits the money row when the routine rate is empty', () => {
     const csv = buildReportCsv({
       revenue: null,
       priority: null,
@@ -153,7 +155,32 @@ describe('report export', () => {
         updatedAt: 1,
       },
     });
-    expect(csv).toContain('Рутина;Итого экономия, ₽/мес;');
+    expect(csv).not.toContain('Итого экономия, ₽/мес');
+    const html = buildHtmlReport(
+      {
+        ...emptyDossier(),
+        routine: {
+          toolId: 'routine-calc',
+          inputs: {
+            presetId: null,
+            operationsPerWeek: 0,
+            minutesPerOperation: 0,
+            hourlyRate: null,
+            automationSharePercent: 0,
+          },
+          results: {
+            hoursPerMonth: 0,
+            workDaysPerYear: 0,
+            savedHoursPerMonth: 0,
+            savedWorkDaysPerYear: 0,
+            savedMoneyPerMonth: null,
+          },
+          updatedAt: 1,
+        },
+      },
+      1,
+    );
+    expect(html).not.toContain('Итого экономия, ₽/мес');
     expect(csv).not.toContain('Ниша');
     expect(csv).toContain('Рутина;Часов в месяц;0');
     expect(csv).not.toContain('Итого часов');
@@ -211,6 +238,7 @@ describe('report export', () => {
     expect(csv).toContain('# Сгенерировано: 31 октября 2026, 14:32');
     expect(csv).toContain('Выручка;Итого риск, ₽;31500');
     expect(csv).toContain('Рутина;Часов в месяц;1,08');
+    expect(csv).toContain('Рутина;Итого экономия, ₽/мес;5400');
     expect(csv).not.toContain('Итого часов');
     expect(reportCsvFilename(stamp)).toBe('business-game-report-2026-10-31.csv');
     expect(reportCsvFilename(Date.parse('2026-10-31T21:30:00Z'))).toBe(

@@ -246,12 +246,10 @@ export function buildReportCsv(
         num(section, 'Итого экономия часов в месяц', routine.results.savedHoursPerMonth),
       );
     }
-    lines.push(
-      routine.results.savedMoneyPerMonth === null
-        ? csvRow(section, 'Итого экономия, ₽/мес', '')
-        : num(section, 'Итого экономия, ₽/мес', routine.results.savedMoneyPerMonth),
-      '',
-    );
+    if (routine.results.savedMoneyPerMonth !== null) {
+      lines.push(num(section, 'Итого экономия, ₽/мес', routine.results.savedMoneyPerMonth));
+    }
+    lines.push('');
   }
 
   if (priority) {

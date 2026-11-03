@@ -35,7 +35,7 @@ import {
   type RoutineFieldErrors,
   type RoutineResult,
 } from './calc';
-import { SHARE_INPUT_STEP, collapsePresetsToManual, routineStepModel } from './steps';
+import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, routineStepModel } from './steps';
 
 const HELP = {
   operations:
@@ -553,7 +553,7 @@ export function renderRoutineCalcTool(
 
     const money =
       result.savedMoneyPerMonth === null
-        ? 'Ставка не указана'
+        ? EMPTY_RATE_HINT
         : `${formatRubles(result.savedMoneyPerMonth)}/мес`;
     metrics.replaceChildren(
       metric('Можно вернуть', `${formatWorkHours(result.savedHoursPerMonth)}/мес`),
@@ -568,7 +568,7 @@ export function renderRoutineCalcTool(
         ? `Доля: ${shareText}. Экономия часов = ${formatWorkHours(result.savedHoursPerMonth)}.`
         : `Экономия часов = часы × ${shareRaw}% = ${formatWorkHours(result.savedHoursPerMonth)}.`,
       result.savedMoneyPerMonth === null
-        ? 'Ставка не указана, поэтому рубли не считаются.'
+        ? EMPTY_RATE_HINT
         : `Экономия в рублях = часы экономии × ставка = ${formatRubles(result.savedMoneyPerMonth)} в месяц.`,
     ];
     const formula = document.createElement('ol');

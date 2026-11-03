@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { aggregateRoutine, calculateRoutine, getRoutinePresetById } from './calc';
-import { SHARE_INPUT_STEP, collapsePresetsToManual, routineStepModel } from './steps';
+import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, routineStepModel } from './steps';
 
 describe('routine step model', () => {
   const orders = getRoutinePresetById('orders');
@@ -57,5 +57,6 @@ describe('routine step model', () => {
       value: '65.85',
     });
     expect(SHARE_INPUT_STEP).toBe('0.01');
+    expect(EMPTY_RATE_HINT).toBe('Поставьте ставку, чтобы увидеть экономию в деньгах');
   });
 });
