@@ -1,5 +1,5 @@
-import { normalizeFiniteNumber } from '../../lib/format';
-import type { PriorityProcessId, PriorityScoreInput } from '../../lib/types';
+import { formatRubles, normalizeFiniteNumber, pluralize } from '../../lib/format';
+import type { PriorityProcessId, PriorityScoreInput, RoutinePresetId } from '../../lib/types';
 
 export const PRIORITY_WEIGHTS = {
   frequency: 0.4,
@@ -109,8 +109,8 @@ export function scoreProcess(input: PriorityScoreInput): number {
 }
 
 /**
- * Ranks six processes. Equal scores break toward the costlier error,
- * then the higher frequency, then the earlier place in the funnel.
+ * Orders six processes for display. Equal scores sort by the costlier error,
+ * then the higher frequency. That order is not a rank: a tie has no leader.
  */
 export function rankProcesses(
   inputs: Readonly<Record<PriorityProcessId, PriorityScoreInput>>,
@@ -156,4 +156,163 @@ export function rankProcesses(
     top: toRanked(top),
     tied: second ? second.score === top.score : false,
   };
+}
+
+export type PriorityBoardKind = 'leader' | 'quiet' | 'tied';
+
+export interface PriorityBoard {
+  readonly kind: PriorityBoardKind;
+  readonly peers: readonly RankedProcess[];
+  readonly leader: RankedProcess | null;
+}
+
+export type RankSource = 'unique' | 'visitor' | 'money' | 'open';
+
+export interface PriorityResolution {
+  readonly source: RankSource;
+  readonly processId: PriorityProcessId | null;
+  readonly reason: string;
+}
+
+export interface PriorityMoney {
+  readonly revenue: number | null;
+  readonly routine: number | null;
+}
+
+export const QUIET_TEXT =
+  'Ни один процесс не болит сильнее единицы. Ранга нет. Смотрите риск выручки и часы рутины.';
+
+/** All six scores at 1 are quiet. One strict maximum is a leader. Any other shared maximum is a tie. */
+export function classifyBoard(
+  inputs: Readonly<Record<PriorityProcessId, PriorityScoreInput>>,
+): PriorityBoard {
+  const ranked = rankProcesses(inputs).ranked;
+  const topScore = ranked[0]?.score ?? 0;
+  const peers = ranked.filter((item) => item.score === topScore);
+  if (ranked.length > 0 && ranked.every((item) => item.score === 1)) {
+    return { kind: 'quiet', peers, leader: null };
+  }
+  if (peers.length === 1) {
+    return { kind: 'leader', peers, leader: peers[0] ?? null };
+  }
+  return { kind: 'tied', peers, leader: null };
+}
+
+export function tieQuestion(peerCount: number): string {
+  if (peerCount >= 6) {
+    return 'Балл одинаковый у всех шести. Что сгорит первым, если неделю не трогать?';
+  }
+  const noun = pluralize(peerCount, ['процесс', 'процесса', 'процессов']);
+  return `Одинаковый балл у ${String(peerCount)} ${noun}. Что сгорит первым, если неделю не трогать?`;
+}
+
+function processTitle(id: PriorityProcessId): string {
+  return PRIORITY_PROCESSES.find((item) => item.id === id)?.title ?? id;
+}
+
+/** Orders and booking presets both point at the booking process. Sheets point at reports. */
+function processForRoutinePreset(id: RoutinePresetId): PriorityProcessId {
+  if (id === 'answers') return 'answers';
+  if (id === 'sheets') return 'reports';
+  return 'booking';
+}
+
+function moneyPick(
+  peers: readonly RankedProcess[],
+  money: PriorityMoney,
+  routinePresetIds: readonly RoutinePresetId[],
+): RankedProcess | null {
+  const { revenue, routine } = money;
+  if (revenue === null || routine === null || revenue === routine) return null;
+  if (revenue > routine) {
+    const maxError = Math.max(...peers.map((item) => item.errorCost));
+    let pool = peers.filter((item) => item.errorCost === maxError);
+    if (pool.length > 1) {
+      const maxFrequency = Math.max(...pool.map((item) => item.frequency));
+      pool = pool.filter((item) => item.frequency === maxFrequency);
+    }
+    return pool.length === 1 ? (pool[0] ?? null) : null;
+  }
+  const mapped = new Set(routinePresetIds.map(processForRoutinePreset));
+  const hits = peers.filter((item) => mapped.has(item.id));
+  return hits.length === 1 ? (hits[0] ?? null) : null;
+}
+
+function sumsPhrase(revenue: number, routine: number): string {
+  const revenueText = formatRubles(revenue);
+  const routineText = formatRubles(routine);
+  if (revenue > routine) {
+    return `под риском ${revenueText}, это больше экономии рутины ${routineText}`;
+  }
+  if (routine > revenue) {
+    return `экономия рутины ${routineText}, это больше выручки под риском ${revenueText}`;
+  }
+  return `под риском ${revenueText} и экономия рутины ${routineText} равны`;
+}
+
+function sentence(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function openReason(money: PriorityMoney, ambiguous: boolean): string {
+  const { revenue, routine } = money;
+  if (revenue === null && routine === null) {
+    return 'Баллы совпали. Выбор не сделан. Сумм выручки и рутины нет, деньги процессы не разводят. Лидер не назначен.';
+  }
+  if (revenue === null || routine === null) {
+    const present =
+      revenue === null
+        ? `экономия рутины ${formatRubles(routine as number)} есть, выручки под риском нет`
+        : `под риском ${formatRubles(revenue as number)} есть, экономии рутины нет`;
+    return `Баллы совпали. Выбор не сделан. ${sentence(present)}, деньги процессы не разводят. Лидер не назначен.`;
+  }
+  const comparison = sumsPhrase(revenue, routine);
+  const tail = ambiguous
+    ? `${sentence(comparison)}, но правило указывает не на один процесс.`
+    : `${sentence(comparison)}.`;
+  return `Баллы совпали. Выбор не сделан. ${tail} Лидер не назначен.`;
+}
+
+/**
+ * Picks a leader only from a strict maximum, the visitor's chip, or one process the money rule names.
+ * A stored chip outside the current tie is ignored. Array order never wins.
+ */
+export function resolvePriority(
+  board: PriorityBoard,
+  pick: PriorityProcessId | null,
+  money: PriorityMoney,
+  routinePresetIds: readonly RoutinePresetId[],
+): PriorityResolution {
+  if (board.kind === 'quiet') {
+    return { source: 'open', processId: null, reason: QUIET_TEXT };
+  }
+  if (board.kind === 'leader' && board.leader) {
+    return {
+      source: 'unique',
+      processId: board.leader.id,
+      reason: `Лидер — «${board.leader.title}»: балл строго выше остальных.`,
+    };
+  }
+  const picked = pick !== null && board.peers.some((item) => item.id === pick) ? pick : null;
+  if (picked) {
+    return {
+      source: 'visitor',
+      processId: picked,
+      reason: `Лидер — «${processTitle(picked)}»: вы выбрали, что сгорит первым.`,
+    };
+  }
+  const bothSums = money.revenue !== null && money.routine !== null;
+  const winner = moneyPick(board.peers, money, routinePresetIds);
+  if (winner && bothSums && money.revenue !== money.routine) {
+    return {
+      source: 'money',
+      processId: winner.id,
+      reason: `Лидер — «${winner.title}»: ${sumsPhrase(money.revenue as number, money.routine as number)}.`,
+    };
+  }
+  const ambiguous =
+    bothSums &&
+    money.revenue !== money.routine &&
+    winner === null;
+  return { source: 'open', processId: null, reason: openReason(money, ambiguous) };
 }
