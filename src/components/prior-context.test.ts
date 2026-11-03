@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { formatRubles, formatWorkHours } from '../lib/format';
 import type {
   PriorityBridgeSnapshot,
   RevenueRiskBridgeSnapshot,
@@ -72,6 +73,19 @@ const priority: PriorityBridgeSnapshot = {
 
 const empty: PriorContextSources = { revenue: null, routine: null, priority: null };
 
+function routineLine(hours: number, saved: number, money: number | null) {
+  const snapshot: RoutineBridgeSnapshot = {
+    ...routine,
+    results: {
+      ...routine.results,
+      hoursPerMonth: hours,
+      savedHoursPerMonth: saved,
+      savedMoneyPerMonth: money,
+    },
+  };
+  return buildPriorContextLines({ ...empty, routine: snapshot }, 'priority-diag')[0];
+}
+
 describe('buildPriorContextLines', () => {
   it('names the block as figures carried over from the previous tool', () => {
     expect(PRIOR_CONTEXT_TITLE).toBe('Данные из предыдущего шага');
@@ -81,7 +95,8 @@ describe('buildPriorContextLines', () => {
   it('shows only saved revenue on the routine step', () => {
     const lines = buildPriorContextLines({ ...empty, revenue, routine, priority }, 'routine-calc');
     expect(lines.map((line) => line.label)).toEqual(['Выручка']);
-    expect(lines[0]?.text).toContain('63');
+    expect(lines[0]?.clauses).toEqual([formatRubles(63000), 'в месяц под риском']);
+    expect(lines[0]?.text).toBe('63\u00A0000\u00A0₽ в месяц под риском');
     expect(lines[0]?.text).not.toContain('undefined');
   });
 
@@ -93,6 +108,78 @@ describe('buildPriorContextLines', () => {
     expect(onlyRoutine.map((line) => line.label)).toEqual(['Рутина']);
     expect(onlyRoutine[0]?.text).toContain('можно вернуть');
     expect(onlyRoutine[0]?.text).not.toMatch(/null|undefined/);
+    expect(onlyRoutine[0]?.clauses[0]).toMatch(/в месяц,$/);
+    expect(onlyRoutine[0]?.clauses[1]).toMatch(/^можно вернуть /);
+    expect(onlyRoutine[0]?.text).toBe(onlyRoutine[0]?.clauses.join(' '));
+  });
+
+  it('says an equal hour count once, for every plural and for a rounded match', () => {
+    const whole = [0, 1, 1.04, 2, 4, 5, 11, 21, 22, 18, 112, 122];
+    for (const hours of whole) {
+      const line = routineLine(hours, hours, null);
+      const shown = formatWorkHours(hours);
+      expect(line?.clauses, String(hours)).toEqual([`${shown} в месяц,`, 'можно вернуть целиком']);
+      expect(line?.clauses[1]).not.toContain(shown);
+    }
+
+    const sameMoney = routineLine(18, 18, 90200);
+    expect(sameMoney?.clauses).toEqual([
+      `${formatWorkHours(18)} в месяц,`,
+      'можно вернуть целиком,',
+      formatRubles(90200),
+    ]);
+    expect(sameMoney?.clauses[1]).not.toContain(formatWorkHours(18));
+
+    const rounded = routineLine(17.96, 18.04, null);
+    expect(rounded?.clauses).toEqual([`${formatWorkHours(18)} в месяц,`, 'можно вернуть целиком']);
+    expect(routineLine(1.04, 1, null)?.clauses).toEqual([
+      `${formatWorkHours(1)} в месяц,`,
+      'можно вернуть целиком',
+    ]);
+
+    const partial = routineLine(18, 10.8, null);
+    expect(partial?.clauses).toEqual([
+      `${formatWorkHours(18)} в месяц,`,
+      `можно вернуть ${formatWorkHours(10.8)}`,
+    ]);
+
+    const partialMoney = routineLine(18, 10.8, 12400);
+    expect(partialMoney?.clauses).toEqual([
+      `${formatWorkHours(18)} в месяц,`,
+      `можно вернуть ${formatWorkHours(10.8)},`,
+      formatRubles(12400),
+    ]);
+
+    const nothingBack = routineLine(18, 0, null);
+    expect(nothingBack?.clauses).toEqual([
+      `${formatWorkHours(18)} в месяц,`,
+      `можно вернуть ${formatWorkHours(0)}`,
+    ]);
+
+    const zeroMoney = routineLine(18, 18, 0);
+    expect(zeroMoney?.clauses).toEqual([
+      `${formatWorkHours(18)} в месяц,`,
+      'можно вернуть целиком,',
+      formatRubles(0),
+    ]);
+
+    const fraction = routineLine(1.5, 2, null);
+    expect(fraction?.clauses).toEqual([
+      `${formatWorkHours(1.5)} в месяц,`,
+      `можно вернуть ${formatWorkHours(2)}`,
+    ]);
+  });
+
+  it('keeps the ruble amount as its own clause so the hours stay whole', () => {
+    const withMoney: RoutineBridgeSnapshot = {
+      ...routine,
+      results: { ...routine.results, savedMoneyPerMonth: 12400 },
+    };
+    const [line] = buildPriorContextLines({ ...empty, routine: withMoney }, 'priority-diag');
+    expect(line?.clauses).toHaveLength(3);
+    expect(line?.clauses[1]).toMatch(/,$/);
+    expect(line?.clauses[2]).toContain('₽');
+    expect(line?.text).toBe(line?.clauses.join(' '));
   });
 
   it('adds the priority line only on the checklist, and stays empty when nothing is saved', () => {

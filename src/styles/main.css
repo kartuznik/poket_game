@@ -467,8 +467,7 @@ body {
 
 /* A clause stays whole. The row wraps only before the next clause. */
 .prior-context__clause {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: 0 0 auto;
   max-width: 100%;
   font-weight: 600;
 }

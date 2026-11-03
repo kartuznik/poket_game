@@ -15,7 +15,10 @@ export interface PriorContextSources {
 
 export interface PriorContextLine {
   readonly label: string;
+  /** Full sentence, clauses joined by a space. */
   readonly text: string;
+  /** Pieces that may wrap only between themselves, never inside a number. */
+  readonly clauses: readonly string[];
 }
 
 export const PRIOR_CONTEXT_TITLE = 'Данные из предыдущего шага';
@@ -32,6 +35,27 @@ function scoreText(score: number): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1).replace('.', ',');
 }
 
+function contextLine(label: string, clauses: readonly string[]): PriorContextLine {
+  return { label, text: clauses.join(' '), clauses };
+}
+
+/**
+ * When both hour counts format the same, saying them twice is a tautology
+ * («18 часов в месяц, можно вернуть 18 часов»). Say the count once.
+ * The ruble amount stays its own clause so the number never breaks.
+ */
+function routineClauses(hours: number, saved: number, money: number | null): readonly string[] {
+  const hoursText = formatWorkHours(hours);
+  const savedText = formatWorkHours(saved);
+  const same = hoursText === savedText;
+  const recovery = same
+    ? `можно вернуть целиком${money === null ? '' : ','}`
+    : `можно вернуть ${savedText}${money === null ? '' : ','}`;
+  const clauses = [`${hoursText} в месяц,`, recovery];
+  if (money !== null) clauses.push(formatRubles(money));
+  return clauses;
+}
+
 /**
  * Compact lines for the steps the user has already saved.
  * The current step is never included, and a skipped tool is simply absent.
@@ -44,10 +68,7 @@ export function buildPriorContextLines(
 
   const risk = sources.revenue?.results.revenueAtRiskMax;
   if (finite(risk)) {
-    lines.push({
-      label: 'Выручка',
-      text: `${formatRubles(risk)} в месяц под риском`,
-    });
+    lines.push(contextLine('Выручка', [formatRubles(risk), 'в месяц под риском']));
   }
 
   if (step !== 'routine-calc') {
@@ -55,11 +76,7 @@ export function buildPriorContextLines(
     const saved = sources.routine?.results.savedHoursPerMonth;
     if (finite(hours) && finite(saved)) {
       const money = sources.routine?.results.savedMoneyPerMonth;
-      const moneyText = finite(money) ? `, ${formatRubles(money)}` : '';
-      lines.push({
-        label: 'Рутина',
-        text: `${formatWorkHours(hours)} в месяц, можно вернуть ${formatWorkHours(saved)}${moneyText}`,
-      });
+      lines.push(contextLine('Рутина', routineClauses(hours, saved, finite(money) ? money : null)));
     }
   }
 
@@ -67,10 +84,7 @@ export function buildPriorContextLines(
     const title = sources.priority?.results.topTitle?.trim() ?? '';
     const score = sources.priority?.results.topScore;
     if (title.length > 0 && finite(score)) {
-      lines.push({
-        label: 'Что первым',
-        text: `${title}, балл ${scoreText(score)}`,
-      });
+      lines.push(contextLine('Что первым', [`${title},`, `балл ${scoreText(score)}`]));
     }
   }
 
@@ -106,10 +120,13 @@ export function appendPriorContext(
     const label = document.createElement('span');
     label.className = 'prior-context__label';
     label.textContent = line.label;
-    const text = document.createElement('span');
-    text.className = 'prior-context__text';
-    text.textContent = line.text;
-    item.append(label, text);
+    item.append(label);
+    for (const clause of line.clauses) {
+      const part = document.createElement('span');
+      part.className = 'prior-context__clause';
+      part.textContent = clause;
+      item.append(part);
+    }
     list.append(item);
   }
 
