@@ -3,6 +3,7 @@ import {
   JOURNEY_LENGTH,
   enterAdvances,
   enterStepMove,
+  firstShownField,
   globalProgressPercent,
   journeyIndex,
   localProgressPercent,
@@ -28,7 +29,6 @@ export function createWizard(options: {
   readonly onStep: (step: number) => void;
   readonly onFinish: () => void;
   readonly onRecalculate?: () => void;
-  readonly neighborStep?: (step: number, direction: 1 | -1) => number;
 }): WizardController {
   const count = options.panels.length;
   let step = Math.min(count, Math.max(1, options.initialStep));
@@ -104,14 +104,21 @@ export function createWizard(options: {
    * the visitor is typing in.
    */
   function stepFocusTarget(panel: HTMLElement): HTMLElement | null {
-    return (
-      panel.querySelector<HTMLElement>(
-        'input[type="number"], input[type="text"], input[type="tel"], textarea',
-      ) ??
-      panel.querySelector<HTMLElement>(
-        'select, .choice-scale__btn[aria-pressed="true"], .preset-card[aria-pressed="true"]',
-      )
-    );
+    const groups = [
+      'input[type="number"], input[type="text"], input[type="tel"], textarea',
+      'select, .choice-scale__btn[aria-pressed="true"], .preset-card[aria-pressed="true"]',
+    ];
+    for (const selector of groups) {
+      const picked = firstShownField(
+        [...panel.querySelectorAll<HTMLElement>(selector)].map((element) => ({
+          element,
+          hidden: element.hidden,
+          inHiddenSubtree: element.parentElement?.closest('[hidden]') != null,
+        })),
+      );
+      if (picked) return picked.element;
+    }
+    return null;
   }
 
   let inputsOpen = false;
@@ -246,10 +253,9 @@ export function createWizard(options: {
 
   const goAdjacent = (direction: 1 | -1): void => {
     if (direction < 0 && step === 1) return;
-    const target = options.neighborStep?.(step, direction) ?? step + direction;
-    const next = Math.min(count, Math.max(1, Math.trunc(target)));
-    if (next === step) return;
-    step = next;
+    const target = Math.min(count, Math.max(1, Math.trunc(step + direction)));
+    if (target === step) return;
+    step = target;
     const panel = options.panels[step - 1];
     if (direction > 0 && step === count && panel?.querySelector('input, textarea')) holdFields = true;
     paint(true);

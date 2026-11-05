@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aggregateRoutine, calculateRoutine, getRoutinePresetById } from './calc';
+import { aggregateRoutine, calculateRoutine, getRoutinePresetById, validateRoutineDraft } from './calc';
 import {
   EMPTY_RATE_HINT,
   SHARE_INPUT_STEP,
@@ -8,6 +8,7 @@ import {
   nicheRoutineMatch,
   routineDetailModel,
   routineStepModel,
+  shareFieldError,
 } from './steps';
 
 describe('routine step model', () => {
@@ -121,5 +122,18 @@ describe('routine step model', () => {
       lines: {},
     });
     expect(custom.rows).toEqual([{ presetId: null, title: 'Свои цифры', operations: '45', minutes: '9' }]);
+  });
+
+  it('shows the share validator text for a table and a free row, and hides it for a niche', () => {
+    const message = validateRoutineDraft({
+      operationsPerWeekRaw: '25',
+      minutesPerOperationRaw: '10',
+      automationSharePercentRaw: '',
+      hourlyRateRaw: '',
+    }).errors.automationSharePercent;
+    expect(message).toBe('Введите долю автоматизации от 0 до 100.');
+    expect(shareFieldError('table', message)).toBe(message);
+    expect(shareFieldError('custom', message)).toBe(message);
+    expect(shareFieldError('niche', message)).toBeUndefined();
   });
 });

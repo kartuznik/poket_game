@@ -1,9 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   clampStep,
   editStepFor,
   enterAdvances,
   enterStepMove,
+  firstShownField,
   globalProgressPercent,
   isRevenueStepValid,
   isRoutineStartChosen,
@@ -15,6 +19,8 @@ import {
   resolveInitialStep,
   stepCountFor,
 } from './wizard';
+
+const wizardView = resolve(dirname(fileURLToPath(import.meta.url)), '../components/wizard.ts');
 
 describe('wizard steps', () => {
   it('uses a different step count for each tool', () => {
@@ -90,5 +96,18 @@ describe('wizard steps', () => {
     expect(migrateRoutineStep(4)).toBe(2);
     expect(resolveInitialStep(2, 4, null)).toBe(2);
     expect(resolveInitialStep(2, 3, 1)).toBe(2);
+  });
+
+  it('lands on the rate when operations and share are inside a hidden group', () => {
+    const picked = firstShownField([
+      { id: 'ops', hidden: false, inHiddenSubtree: true },
+      { id: 'share', hidden: false, inHiddenSubtree: true },
+      { id: 'rate', hidden: false, inHiddenSubtree: false },
+    ]);
+    expect(picked?.id).toBe('rate');
+  });
+
+  it('does not keep a neighbor step hook', () => {
+    expect(readFileSync(wizardView, 'utf8')).not.toContain('neighborStep');
   });
 });

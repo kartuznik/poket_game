@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_THEME_ID,
@@ -353,5 +356,21 @@ describe('URL routing and cross-tool handoff bridge', () => {
     expect(formatStubPreview('readiness-check', 6).formattedDisplay).toBe(
       '6\u00A0пунктов из 9',
     );
+  });
+
+  it('does not keep the removed stub renderer', () => {
+    const needle = 'renderTool' + 'Stub';
+    const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+    const files: string[] = [];
+    const walk = (dir: string): void => {
+      for (const name of readdirSync(dir)) {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) walk(path);
+        else if (name.endsWith('.ts')) files.push(path);
+      }
+    };
+    walk(root);
+    const hits = files.filter((path) => readFileSync(path, 'utf8').includes(needle));
+    expect(hits).toEqual([]);
   });
 });

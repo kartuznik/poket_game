@@ -43,6 +43,7 @@ import {
   nicheRoutineMatch,
   routineDetailModel,
   routineStepModel,
+  shareFieldError,
 } from './steps';
 
 const HELP = {
@@ -640,12 +641,12 @@ export function renderRoutineCalcTool(
       visibleError(minutesRaw, validated.errors.minutesPerOperation),
     );
     showError(rateError, rateInput, visibleError(rateRaw, validated.errors.hourlyRate));
+    const kind = detailKind();
     showError(
       shareError,
       shareInput,
-      visibleError(shareRaw, validated.errors.automationSharePercent),
+      shareFieldError(kind, validated.errors.automationSharePercent),
     );
-    const kind = detailKind();
     const rateBroken = Boolean(validated.errors.hourlyRate) && rateRaw.trim() !== '';
     const shareBroken = Boolean(validated.errors.automationSharePercent) && shareRaw.trim() !== '';
     let tableBroken = false;
@@ -653,7 +654,6 @@ export function renderRoutineCalcTool(
       lastErrors = rateBroken && validated.errors.hourlyRate ? { hourlyRate: validated.errors.hourlyRate } : {};
       showError(operationsError, operationsInput, undefined);
       showError(minutesError, minutesInput, undefined);
-      showError(shareError, shareInput, undefined);
       if (tableError) {
         tableError.hidden = true;
         tableError.textContent = '';

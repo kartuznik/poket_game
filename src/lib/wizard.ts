@@ -73,6 +73,16 @@ export function enterStepMove(
   return 'advance';
 }
 
+export interface ShownField {
+  readonly hidden: boolean;
+  readonly inHiddenSubtree: boolean;
+}
+
+/** The first control that is itself visible and not inside a hidden ancestor. */
+export function firstShownField<T extends ShownField>(items: readonly T[]): T | null {
+  return items.find((item) => !item.hidden && !item.inHiddenSubtree) ?? null;
+}
+
 /** Next is refused while the current step is invalid. Finish only on the last valid step. */
 export function nextMove(step: number, count: number, valid: boolean): StepMove {
   if (!valid) return 'stay';

@@ -103,6 +103,15 @@ export function manualSwitchClass(presetCount: number): string {
 
 export const EMPTY_RATE_HINT = 'Поставьте ставку, чтобы увидеть экономию в деньгах';
 
+/** Niche hides the share field. A table or a free row shows the validator text, including an empty share. */
+export function shareFieldError(
+  kind: 'niche' | 'table' | 'custom',
+  message: string | undefined,
+): string | undefined {
+  if (kind === 'niche') return undefined;
+  return message;
+}
+
 export interface RoutineControlModel {
   readonly id: 'operations' | 'minutes' | 'share' | 'slider';
   readonly visible: boolean;
