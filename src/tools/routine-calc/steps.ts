@@ -16,6 +16,35 @@ export function nicheRoutineMatch(
   if (!nicheIds || customEntry) return false;
   return nicheIds.length === presetIds.length && nicheIds.every((id) => presetIds.includes(id));
 }
+
+/** Step numbers that belong in the document. A niche match omits 2 and 3 without renumbering. */
+export function routinePanelsInDocument(nicheMatch: boolean): readonly number[] {
+  return nicheMatch ? [1, 4] : [1, 2, 3, 4];
+}
+
+export interface RoutinePanelMount {
+  readonly isConnected: boolean;
+  before(...nodes: readonly RoutinePanelMount[]): void;
+  remove(): void;
+}
+
+/** Insert or drop the breakdown panels. An empty routine list does not count as a match. */
+export function syncRoutineBreakdownPanels(
+  ratePanel: RoutinePanelMount,
+  breakdownPanels: readonly [RoutinePanelMount, RoutinePanelMount],
+  nicheMatch: boolean,
+): readonly number[] {
+  const mounted = routinePanelsInDocument(nicheMatch);
+  if (nicheMatch) {
+    for (const panel of breakdownPanels) panel.remove();
+    return mounted;
+  }
+  if (breakdownPanels.some((panel) => !panel.isConnected)) {
+    ratePanel.before(...breakdownPanels);
+  }
+  return mounted;
+}
+
 export const SHARE_INPUT_STEP = '0.01';
 
 /** Visual marker that the manual switch is leaving preset numbers. Not aria-pressed. */

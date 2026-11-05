@@ -35,7 +35,16 @@ import {
   type RoutineFieldErrors,
   type RoutineResult,
 } from './calc';
-import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, manualSwitchClass, nicheRoutineMatch, routineStepModel } from './steps';
+import {
+  EMPTY_RATE_HINT,
+  SHARE_INPUT_STEP,
+  collapsePresetsToManual,
+  manualSwitchClass,
+  nicheRoutineMatch,
+  routineStepModel,
+  syncRoutineBreakdownPanels,
+  type RoutinePanelMount,
+} from './steps';
 
 const HELP = {
   operations:
@@ -258,6 +267,7 @@ export function renderRoutineCalcTool(
     shareInput.readOnly = false;
     shareSlider.disabled = false;
     shareSlider.step = SHARE_INPUT_STEP;
+    mountRoutinePanels();
   }
 
   for (const preset of ROUTINE_PRESETS) {
@@ -822,6 +832,7 @@ export function renderRoutineCalcTool(
     applyLabel: (id) => {
       dossier.update((current) => ({ ...current, niche: id }));
       if (id === null && presetIds.length > 0 && !customEntry) enterManualMode();
+      else mountRoutinePanels();
       paintNicheNotes();
     },
     undo: () => {
@@ -843,16 +854,16 @@ export function renderRoutineCalcTool(
   });
   refreshNicheMenu = () => nicheMenu.refresh();
   presetStep.prepend(nicheMenu.element);
-  inputCard.append(
-    wizard.progress,
-    presetStep,
-    operationsStep,
-    minutesStep,
-    shareStep,
-    resultCard,
-    wizard.nav,
-    earlyReportBtn,
-  );
+  function mountRoutinePanels(): void {
+    syncRoutineBreakdownPanels(
+      shareStep as unknown as RoutinePanelMount,
+      [operationsStep, minutesStep] as unknown as [RoutinePanelMount, RoutinePanelMount],
+      nichePresetsActive(),
+    );
+  }
+
+  inputCard.append(wizard.progress, presetStep, shareStep, resultCard, wizard.nav, earlyReportBtn);
+  mountRoutinePanels();
 
   earlyReportBtn.addEventListener('click', () => {
     recalculate();

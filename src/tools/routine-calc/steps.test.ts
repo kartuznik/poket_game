@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { aggregateRoutine, calculateRoutine, getRoutinePresetById } from './calc';
-import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, manualSwitchClass, nicheRoutineMatch, routineStepModel } from './steps';
+import {
+  EMPTY_RATE_HINT,
+  SHARE_INPUT_STEP,
+  collapsePresetsToManual,
+  manualSwitchClass,
+  nicheRoutineMatch,
+  routinePanelsInDocument,
+  routineStepModel,
+  syncRoutineBreakdownPanels,
+  type RoutinePanelMount,
+} from './steps';
 
 describe('routine step model', () => {
   const orders = getRoutinePresetById('orders');
@@ -73,5 +83,37 @@ describe('routine step model', () => {
     });
     expect(SHARE_INPUT_STEP).toBe('0.01');
     expect(EMPTY_RATE_HINT).toBe('Поставьте ставку, чтобы увидеть экономию в деньгах');
+  });
+
+  it('puts only panels 1 and 4 in the document while the niche list matches', () => {
+    const steps: number[] = [1, 4];
+    const slot = (step: number): RoutinePanelMount & { readonly step: number } => ({
+      step,
+      get isConnected() {
+        return steps.includes(step);
+      },
+      before(...nodes) {
+        const incoming = nodes.map((node) => (node as unknown as { step: number }).step);
+        for (const id of incoming) {
+          const existing = steps.indexOf(id);
+          if (existing >= 0) steps.splice(existing, 1);
+        }
+        steps.splice(steps.indexOf(step), 0, ...incoming);
+      },
+      remove() {
+        const index = steps.indexOf(step);
+        if (index >= 0) steps.splice(index, 1);
+      },
+    });
+    const rate = slot(4);
+    const breakdown = [slot(2), slot(3)] as [RoutinePanelMount, RoutinePanelMount];
+    const matched = nicheRoutineMatch(['orders', 'booking'], ['orders', 'booking'], false);
+    expect(syncRoutineBreakdownPanels(rate, breakdown, matched)).toEqual([1, 4]);
+    expect(steps).toEqual([1, 4]);
+    expect(syncRoutineBreakdownPanels(rate, breakdown, nicheRoutineMatch(null, ['orders', 'booking'], false))).toEqual([
+      1, 2, 3, 4,
+    ]);
+    expect(steps).toEqual([1, 2, 3, 4]);
+    expect(routinePanelsInDocument(nicheRoutineMatch(['orders', 'booking'], [], false))).toEqual([1, 2, 3, 4]);
   });
 });
