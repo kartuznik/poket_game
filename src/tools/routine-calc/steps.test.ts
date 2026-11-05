@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { aggregateRoutine, calculateRoutine, getRoutinePresetById } from './calc';
-import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, routineStepModel } from './steps';
+import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, manualSwitchClass, routineStepModel } from './steps';
 
 describe('routine step model', () => {
   const orders = getRoutinePresetById('orders');
@@ -22,6 +22,8 @@ describe('routine step model', () => {
     });
     expect(model.kind).toBe('breakdown');
     expect(model.manualSwitch).toBe(true);
+    expect(manualSwitchClass(2)).toBe('action-btn action-btn--secondary action-btn--from-preset');
+    expect(manualSwitchClass(0)).toBe('action-btn action-btn--secondary');
     expect(model.cards.map((card) => card.title)).toEqual(['Приём заказов', 'Записи']);
     expect(model.totalHours).toBe(aggregateRoutine(items).hoursPerMonth);
     expect(model.controls.filter((control) => control.visible && control.disabled && control.value === '')).toEqual(

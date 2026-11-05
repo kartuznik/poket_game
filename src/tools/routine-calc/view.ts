@@ -35,7 +35,7 @@ import {
   type RoutineFieldErrors,
   type RoutineResult,
 } from './calc';
-import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, routineStepModel } from './steps';
+import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, manualSwitchClass, routineStepModel } from './steps';
 
 const HELP = {
   operations:
@@ -371,7 +371,7 @@ export function renderRoutineCalcTool(
     if (model.manualSwitch) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'action-btn action-btn--secondary';
+      button.className = manualSwitchClass(model.cards.length);
       button.textContent = 'Введу свои цифры';
       button.addEventListener('click', enterManualMode);
       host.append(button);
@@ -749,6 +749,7 @@ export function renderRoutineCalcTool(
       if (step === 4 && !latest) resultCard.hidden = true;
     },
     onFinish: finishRoutine,
+    onRecalculate: recalculate,
   });
   function nicheNote(): HTMLParagraphElement {
     const note = document.createElement('p');

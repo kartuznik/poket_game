@@ -1,10 +1,13 @@
 import { celebrate } from './confetti';
 import {
   JOURNEY_LENGTH,
+  enterAdvances,
+  enterStepMove,
   globalProgressPercent,
   journeyIndex,
   localProgressPercent,
   nextMove,
+  type EnterField,
   type JourneyToolId,
 } from '../lib/wizard';
 
@@ -24,6 +27,7 @@ export function createWizard(options: {
   readonly finishLabel: string;
   readonly onStep: (step: number) => void;
   readonly onFinish: () => void;
+  readonly onRecalculate?: () => void;
 }): WizardController {
   const count = options.panels.length;
   let step = Math.min(count, Math.max(1, options.initialStep));
@@ -266,6 +270,33 @@ export function createWizard(options: {
     if (step === count && landed?.querySelector('input, textarea')) holdFields = true;
     paint(true);
   });
+
+  const onFieldKeyDown = (event: KeyboardEvent): void => {
+    const target = event.target;
+    const field: EnterField =
+      target instanceof HTMLTextAreaElement
+        ? 'textarea'
+        : target instanceof HTMLInputElement && target.type === 'number'
+          ? 'number'
+          : 'other';
+    if (!enterAdvances(event.key, event.shiftKey, field)) return;
+    event.preventDefault();
+    options.onRecalculate?.();
+    const move = enterStepMove(step, count, options.isStepValid(step), resultWasShown);
+    if (move === 'stay') {
+      paint(false);
+      return;
+    }
+    if (move === 'reveal') {
+      showResult();
+      return;
+    }
+    step += 1;
+    const landed = options.panels[step - 1];
+    if (step === count && landed?.querySelector('input, textarea')) holdFields = true;
+    paint(true);
+  };
+  for (const panel of options.panels) panel.addEventListener('keydown', onFieldKeyDown);
 
   paint(false);
 

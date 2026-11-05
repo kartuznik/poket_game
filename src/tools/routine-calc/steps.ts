@@ -10,6 +10,12 @@ import {
 /** Range step that keeps a weighted share such as 65.85. Step 1 still snaps it. */
 export const SHARE_INPUT_STEP = '0.01';
 
+/** Visual marker that the manual switch is leaving preset numbers. Not aria-pressed. */
+export function manualSwitchClass(presetCount: number): string {
+  const base = 'action-btn action-btn--secondary';
+  return presetCount > 0 ? `${base} action-btn--from-preset` : base;
+}
+
 export const EMPTY_RATE_HINT = 'Поставьте ставку, чтобы увидеть экономию в деньгах';
 
 export interface RoutineControlModel {

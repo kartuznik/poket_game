@@ -330,6 +330,7 @@ export function renderReadinessCheckTool(
       if (step === 3 && !latest) resultCard.hidden = true;
     },
     onFinish: finishReadiness,
+    onRecalculate: recalculate,
   });
   refreshSteps = () => wizard.refresh();
   inputCard.append(wizard.progress, ...readinessPanels, resultCard, wizard.nav);

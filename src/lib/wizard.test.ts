@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   clampStep,
   editStepFor,
+  enterAdvances,
+  enterStepMove,
   globalProgressPercent,
   isRevenueStepValid,
   isRoutineStartChosen,
@@ -21,6 +23,19 @@ describe('wizard steps', () => {
     expect(stepCountFor('readiness-check')).toBe(3);
     expect(stepCountFor('final-report')).toBeNull();
     expect(journeyIndex('readiness-check')).toBe(4);
+  });
+
+  it('moves on Enter only when the step is valid and stays inside the tool', () => {
+    expect(enterAdvances('Enter', false, 'number')).toBe(true);
+    expect(enterAdvances('Go', false, 'textarea')).toBe(true);
+    expect(enterAdvances('Enter', true, 'number')).toBe(false);
+    expect(enterAdvances('Enter', false, 'other')).toBe(false);
+    expect(enterAdvances('Tab', false, 'number')).toBe(false);
+    expect(enterStepMove(2, 4, false, false)).toBe('stay');
+    expect(enterStepMove(2, 4, true, false)).toBe('advance');
+    expect(enterStepMove(4, 4, true, false)).toBe('reveal');
+    expect(enterStepMove(4, 4, true, true)).toBe('stay');
+    expect(nextMove(4, 4, true)).toBe('finish');
   });
 
   it('refuses the next step while the current one is invalid', () => {

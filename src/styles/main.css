@@ -1318,6 +1318,12 @@ a.action-btn {
   color: var(--text-muted);
 }
 
+.action-btn.action-btn--from-preset {
+  border-color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 12%, var(--bg-surface));
+  color: var(--text-primary);
+}
+
 .action-btn--danger {
   background: transparent;
   color: var(--text-danger);

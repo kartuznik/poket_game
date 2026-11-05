@@ -470,6 +470,7 @@ export function renderPriorityDiagTool(
       if (!latestRanked) resultCard.hidden = true;
     },
     onFinish: finishPriority,
+    onRecalculate: recalculate,
   });
   refreshSteps = () => wizard.refresh();
   inputCard.append(wizard.progress, stepPanel, resultCard, wizard.nav, earlyReportBtn);

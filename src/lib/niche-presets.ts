@@ -11,6 +11,8 @@ export interface NichePreset {
   readonly operationsPerWeek: number;
   readonly minutesPerOperation: number;
   readonly conversionPercent: number;
+  /** Visible return share. The corridor formula is not derived from this field. */
+  readonly recoveryPercent: number;
   readonly conversionCaption: string;
   readonly routinePresetIds: readonly RoutinePresetId[];
 }
@@ -45,7 +47,8 @@ const PRESETS: readonly NichePreset[] = [
     operationsPerWeek: 25,
     minutesPerOperation: 10,
     conversionPercent: 25,
-    conversionCaption: 'Сценарное допущение для заказов еды. Не замер.',
+    recoveryPercent: 50,
+    conversionCaption: 'Кафе и еда. Не замер.',
     routinePresetIds: ['orders', 'booking'],
   },
   {
@@ -57,7 +60,8 @@ const PRESETS: readonly NichePreset[] = [
     operationsPerWeek: 20,
     minutesPerOperation: 8,
     conversionPercent: 30,
-    conversionCaption: 'Сценарное допущение записи. Не замер.',
+    recoveryPercent: 50,
+    conversionCaption: 'Бьюти, здоровье, локальные услуги. Не замер.',
     routinePresetIds: ['booking', 'answers'],
   },
   {
@@ -69,7 +73,8 @@ const PRESETS: readonly NichePreset[] = [
     operationsPerWeek: 40,
     minutesPerOperation: 6,
     conversionPercent: 12,
-    conversionCaption: 'Сценарное допущение длинной продажи обучения. Не замер.',
+    recoveryPercent: 58,
+    conversionCaption: 'Онлайн-школа и коуч. Не замер.',
     routinePresetIds: ['answers', 'sheets'],
   },
   {
@@ -81,7 +86,8 @@ const PRESETS: readonly NichePreset[] = [
     operationsPerWeek: 15,
     minutesPerOperation: 12,
     conversionPercent: 10,
-    conversionCaption: 'Сценарное допущение редких консультаций. Не замер.',
+    recoveryPercent: 30,
+    conversionCaption: 'Фрилансер и консультант. Не замер.',
     routinePresetIds: ['answers', 'sheets'],
   },
   {
@@ -93,7 +99,8 @@ const PRESETS: readonly NichePreset[] = [
     operationsPerWeek: 25,
     minutesPerOperation: 10,
     conversionPercent: 20,
-    conversionCaption: 'Сценарное допущение товарной покупки. Не замер.',
+    recoveryPercent: 50,
+    conversionCaption: 'Одежда, подарки, декор, цветы. Не замер.',
     routinePresetIds: ['orders', 'answers'],
   },
 ];
@@ -156,6 +163,16 @@ export function activeConversionNiche(
 /** Card heading: «Ваша ниша: Кафе и еда — 25%». */
 export function nicheConversionCardTitle(niche: NichePreset): string {
   return `Ваша ниша: ${niche.title} — ${String(niche.conversionPercent)}%`;
+}
+
+/**
+ * The fifth card is the niche already stored in the dossier.
+ * `beauty-local` is only the fallback when that field is still empty.
+ */
+export function storedNicheConversionCard(
+  storedNiche: BusinessNicheId | null,
+): BusinessNicheId | null {
+  return activeConversionNiche(storedNiche, 'preset', storedNiche === null ? 'beauty-local' : null);
 }
 
 /** CSV «Режим». A niche preset names the niche. The four old scenarios stay a scenario. */

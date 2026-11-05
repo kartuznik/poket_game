@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { UNCERTAINTY_SPREAD, computeCorridor, defaultUncertainty } from '../tools/revenue-risk/calc';
 import {
   NICHE_ACCENT_BUTTON,
@@ -20,6 +23,7 @@ import {
   planNicheApply,
   revenueNicheFields,
   scenarioLine,
+  storedNicheConversionCard,
 } from './niche-presets';
 
 describe('niche presets', () => {
@@ -56,26 +60,47 @@ describe('niche presets', () => {
     const byId = Object.fromEntries(listNichePresets().map((preset) => [preset.id, preset]));
     expect(byId['cafe-food']).toMatchObject({
       conversionPercent: 25,
-      conversionCaption: 'Сценарное допущение для заказов еды. Не замер.',
+      recoveryPercent: 50,
+      conversionCaption: 'Кафе и еда. Не замер.',
       routinePresetIds: ['orders', 'booking'],
     });
     expect(byId['beauty']).toMatchObject({
       conversionPercent: 30,
+      recoveryPercent: 50,
+      conversionCaption: 'Бьюти, здоровье, локальные услуги. Не замер.',
       routinePresetIds: ['booking', 'answers'],
     });
     expect(byId['school']).toMatchObject({
       conversionPercent: 12,
+      recoveryPercent: 58,
+      conversionCaption: 'Онлайн-школа и коуч. Не замер.',
       routinePresetIds: ['answers', 'sheets'],
     });
     expect(byId['freelance']).toMatchObject({
       conversionPercent: 10,
-      conversionCaption: 'Сценарное допущение редких консультаций. Не замер.',
+      recoveryPercent: 30,
+      conversionCaption: 'Фрилансер и консультант. Не замер.',
       routinePresetIds: ['answers', 'sheets'],
     });
     expect(byId['retail']).toMatchObject({
       conversionPercent: 20,
+      recoveryPercent: 50,
+      conversionCaption: 'Одежда, подарки, декор, цветы. Не замер.',
       routinePresetIds: ['orders', 'answers'],
     });
+    for (const preset of listNichePresets()) {
+      expect(storedNicheConversionCard(preset.id)).toBe(preset.id);
+      expect(storedNicheConversionCard(preset.id)).not.toBeNull();
+    }
+    expect(storedNicheConversionCard(null)).toBeNull();
+    const view = readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), '../tools/revenue-risk/view.ts'),
+      'utf8',
+    );
+    const apply = view.slice(view.indexOf('function applyRevenueNiche'), view.indexOf('let refreshSteps'));
+    expect(apply.indexOf('dossier.update')).toBeGreaterThanOrEqual(0);
+    expect(apply.indexOf('dossier.update')).toBeLessThan(apply.indexOf('syncConversionFieldWithMode'));
+    expect(view).toContain('nicheConversionId = storedNicheConversionCard(dossier.read().niche)');
     expect(
       listNichePresets().every(
         (preset) =>

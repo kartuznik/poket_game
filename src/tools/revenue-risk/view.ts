@@ -21,6 +21,7 @@ import {
   nicheConversionCardTitle,
   nichePromptKind,
   revenueNicheFields,
+  storedNicheConversionCard,
   type BusinessNicheId,
   type NichePreset as BusinessNichePreset,
 } from '../../lib/niche-presets';
@@ -873,11 +874,7 @@ export function renderRevenueRiskTool(
 
   function paintConversionChoice(): void {
     if (mode === 'preset') {
-      nicheConversionId = activeConversionNiche(
-        dossier.read().niche,
-        mode,
-        nicheConversionId === null ? selectedPresetId : null,
-      );
+      nicheConversionId = storedNicheConversionCard(dossier.read().niche);
     }
     const niche = mode === 'preset' ? activeNiche() : null;
     for (const [id, button] of presetButtons) {
@@ -1383,9 +1380,10 @@ export function renderRevenueRiskTool(
     mode = 'preset';
     nicheConversionId = preset.id;
     tags = applyNicheGuess(tags);
+    writeRecovery(String(preset.recoveryPercent));
+    dossier.update((current) => ({ ...current, niche: preset.id }));
     syncConversionFieldWithMode();
     holdConfirmedRevenue = true;
-    dossier.update((current) => ({ ...current, niche: preset.id }));
     recalculateAndRender();
     persistRevenueDraft(wizard.currentStep());
   }
@@ -1407,6 +1405,7 @@ export function renderRevenueRiskTool(
       incompleteNote.hidden = step !== 4 || showResult;
     },
     onFinish: finishRevenue,
+    onRecalculate: recalculateAndRender,
   });
   refreshSteps = () => wizard.refresh();
   const nicheMenu = mountNicheMenu({
@@ -1415,9 +1414,15 @@ export function renderRevenueRiskTool(
     readFields: (preset) => revenueNicheFields({ leads: leadsRaw, late: lateShareRaw, check: avgCheckRaw }, preset),
     applyNumbers: applyRevenueNiche,
     applyLabel: (id) => {
+      if (id) {
+        mode = 'preset';
+        nicheConversionId = id;
+        const niche = nicheById(id);
+        if (niche) writeRecovery(String(niche.recoveryPercent));
+      }
       dossier.update((current) => ({ ...current, niche: id }));
       if (mode === 'preset') {
-        nicheConversionId = activeConversionNiche(id, mode, id ? null : selectedPresetId);
+        nicheConversionId = storedNicheConversionCard(dossier.read().niche);
         syncConversionFieldWithMode();
         recalculateAndRender();
         persistRevenueDraft(wizard.currentStep());

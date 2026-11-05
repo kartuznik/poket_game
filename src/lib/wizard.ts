@@ -47,6 +47,32 @@ export function clampStep(step: number, count: number): number {
 
 export type StepMove = 'stay' | 'advance' | 'finish';
 
+export type EnterField = 'number' | 'textarea' | 'other';
+
+export type EnterMove = 'stay' | 'advance' | 'reveal';
+
+/** Enter and the mobile Go key. Shift+Enter keeps the browser newline. */
+export function enterAdvances(key: string, shiftKey: boolean, field: EnterField): boolean {
+  if (shiftKey) return false;
+  if (key !== 'Enter' && key !== 'Go') return false;
+  return field === 'number' || field === 'textarea';
+}
+
+/**
+ * A valid step moves forward. The last step reveals the result and does not
+ * leave the tool, even when the primary button would open the next one.
+ */
+export function enterStepMove(
+  step: number,
+  count: number,
+  valid: boolean,
+  resultShown: boolean,
+): EnterMove {
+  if (!valid) return 'stay';
+  if (step >= count) return resultShown ? 'stay' : 'reveal';
+  return 'advance';
+}
+
 /** Next is refused while the current step is invalid. Finish only on the last valid step. */
 export function nextMove(step: number, count: number, valid: boolean): StepMove {
   if (!valid) return 'stay';
