@@ -8,10 +8,10 @@ export const RING_RADIUS = 33.5;
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-/** Bar length as a percent of a 1–5 score. Values outside the scale stay on the strip. */
+/** Bar length as a percent of a 1–5 score. Any non-zero score is at least 20%. */
 export function priorityBarPercent(score: number): number {
-  if (!Number.isFinite(score)) return 0;
-  return Math.min(100, Math.max(0, (score / SCORE_SCALE) * 100));
+  if (!Number.isFinite(score) || score <= 0) return 0;
+  return Math.min(100, Math.max(20, (score / SCORE_SCALE) * 100));
 }
 
 /**
@@ -52,7 +52,7 @@ export function priorityBoard(
       title: row.title,
       scoreLabel: formatNumber(row.score),
       widthPercent: priorityBarPercent(row.score),
-      showBar: row.score >= 3,
+      showBar: row.score > 0,
       leader: top !== undefined && row.score === top,
     })),
     gapLine: top !== undefined && second !== undefined ? priorityGapLine(top, second) : null,

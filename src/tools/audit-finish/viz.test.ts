@@ -11,14 +11,18 @@ const circumference = 2 * Math.PI * RING_RADIUS;
 describe('finish screen micro visuals', () => {
   it('sizes a priority bar from a ceiling of 5', () => {
     expect(priorityBarPercent(5)).toBe(100);
+    expect(priorityBarPercent(4)).toBe(80);
     expect(priorityBarPercent(3)).toBe(60);
+    expect(priorityBarPercent(2)).toBe(40);
     expect(priorityBarPercent(1)).toBe(20);
+    expect(priorityBarPercent(0.5)).toBe(20);
+    expect(priorityBarPercent(2.5)).toBe(50);
     expect(priorityBarPercent(0)).toBe(0);
     expect(priorityBarPercent(6)).toBe(100);
     expect(priorityBarPercent(-2)).toBe(0);
   });
 
-  it('draws a bar only from a score of 3', () => {
+  it('draws a bar for every non-zero score, at least 20% wide', () => {
     const board = priorityBoard([
       { title: 'Приём', score: 5 },
       { title: 'Ответы', score: 4 },
@@ -26,27 +30,29 @@ describe('finish screen micro visuals', () => {
       { title: 'Оплата', score: 2.5 },
       { title: 'Напоминания', score: 2 },
       { title: 'Отчёты', score: 1 },
+      { title: 'Пусто', score: 0 },
     ]);
     const shown = board.bars.filter((bar) => bar.showBar);
-    expect(shown.map((bar) => [bar.scoreLabel, bar.widthPercent])).toEqual([
-      ['5', 100],
-      ['4', 80],
-      ['3', 60],
-    ]);
+    expect(shown.map((bar) => bar.scoreLabel)).toEqual(['5', '4', '3', '2,5', '2', '1']);
+    const widths = [1, 2, 3, 4, 5].map((score) => priorityBarPercent(score));
+    expect(widths).toEqual([20, 40, 60, 80, 100]);
+    expect(widths[0]).toBeLessThan(widths[1] ?? 0);
+    expect(widths[1]).toBeLessThan(widths[2] ?? 0);
+    expect(widths[2]).toBeLessThan(widths[3] ?? 0);
+    expect(widths[3]).toBeLessThan(widths[4] ?? 0);
+    expect(shown.find((bar) => bar.scoreLabel === '2,5')?.widthPercent).toBe(50);
     expect(shown[0]?.leader).toBe(true);
     expect(shown.slice(1).every((bar) => bar.leader === false)).toBe(true);
-    expect(board.bars.filter((bar) => !bar.showBar).map((bar) => bar.scoreLabel)).toEqual([
-      '2,5',
-      '2',
-      '1',
-    ]);
+    expect(board.bars.filter((bar) => !bar.showBar).map((bar) => bar.scoreLabel)).toEqual(['0']);
 
     const quiet = priorityBoard([
       { title: 'Оплата', score: 2 },
       { title: 'Отчёты', score: 1 },
     ]);
-    expect(quiet.bars.every((bar) => bar.showBar === false)).toBe(true);
+    expect(quiet.bars.every((bar) => bar.showBar)).toBe(true);
+    expect(quiet.bars.map((bar) => bar.widthPercent)).toEqual([40, 20]);
     expect(quiet.bars[0]?.leader).toBe(true);
+    expect(quiet.bars[1]?.leader).toBe(false);
   });
 
   it('draws the readiness arc as a share of the circle', () => {
