@@ -695,4 +695,43 @@ describe('business dossier', () => {
     expect(restored?.priority?.results.topProcessId).not.toBe('inquiries');
     expect(restored?.priority?.results.resolution).not.toBe('visitor');
   });
+
+  it('folds an old routine step 4 into step 2 and keeps table lines', () => {
+    const restored = parseDossier({
+      version: 2,
+      updatedAt: 4,
+      routineDraft: {
+        step: 4,
+        presetId: null,
+        presetIds: ['orders', 'booking'],
+        customEntry: false,
+        operationsPerWeek: '',
+        minutesPerOperation: '',
+        automationSharePercent: '60',
+        hourlyRate: '',
+        lines: [
+          { presetId: 'orders', operationsPerWeek: '30', minutesPerOperation: '12' },
+          { presetId: 'nope', operationsPerWeek: '1', minutesPerOperation: '1' },
+        ],
+      },
+    });
+    expect(restored?.routineDraft?.step).toBe(2);
+    expect(restored?.version).toBe(2);
+    expect(restored?.routineDraft?.lines).toEqual([
+      { presetId: 'orders', operationsPerWeek: '30', minutesPerOperation: '12' },
+    ]);
+    expect(parseDossier({
+      version: 2,
+      updatedAt: 4,
+      routineDraft: {
+        step: 3,
+        presetId: 'orders',
+        customEntry: false,
+        operationsPerWeek: '25',
+        minutesPerOperation: '10',
+        automationSharePercent: '60',
+        hourlyRate: '',
+      },
+    })?.routineDraft?.step).toBe(2);
+  });
 });

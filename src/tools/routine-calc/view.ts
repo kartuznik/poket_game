@@ -16,7 +16,7 @@ import {
   type BusinessNicheId,
   type NichePreset as BusinessNichePreset,
 } from '../../lib/niche-presets';
-import { isRoutineStartChosen, isRoutineStepValid, resolveInitialStep, routineNeighborStep, routineVisibleStep } from '../../lib/wizard';
+import { isRoutineStartChosen, isRoutineStepValid, migrateRoutineStep, resolveInitialStep } from '../../lib/wizard';
 import {
   formatCountWithNoun,
   formatRubles,
@@ -41,9 +41,8 @@ import {
   collapsePresetsToManual,
   manualSwitchClass,
   nicheRoutineMatch,
+  routineDetailModel,
   routineStepModel,
-  syncRoutineBreakdownPanels,
-  type RoutinePanelMount,
 } from './steps';
 
 const HELP = {
@@ -120,9 +119,17 @@ export function renderRoutineCalcTool(
       presetIds,
       customEntry,
     );
-  const openedStep = routineVisibleStep(
-    resolveInitialStep(4, initialStep, draft?.step ?? null),
-    nichePresetsActive(),
+  const lineEdits = new Map<RoutinePresetId, { operations: string; minutes: string }>();
+  for (const line of draft?.lines ?? []) {
+    lineEdits.set(line.presetId, {
+      operations: line.operationsPerWeek,
+      minutes: line.minutesPerOperation,
+    });
+  }
+  const openedStep = resolveInitialStep(
+    2,
+    initialStep === null ? null : migrateRoutineStep(initialStep),
+    draft?.step ?? null,
   );
 
   releaseHelpTipsWithin(container);
@@ -219,7 +226,10 @@ export function renderRoutineCalcTool(
   shareRow.append(shareSlider, shareInput);
 
   let ownNumbersBtn: HTMLButtonElement | null = null;
-  let breakdownHosts: HTMLDivElement[] = [];
+  let cardsHost: HTMLDivElement | null = null;
+  let tableHost: HTMLDivElement | null = null;
+  let tableError: HTMLParagraphElement | null = null;
+  let tableSignature = '';
   const checklistCaption = document.createElement('p');
   checklistCaption.className = 'field-note';
   checklistCaption.hidden = true;
@@ -233,6 +243,35 @@ export function renderRoutineCalcTool(
       automationSharePercent: preset.automationSharePercent,
       hourlyRate: null as number | null,
     };
+  }
+
+  function detailKind(): 'niche' | 'table' | 'custom' {
+    if (nichePresetsActive()) return 'niche';
+    if (presetIds.length > 0 && !customEntry) return 'table';
+    return 'custom';
+  }
+
+  function lineOf(id: RoutinePresetId): { operations: string; minutes: string } {
+    const edited = lineEdits.get(id);
+    if (edited) return edited;
+    const preset = getRoutinePresetById(id);
+    const seeded = {
+      operations: String(preset.operationsPerWeek),
+      minutes: String(preset.minutesPerOperation),
+    };
+    lineEdits.set(id, seeded);
+    return seeded;
+  }
+
+  function readTableInputs(): void {
+    if (!tableHost || detailKind() !== 'table') return;
+    for (const id of presetIds) {
+      const ops = tableHost.querySelector(`[data-routine-ops="${id}"]`);
+      const mins = tableHost.querySelector(`[data-routine-min="${id}"]`);
+      if (ops instanceof HTMLInputElement && mins instanceof HTMLInputElement) {
+        lineEdits.set(id, { operations: ops.value, minutes: mins.value });
+      }
+    }
   }
 
   function paintPresets(): void {
@@ -249,25 +288,40 @@ export function renderRoutineCalcTool(
       niche.routinePresetIds.every((id) => presetIds.includes(id));
     checklistCaption.hidden = !same;
     checklistCaption.textContent = same && niche ? niche.conversionCaption : '';
-    const model = routineStepModel({
-      presetIds,
+    const lines: Record<string, { operations: string; minutes: string }> = {};
+    for (const id of presetIds) lines[id] = lineOf(id);
+    const detail = routineDetailModel({
+      nicheMatch: matched,
       customEntry,
+      presetIds,
       operations: operationsRaw,
       minutes: minutesRaw,
-      share: shareRaw,
-      allowManualSwitch: !matched,
+      lines,
     });
-    const breakdown = model.kind === 'breakdown';
-    for (const host of breakdownHosts) paintBreakdownHost(host, model);
-    operationsGroup.hidden = breakdown;
-    minutesGroup.hidden = breakdown;
-    shareGroup.hidden = breakdown;
+    const nicheModel = routineStepModel({
+      presetIds,
+      customEntry: false,
+      operations: '',
+      minutes: '',
+      share: '',
+      allowManualSwitch: false,
+    });
+    if (cardsHost) {
+      if (detail.kind === 'niche') paintBreakdownHost(cardsHost, nicheModel);
+      else {
+        cardsHost.replaceChildren();
+        cardsHost.hidden = true;
+      }
+    }
+    operationsGroup.hidden = detail.kind !== 'custom';
+    minutesGroup.hidden = detail.kind !== 'custom';
+    shareGroup.hidden = !detail.shareVisible;
+    paintTable(detail.kind);
     operationsInput.readOnly = false;
     minutesInput.readOnly = false;
     shareInput.readOnly = false;
     shareSlider.disabled = false;
     shareSlider.step = SHARE_INPUT_STEP;
-    mountRoutinePanels();
   }
 
   for (const preset of ROUTINE_PRESETS) {
@@ -289,6 +343,11 @@ export function renderRoutineCalcTool(
         ? presetIds.filter((id) => id !== preset.id)
         : [...presetIds, preset.id];
       presetIds = ROUTINE_PRESETS.map((item) => item.id).filter((id) => presetIds.includes(id));
+      if (!nichePresetsActive() && shareRaw.trim() === '' && presetIds.length > 0) {
+        shareRaw = String(weightedAutomationShare(presetIds.map(presetLine)));
+        shareInput.value = shareRaw;
+        shareSlider.value = shareRaw;
+      }
       paintPresets();
       recalculate();
     });
@@ -410,21 +469,80 @@ export function renderRoutineCalcTool(
   const presetStep = document.createElement('div');
   presetStep.className = 'step-panel';
   presetStep.append(checklistCaption, presetsGrid, ownNumbersBtn);
-  const operationsStep = document.createElement('div');
-  operationsStep.className = 'step-panel';
-  const minutesStep = document.createElement('div');
-  minutesStep.className = 'step-panel';
-  const shareStep = document.createElement('div');
-  shareStep.className = 'step-panel';
-  breakdownHosts = [0, 1, 2].map(() => {
-    const host = document.createElement('div');
-    host.className = 'routine-breakdown';
-    host.hidden = true;
-    return host;
-  });
-  operationsStep.append(breakdownHosts[0]!, operationsGroup);
-  minutesStep.append(breakdownHosts[1]!, minutesGroup);
-  shareStep.append(breakdownHosts[2]!, shareGroup, rateGroup);
+  cardsHost = document.createElement('div');
+  cardsHost.className = 'routine-breakdown';
+  cardsHost.hidden = true;
+  tableHost = document.createElement('div');
+  tableHost.className = 'routine-table-wrap';
+  tableHost.hidden = true;
+  tableError = document.createElement('p');
+  tableError.className = 'field-error';
+  tableError.hidden = true;
+  const detailStep = document.createElement('div');
+  detailStep.className = 'step-panel';
+  detailStep.append(cardsHost, tableHost, tableError, operationsGroup, minutesGroup, shareGroup, rateGroup);
+
+  function paintTable(kind: 'niche' | 'table' | 'custom'): void {
+    if (!tableHost) return;
+    tableHost.hidden = kind !== 'table';
+    const signature = `${kind}:${presetIds.join(',')}`;
+    if (signature === tableSignature) return;
+    tableSignature = signature;
+    tableHost.replaceChildren();
+    if (kind !== 'table') return;
+    const table = document.createElement('div');
+    table.className = 'routine-table';
+    table.setAttribute('role', 'table');
+    const head = document.createElement('div');
+    head.className = 'routine-table__row routine-table__head';
+    head.setAttribute('role', 'row');
+    for (const label of ['Рутина', 'Операций в неделю', 'Минут на операцию']) {
+      const cell = document.createElement('span');
+      cell.setAttribute('role', 'columnheader');
+      cell.textContent = label;
+      head.append(cell);
+    }
+    table.append(head);
+    for (const id of presetIds) {
+      const preset = getRoutinePresetById(id);
+      const values = lineOf(id);
+      const row = document.createElement('div');
+      row.className = 'routine-table__row';
+      row.setAttribute('role', 'row');
+      const name = document.createElement('span');
+      name.className = 'routine-table__name';
+      name.textContent = preset.title;
+      const ops = document.createElement('input');
+      ops.className = 'field-input';
+      ops.type = 'number';
+      ops.inputMode = 'decimal';
+      ops.min = '0';
+      ops.max = '10000';
+      ops.step = '1';
+      ops.value = values.operations;
+      ops.dataset.routineOps = id;
+      ops.setAttribute('aria-label', `${preset.title}: операций в неделю`);
+      const mins = document.createElement('input');
+      mins.className = 'field-input';
+      mins.type = 'number';
+      mins.inputMode = 'decimal';
+      mins.min = '0';
+      mins.max = '480';
+      mins.step = '1';
+      mins.value = values.minutes;
+      mins.dataset.routineMin = id;
+      mins.setAttribute('aria-label', `${preset.title}: минут на операцию`);
+      const remember = (): void => {
+        lineEdits.set(id, { operations: ops.value, minutes: mins.value });
+        recalculate();
+      };
+      ops.addEventListener('input', remember);
+      mins.addEventListener('input', remember);
+      row.append(name, ops, mins);
+      table.append(row);
+    }
+    tableHost.append(table);
+  }
 
   const resultCard = document.createElement('div');
   resultCard.className = 'result-card';
@@ -498,6 +616,7 @@ export function renderRoutineCalcTool(
   }
 
   function recalculate(): void {
+    readTableInputs();
     operationsRaw = operationsInput.value;
     minutesRaw = minutesInput.value;
     shareRaw = shareInput.value;
@@ -526,18 +645,72 @@ export function renderRoutineCalcTool(
       shareInput,
       visibleError(shareRaw, validated.errors.automationSharePercent),
     );
-    const usingPresets = presetIds.length > 0 && !customEntry;
+    const kind = detailKind();
     const rateBroken = Boolean(validated.errors.hourlyRate) && rateRaw.trim() !== '';
-    if (usingPresets) {
+    const shareBroken = Boolean(validated.errors.automationSharePercent) && shareRaw.trim() !== '';
+    let tableBroken = false;
+    if (kind === 'niche') {
       lastErrors = rateBroken && validated.errors.hourlyRate ? { hourlyRate: validated.errors.hourlyRate } : {};
       showError(operationsError, operationsInput, undefined);
       showError(minutesError, minutesInput, undefined);
       showError(shareError, shareInput, undefined);
+      if (tableError) {
+        tableError.hidden = true;
+        tableError.textContent = '';
+      }
+    } else if (kind === 'table') {
+      let operationsMessage: string | undefined;
+      let minutesMessage: string | undefined;
+      for (const id of presetIds) {
+        const raw = lineOf(id);
+        const row = validateRoutineDraft({
+          operationsPerWeekRaw: raw.operations,
+          minutesPerOperationRaw: raw.minutes,
+          automationSharePercentRaw: shareRaw,
+          hourlyRateRaw: rateRaw,
+        });
+        const opsInput = tableHost?.querySelector(`[data-routine-ops="${id}"]`);
+        const minsInput = tableHost?.querySelector(`[data-routine-min="${id}"]`);
+        if (opsInput instanceof HTMLInputElement) {
+          opsInput.classList.toggle('field-input--invalid', Boolean(row.errors.operationsPerWeek));
+        }
+        if (minsInput instanceof HTMLInputElement) {
+          minsInput.classList.toggle('field-input--invalid', Boolean(row.errors.minutesPerOperation));
+        }
+        if (!row.isValid || !row.input) tableBroken = true;
+        operationsMessage ??= row.errors.operationsPerWeek;
+        minutesMessage ??= row.errors.minutesPerOperation;
+      }
+      lastErrors = {
+        ...(operationsMessage ? { operationsPerWeek: operationsMessage } : {}),
+        ...(minutesMessage ? { minutesPerOperation: minutesMessage } : {}),
+        ...(validated.errors.automationSharePercent
+          ? { automationSharePercent: validated.errors.automationSharePercent }
+          : {}),
+        ...(validated.errors.hourlyRate ? { hourlyRate: validated.errors.hourlyRate } : {}),
+      };
+      showError(operationsError, operationsInput, undefined);
+      showError(minutesError, minutesInput, undefined);
+      if (tableError) {
+        const message = operationsMessage ?? minutesMessage;
+        tableError.hidden = !message;
+        tableError.textContent = message ?? '';
+      }
     } else {
       lastErrors = validated.errors;
+      if (tableError) {
+        tableError.hidden = true;
+        tableError.textContent = '';
+      }
     }
 
-    if ((!usingPresets && (!validated.isValid || !validated.input)) || (usingPresets && rateBroken)) {
+    const blocked =
+      kind === 'niche'
+        ? rateBroken
+        : kind === 'table'
+          ? tableBroken || shareBroken || rateBroken
+          : !validated.isValid || !validated.input;
+    if (blocked) {
       latest = null;
       valueEl.textContent = 'Проверьте поля';
       noteEl.textContent = 'Расчёт появится, когда числа будут в допустимых границах.';
@@ -549,12 +722,31 @@ export function renderRoutineCalcTool(
     }
 
     const hourlyRate = rateRaw.trim() === '' ? null : Number(rateRaw);
-    const lines = usingPresets
-      ? presetIds.map((id) => ({
-          ...presetLine(id),
-          hourlyRate: Number.isFinite(hourlyRate) ? hourlyRate : null,
-        }))
-      : null;
+    const lines =
+      kind === 'custom'
+        ? null
+        : presetIds.map((id) => {
+            if (kind === 'niche') {
+              return {
+                ...presetLine(id),
+                hourlyRate: Number.isFinite(hourlyRate) ? hourlyRate : null,
+              };
+            }
+            const raw = lineOf(id);
+            const row = validateRoutineDraft({
+              operationsPerWeekRaw: raw.operations,
+              minutesPerOperationRaw: raw.minutes,
+              automationSharePercentRaw: shareRaw,
+              hourlyRateRaw: rateRaw,
+            }).input!;
+            return {
+              presetId: id,
+              operationsPerWeek: row.operationsPerWeek,
+              minutesPerOperation: row.minutesPerOperation,
+              automationSharePercent: row.automationSharePercent,
+              hourlyRate: Number.isFinite(hourlyRate) ? hourlyRate : null,
+            };
+          });
     const result = lines ? aggregateRoutine(lines) : calculateRoutine(validated.input!);
     latest = result;
     const presetTitle = lines
@@ -584,7 +776,9 @@ export function renderRoutineCalcTool(
     );
 
     const steps = [
-      `Часы в месяц = ${operationsRaw} × ${minutesRaw} мин × 4,33 ÷ 60 = ${formatWorkHours(result.hoursPerMonth)}.`,
+      kind === 'custom'
+        ? `Часы в месяц = ${operationsRaw} × ${minutesRaw} мин × 4,33 ÷ 60 = ${formatWorkHours(result.hoursPerMonth)}.`
+        : `Часы в месяц = ${formatWorkHours(result.hoursPerMonth)}.`,
       `Рабочие дни в год = часы × 12 ÷ 8 = ${formatWorkDays(result.workDaysPerYear)}.`,
       shareText
         ? `Доля: ${shareText}. Экономия часов = ${formatWorkHours(result.savedHoursPerMonth)}.`
@@ -633,11 +827,15 @@ export function renderRoutineCalcTool(
   });
   shareInput.addEventListener('input', () => {
     shareSlider.value = shareInput.value;
-    onManualEdit();
+    shareRaw = shareInput.value;
+    if (detailKind() === 'custom') onManualEdit();
+    else recalculate();
   });
   shareSlider.addEventListener('input', () => {
     shareInput.value = shareSlider.value;
-    onManualEdit();
+    shareRaw = shareInput.value;
+    if (detailKind() === 'custom') onManualEdit();
+    else recalculate();
   });
   for (const field of [operationsInput, minutesInput, rateInput, shareInput, shareSlider]) {
     field.addEventListener('change', () => {
@@ -692,6 +890,18 @@ export function renderRoutineCalcTool(
         minutesPerOperation: minutesRaw,
         automationSharePercent: shareRaw,
         hourlyRate: rateRaw,
+        ...(presetIds.length > 0
+          ? {
+              lines: presetIds.map((id) => {
+                const line = lineOf(id);
+                return {
+                  presetId: id,
+                  operationsPerWeek: line.operations,
+                  minutesPerOperation: line.minutes,
+                };
+              }),
+            }
+          : {}),
       },
     }));
   }
@@ -704,28 +914,46 @@ export function renderRoutineCalcTool(
       automationSharePercentRaw: shareRaw,
       hourlyRateRaw: rateRaw,
     });
-    const usingPresets = presetIds.length > 0 && !customEntry;
-    if (!usingPresets && (!validated.isValid || !validated.input)) return;
+    const kind = detailKind();
+    if (kind === 'custom' && (!validated.isValid || !validated.input)) return;
     if (!latest) return;
     const hourlyRate = rateRaw.trim() === '' ? null : Number(rateRaw);
-    const items = usingPresets
-      ? presetIds.map((id) => {
-          const line = presetLine(id);
-          return {
-            presetId: line.presetId,
-            operationsPerWeek: line.operationsPerWeek,
-            minutesPerOperation: line.minutesPerOperation,
-            automationSharePercent: line.automationSharePercent,
-          };
-        })
-      : [
-          {
-            presetId: null,
-            operationsPerWeek: validated.input!.operationsPerWeek,
-            minutesPerOperation: validated.input!.minutesPerOperation,
-            automationSharePercent: validated.input!.automationSharePercent,
-          },
-        ];
+    const items =
+      kind === 'niche'
+        ? presetIds.map((id) => {
+            const line = presetLine(id);
+            return {
+              presetId: line.presetId,
+              operationsPerWeek: line.operationsPerWeek,
+              minutesPerOperation: line.minutesPerOperation,
+              automationSharePercent: line.automationSharePercent,
+            };
+          })
+        : kind === 'table'
+          ? presetIds.map((id) => {
+              const raw = lineOf(id);
+              const row = validateRoutineDraft({
+                operationsPerWeekRaw: raw.operations,
+                minutesPerOperationRaw: raw.minutes,
+                automationSharePercentRaw: shareRaw,
+                hourlyRateRaw: rateRaw,
+              }).input!;
+              return {
+                presetId: id,
+                operationsPerWeek: row.operationsPerWeek,
+                minutesPerOperation: row.minutesPerOperation,
+                automationSharePercent: row.automationSharePercent,
+              };
+            })
+          : [
+              {
+                presetId: null,
+                operationsPerWeek: validated.input!.operationsPerWeek,
+                minutesPerOperation: validated.input!.minutesPerOperation,
+                automationSharePercent: validated.input!.automationSharePercent,
+              },
+            ];
+    const usingPresets = kind !== 'custom';
     const first = items[0]!;
     const snapshot = bridge.saveRoutineResult({
       inputs: {
@@ -758,21 +986,20 @@ export function renderRoutineCalcTool(
   const wizard = createWizard({
     toolId: 'routine-calc',
     initialStep: openedStep,
-    panels: [presetStep, operationsStep, minutesStep, shareStep],
+    panels: [presetStep, detailStep],
     extras: [resultCard],
     isStepValid: (step) =>
       step === 1
         ? isRoutineStartChosen(presetIds.length > 0, customEntry)
-        : isRoutineStepValid(step, lastErrors),
+        : isRoutineStepValid(step, lastErrors, nichePresetsActive()),
     finishLabel: meta.nextToolCta,
     onStep: (step) => {
       onWizardStep(step);
       persistRoutineDraft(step);
-      if (step === 4 && !latest) resultCard.hidden = true;
+      if (step === 2 && !latest) resultCard.hidden = true;
     },
     onFinish: finishRoutine,
     onRecalculate: recalculate,
-    neighborStep: (step, direction) => routineNeighborStep(step, direction, nichePresetsActive()),
   });
   function nicheNote(): HTMLParagraphElement {
     const note = document.createElement('p');
@@ -831,8 +1058,9 @@ export function renderRoutineCalcTool(
     applyNumbers: applyRoutineNiche,
     applyLabel: (id) => {
       dossier.update((current) => ({ ...current, niche: id }));
-      if (id === null && presetIds.length > 0 && !customEntry) enterManualMode();
-      else mountRoutinePanels();
+      if (id === null) customEntry = false;
+      paintPresets();
+      recalculate();
       paintNicheNotes();
     },
     undo: () => {
@@ -854,16 +1082,7 @@ export function renderRoutineCalcTool(
   });
   refreshNicheMenu = () => nicheMenu.refresh();
   presetStep.prepend(nicheMenu.element);
-  function mountRoutinePanels(): void {
-    syncRoutineBreakdownPanels(
-      shareStep as unknown as RoutinePanelMount,
-      [operationsStep, minutesStep] as unknown as [RoutinePanelMount, RoutinePanelMount],
-      nichePresetsActive(),
-    );
-  }
-
-  inputCard.append(wizard.progress, presetStep, shareStep, resultCard, wizard.nav, earlyReportBtn);
-  mountRoutinePanels();
+  inputCard.append(wizard.progress, presetStep, detailStep, resultCard, wizard.nav, earlyReportBtn);
 
   earlyReportBtn.addEventListener('click', () => {
     recalculate();

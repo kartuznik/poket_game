@@ -10,9 +10,8 @@ import {
   isRoutineStepValid,
   journeyIndex,
   localProgressPercent,
+  migrateRoutineStep,
   nextMove,
-  routineNeighborStep,
-  routineVisibleStep,
   resolveInitialStep,
   stepCountFor,
 } from './wizard';
@@ -20,7 +19,7 @@ import {
 describe('wizard steps', () => {
   it('uses a different step count for each tool', () => {
     expect(stepCountFor('revenue-risk')).toBe(4);
-    expect(stepCountFor('routine-calc')).toBe(4);
+    expect(stepCountFor('routine-calc')).toBe(2);
     expect(stepCountFor('priority-diag')).toBe(1);
     expect(stepCountFor('readiness-check')).toBe(3);
     expect(stepCountFor('final-report')).toBeNull();
@@ -81,15 +80,15 @@ describe('wizard steps', () => {
     expect(isRoutineStartChosen(false, true)).toBe(true);
     expect(isRoutineStepValid(1, { operationsPerWeek: 'пусто' })).toBe(true);
     expect(isRoutineStepValid(2, { operationsPerWeek: 'пусто' })).toBe(false);
-    expect(isRoutineStepValid(3, {})).toBe(true);
-    expect(isRoutineStepValid(4, { hourlyRate: 'не число' })).toBe(false);
-    expect(isRoutineStepValid(4, {})).toBe(true);
-    expect(routineNeighborStep(1, 1, true)).toBe(4);
-    expect(routineNeighborStep(4, -1, true)).toBe(1);
-    expect(routineNeighborStep(1, 1, false)).toBe(2);
-    expect(routineNeighborStep(4, -1, false)).toBe(3);
-    expect(routineVisibleStep(2, true)).toBe(4);
-    expect(routineVisibleStep(3, true)).toBe(4);
-    expect(routineVisibleStep(4, true)).toBe(4);
+    expect(isRoutineStepValid(2, { operationsPerWeek: 'пусто', minutesPerOperation: 'пусто' }, true)).toBe(true);
+    expect(isRoutineStepValid(2, { hourlyRate: 'не число' }, true)).toBe(false);
+    expect(isRoutineStepValid(2, {})).toBe(true);
+    expect(editStepFor('routine-calc')).toBe(2);
+    expect(migrateRoutineStep(1)).toBe(1);
+    expect(migrateRoutineStep(2)).toBe(2);
+    expect(migrateRoutineStep(3)).toBe(2);
+    expect(migrateRoutineStep(4)).toBe(2);
+    expect(resolveInitialStep(2, 4, null)).toBe(2);
+    expect(resolveInitialStep(2, 3, 1)).toBe(2);
   });
 });

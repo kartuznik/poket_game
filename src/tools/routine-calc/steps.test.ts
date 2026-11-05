@@ -6,10 +6,8 @@ import {
   collapsePresetsToManual,
   manualSwitchClass,
   nicheRoutineMatch,
-  routinePanelsInDocument,
+  routineDetailModel,
   routineStepModel,
-  syncRoutineBreakdownPanels,
-  type RoutinePanelMount,
 } from './steps';
 
 describe('routine step model', () => {
@@ -85,35 +83,43 @@ describe('routine step model', () => {
     expect(EMPTY_RATE_HINT).toBe('Поставьте ставку, чтобы увидеть экономию в деньгах');
   });
 
-  it('puts only panels 1 and 4 in the document while the niche list matches', () => {
-    const steps: number[] = [1, 4];
-    const slot = (step: number): RoutinePanelMount & { readonly step: number } => ({
-      step,
-      get isConnected() {
-        return steps.includes(step);
-      },
-      before(...nodes) {
-        const incoming = nodes.map((node) => (node as unknown as { step: number }).step);
-        for (const id of incoming) {
-          const existing = steps.indexOf(id);
-          if (existing >= 0) steps.splice(existing, 1);
-        }
-        steps.splice(steps.indexOf(step), 0, ...incoming);
-      },
-      remove() {
-        const index = steps.indexOf(step);
-        if (index >= 0) steps.splice(index, 1);
-      },
-    });
-    const rate = slot(4);
-    const breakdown = [slot(2), slot(3)] as [RoutinePanelMount, RoutinePanelMount];
+  it('shows read-only niche cards and a manual table with two fields per routine', () => {
     const matched = nicheRoutineMatch(['orders', 'booking'], ['orders', 'booking'], false);
-    expect(syncRoutineBreakdownPanels(rate, breakdown, matched)).toEqual([1, 4]);
-    expect(steps).toEqual([1, 4]);
-    expect(syncRoutineBreakdownPanels(rate, breakdown, nicheRoutineMatch(null, ['orders', 'booking'], false))).toEqual([
-      1, 2, 3, 4,
+    const niche = routineDetailModel({
+      nicheMatch: matched,
+      customEntry: false,
+      presetIds: ['orders', 'booking'],
+      operations: '',
+      minutes: '',
+      lines: {},
+    });
+    expect(niche.kind).toBe('niche');
+    expect(niche.rows).toEqual([]);
+    expect(niche.shareVisible).toBe(false);
+    expect(niche.rateVisible).toBe(true);
+    expect(niche.cards.map((card) => card.title)).toEqual(['Приём заказов', 'Записи']);
+    const table = routineDetailModel({
+      nicheMatch: false,
+      customEntry: false,
+      presetIds: ['orders', 'booking'],
+      operations: '',
+      minutes: '',
+      lines: {},
+    });
+    expect(table.kind).toBe('table');
+    expect(table.shareVisible).toBe(true);
+    expect(table.rows.map((row) => [row.title, row.operations, row.minutes])).toEqual([
+      ['Приём заказов', '25', '10'],
+      ['Записи', '20', '8'],
     ]);
-    expect(steps).toEqual([1, 2, 3, 4]);
-    expect(routinePanelsInDocument(nicheRoutineMatch(['orders', 'booking'], [], false))).toEqual([1, 2, 3, 4]);
+    const custom = routineDetailModel({
+      nicheMatch: false,
+      customEntry: true,
+      presetIds: [],
+      operations: '45',
+      minutes: '9',
+      lines: {},
+    });
+    expect(custom.rows).toEqual([{ presetId: null, title: 'Свои цифры', operations: '45', minutes: '9' }]);
   });
 });

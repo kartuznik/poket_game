@@ -696,6 +696,40 @@ body {
   font-weight: 600;
 }
 
+.routine-table {
+  display: grid;
+  gap: 8px;
+}
+
+.routine-table__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.routine-table__head {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.routine-table__name {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .routine-table__row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .routine-table__name,
+  .routine-table__head span:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
 .niche-strip {
   margin: 12px 0 0;
   padding: 8px 12px;

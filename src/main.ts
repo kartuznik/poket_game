@@ -12,7 +12,7 @@ import { createColorSchemeController } from './lib/color-scheme';
 import { defaultDossierStore, draftStepFor, hydrateBridge } from './lib/dossier';
 import { defaultColorSchemeStore, defaultScenarioStore } from './lib/storage';
 import type { ToolId } from './lib/types';
-import { resolveInitialStep, stepCountFor } from './lib/wizard';
+import { migrateRoutineStep, resolveInitialStep, stepCountFor } from './lib/wizard';
 import { renderAuditFinish } from './tools/audit-finish/view';
 import { renderFinalReportTool } from './tools/final-report/view';
 import { renderPriorityDiagTool } from './tools/priority-diag/view';
@@ -40,7 +40,9 @@ function mountApp(root: HTMLElement): void {
   function stepFor(toolId: ToolId, routeStep: number | null | undefined): number | null {
     const count = stepCountFor(toolId);
     if (!count) return null;
-    return resolveInitialStep(count, routeStep ?? null, draftStepFor(dossier.read(), toolId));
+    const route = routeStep ?? null;
+    const migrated = toolId === 'routine-calc' && route !== null ? migrateRoutineStep(route) : route;
+    return resolveInitialStep(count, migrated, draftStepFor(dossier.read(), toolId));
   }
 
   const shell = document.createElement('div');

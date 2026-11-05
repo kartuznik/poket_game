@@ -1,4 +1,5 @@
 import { restorePriorityResults, type RankSource } from '../tools/priority-diag/calc';
+import { migrateRoutineStep } from './wizard';
 import type { BusinessNicheId } from './niche-presets';
 import { nicheById } from './niche-presets';
 import type { ToolBridge } from './bridge';
@@ -42,6 +43,12 @@ export interface RevenueDraft {
   readonly botCoverage?: number | null;
 }
 
+export interface RoutineLineDraft {
+  readonly presetId: RoutinePresetId;
+  readonly operationsPerWeek: string;
+  readonly minutesPerOperation: string;
+}
+
 export interface RoutineDraft {
   readonly step: number;
   readonly presetId: RoutinePresetId | null;
@@ -52,6 +59,8 @@ export interface RoutineDraft {
   readonly minutesPerOperation: string;
   readonly automationSharePercent: string;
   readonly hourlyRate: string;
+  /** Per-routine edits on the manual table. Absent in an older draft. */
+  readonly lines?: readonly RoutineLineDraft[];
 }
 
 export interface PriorityScoreDraft {
@@ -352,7 +361,8 @@ function readRevenueDraft(value: unknown): RevenueDraft | null {
 
 function readRoutineDraft(value: unknown): RoutineDraft | null {
   if (!isRecord(value)) return null;
-  const step = stepIn(value.step, 4);
+  const legacyStep = stepIn(value.step, 4);
+  const step = legacyStep === null ? null : migrateRoutineStep(legacyStep);
   const operationsPerWeek = text(value.operationsPerWeek);
   const minutesPerOperation = text(value.minutesPerOperation);
   const automationSharePercent = text(value.automationSharePercent);
@@ -383,6 +393,7 @@ function readRoutineDraft(value: unknown): RoutineDraft | null {
     : presetId
       ? [presetId]
       : [];
+  const lines = readRoutineLines(value.lines);
   return {
     step,
     presetId: presetIds.length === 1 ? presetIds[0]! : presetId,
@@ -392,7 +403,21 @@ function readRoutineDraft(value: unknown): RoutineDraft | null {
     minutesPerOperation,
     automationSharePercent,
     hourlyRate,
+    ...(lines ? { lines } : {}),
   };
+}
+
+function readRoutineLines(value: unknown): readonly RoutineLineDraft[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const lines = value.flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const presetId = ROUTINE_PRESETS.find((id) => id === item.presetId);
+    const operationsPerWeek = text(item.operationsPerWeek);
+    const minutesPerOperation = text(item.minutesPerOperation);
+    if (!presetId || operationsPerWeek === null || minutesPerOperation === null) return [];
+    return [{ presetId, operationsPerWeek, minutesPerOperation }];
+  });
+  return lines.length > 0 ? lines : undefined;
 }
 
 function readPriorityDraft(value: unknown): PriorityDraft | null {

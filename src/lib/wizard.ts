@@ -17,13 +17,13 @@ export const JOURNEY_LENGTH = JOURNEY_TOOL_IDS.length;
 /**
  * Step counts follow the fields, not a fixed four.
  * Revenue: leads, late share, conversion, check + loss.
- * Routine: preset, operations, minutes, automation + optional rate.
+ * Routine: choose routines, then parameters, share, and rate on one screen.
  * Priority: one screen, one pain score per process.
  * Readiness: three groups of three items.
  */
 export const STEP_COUNTS: Readonly<Record<JourneyToolId, number>> = {
   'revenue-risk': 4,
-  'routine-calc': 4,
+  'routine-calc': 2,
   'priority-diag': 1,
   'readiness-check': 3,
 };
@@ -127,22 +127,26 @@ export function isRoutineStartChosen(presetChosen: boolean, customEntry: boolean
   return presetChosen || customEntry;
 }
 
-/** Niche presets skip the two identical breakdown steps and open the rate. */
-export function routineNeighborStep(step: number, direction: 1 | -1, skipBreakdown: boolean): number {
-  if (skipBreakdown && direction > 0 && step === 1) return 4;
-  if (skipBreakdown && direction < 0 && step === 4) return 1;
-  return step + direction;
+/** Old routine visits used four steps. 2, 3, and 4 are the same screen now. */
+export function migrateRoutineStep(step: number): number {
+  if (!Number.isFinite(step)) return 1;
+  const whole = Math.trunc(step);
+  if (whole <= 1) return 1;
+  if (whole === 2 || whole === 3 || whole === 4) return 2;
+  return whole;
 }
 
-/** A saved visit must not reopen a skipped breakdown step. */
-export function routineVisibleStep(step: number, skipBreakdown: boolean): number {
-  if (skipBreakdown && (step === 2 || step === 3)) return 4;
-  return step;
-}
-
-export function isRoutineStepValid(step: number, errors: RoutineFieldErrors): boolean {
+export function isRoutineStepValid(
+  step: number,
+  errors: RoutineFieldErrors,
+  nicheLocked = false,
+): boolean {
   if (step <= 1) return true;
-  if (step === 2) return errors.operationsPerWeek === undefined;
-  if (step === 3) return errors.minutesPerOperation === undefined;
-  return errors.automationSharePercent === undefined && errors.hourlyRate === undefined;
+  if (nicheLocked) return errors.hourlyRate === undefined;
+  return (
+    errors.operationsPerWeek === undefined &&
+    errors.minutesPerOperation === undefined &&
+    errors.automationSharePercent === undefined &&
+    errors.hourlyRate === undefined
+  );
 }
