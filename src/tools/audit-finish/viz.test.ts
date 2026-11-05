@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { priorityBarPercent, priorityGapLine, readinessRing, RING_RADIUS } from './viz';
+import { priorityBarPercent, priorityBoard, priorityGapLine, readinessRing, RING_RADIUS } from './viz';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 const circumference = 2 * Math.PI * RING_RADIUS;
 
@@ -13,15 +18,46 @@ describe('finish screen micro visuals', () => {
     expect(priorityBarPercent(-2)).toBe(0);
   });
 
+  it('draws a bar only from a score of 3', () => {
+    const board = priorityBoard([
+      { title: 'Приём', score: 5 },
+      { title: 'Ответы', score: 4 },
+      { title: 'Запись', score: 3 },
+      { title: 'Оплата', score: 2.5 },
+      { title: 'Напоминания', score: 2 },
+      { title: 'Отчёты', score: 1 },
+    ]);
+    const shown = board.bars.filter((bar) => bar.showBar);
+    expect(shown.map((bar) => [bar.scoreLabel, bar.widthPercent])).toEqual([
+      ['5', 100],
+      ['4', 80],
+      ['3', 60],
+    ]);
+    expect(shown[0]?.leader).toBe(true);
+    expect(shown.slice(1).every((bar) => bar.leader === false)).toBe(true);
+    expect(board.bars.filter((bar) => !bar.showBar).map((bar) => bar.scoreLabel)).toEqual([
+      '2,5',
+      '2',
+      '1',
+    ]);
+
+    const quiet = priorityBoard([
+      { title: 'Оплата', score: 2 },
+      { title: 'Отчёты', score: 1 },
+    ]);
+    expect(quiet.bars.every((bar) => bar.showBar === false)).toBe(true);
+    expect(quiet.bars[0]?.leader).toBe(true);
+  });
+
   it('draws the readiness arc as a share of the circle', () => {
     const six = readinessRing(6);
-    expect(six.size).toBe(56);
-    expect(six.stroke).toBe(4);
-    expect(six.radius).toBe(26);
+    expect(six.size).toBe(72);
+    expect(six.stroke).toBe(5);
+    expect(six.radius).toBe(33.5);
     expect(six.filled / circumference).toBeCloseTo(6 / 9, 5);
     expect(six.gap).toBeCloseTo(circumference - six.filled, 5);
     expect(six.label).toBe('6/9');
-    expect(six.fontSize).toBe(12);
+    expect(six.fontSize).toBe(15);
 
     const half = readinessRing(4.5);
     expect(half.filled / circumference).toBeCloseTo(0.5, 5);
@@ -34,6 +70,27 @@ describe('finish screen micro visuals', () => {
     expect(overflow.label).toBe('10,5/9');
     expect(overflow.fontSize).toBeLessThan(readinessRing(4.5).fontSize);
     expect(overflow.filled).toBeCloseTo(circumference, 5);
+  });
+
+  it('keeps the bar behind showBar and splits priority from the metric cards', () => {
+    const view = readFileSync(resolve(root, 'src/tools/audit-finish/view.ts'), 'utf8');
+    const gate = view.indexOf('if (bar.showBar)');
+    const mark = view.indexOf('finish-bar finish-bar--leader');
+    expect(gate).toBeGreaterThan(-1);
+    expect(mark).toBeGreaterThan(gate);
+    expect(view).toContain("divider.className = 'finish-divider'");
+    expect(view).toContain(
+      'dashboard.append(scenario, priorityBlock(sources.priority), divider, dashboardGrid)',
+    );
+
+    const css = readFileSync(resolve(root, 'src/styles/main.css'), 'utf8');
+    const dividerAt = css.indexOf('.finish-divider');
+    const divider = css.slice(dividerAt, dividerAt + 180);
+    expect(divider).toContain('height: 1px');
+    expect(divider).toContain('margin: 12px 0');
+    expect(divider).toContain('var(--border-color)');
+    const ring = css.slice(css.indexOf('.finish-ring__track'), css.indexOf('.finish-ring__track') + 220);
+    expect(ring).toContain('stroke-width: 5px');
   });
 
   it('declines the gap and hides a difference under half a point', () => {

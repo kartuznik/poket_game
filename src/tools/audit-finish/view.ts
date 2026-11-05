@@ -143,11 +143,14 @@ function priorityBlock(
     score.className = 'finish-bar__score';
     score.textContent = bar.scoreLabel;
     head.append(name, score);
-    const mark = document.createElement('div');
-    mark.className = bar.leader ? 'finish-bar finish-bar--leader' : 'finish-bar';
-    mark.style.width = `${bar.widthPercent}%`;
-    mark.setAttribute('aria-hidden', 'true');
-    row.append(head, mark);
+    row.append(head);
+    if (bar.showBar) {
+      const mark = document.createElement('div');
+      mark.className = bar.leader ? 'finish-bar finish-bar--leader' : 'finish-bar';
+      mark.style.width = `${bar.widthPercent}%`;
+      mark.setAttribute('aria-hidden', 'true');
+      row.append(mark);
+    }
     list.append(row);
   }
   block.append(list);
@@ -294,7 +297,9 @@ export function renderAuditFinish(
   const scenario = document.createElement('p');
   scenario.className = 'finish-dashboard__scenario';
   scenario.textContent = scenarioLine(dossier.read().niche);
-  dashboard.append(scenario, priorityBlock(sources.priority), dashboardGrid);
+  const divider = document.createElement('hr');
+  divider.className = 'finish-divider';
+  dashboard.append(scenario, priorityBlock(sources.priority), divider, dashboardGrid);
   card.append(dashboard);
 
   const insights = buildInsights(sources);

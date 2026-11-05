@@ -849,6 +849,13 @@ body {
   line-height: 1.3;
 }
 
+.finish-divider {
+  height: 1px;
+  margin: 12px 0;
+  border: 0;
+  background: var(--border-color);
+}
+
 .finish-ring {
   display: block;
 }
@@ -856,7 +863,7 @@ body {
 .finish-ring__track,
 .finish-ring__value {
   fill: none;
-  stroke-width: 4;
+  stroke-width: 5px;
 }
 
 .finish-ring__track {

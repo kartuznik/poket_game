@@ -2,9 +2,9 @@ import { formatCountWithNoun, formatNumber } from '../../lib/format';
 
 const SCORE_SCALE = 5;
 const READINESS_TOTAL = 9;
-export const RING_SIZE = 56;
-export const RING_STROKE = 4;
-export const RING_RADIUS = 26;
+export const RING_SIZE = 72;
+export const RING_STROKE = 5;
+export const RING_RADIUS = 33.5;
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
@@ -31,6 +31,7 @@ export interface PriorityBarModel {
   readonly title: string;
   readonly scoreLabel: string;
   readonly widthPercent: number;
+  readonly showBar: boolean;
   readonly leader: boolean;
 }
 
@@ -51,6 +52,7 @@ export function priorityBoard(
       title: row.title,
       scoreLabel: formatNumber(row.score),
       widthPercent: priorityBarPercent(row.score),
+      showBar: row.score >= 3,
       leader: top !== undefined && row.score === top,
     })),
     gapLine: top !== undefined && second !== undefined ? priorityGapLine(top, second) : null,
@@ -67,11 +69,11 @@ export interface ReadinessRingModel {
   readonly fontSize: number;
 }
 
-/** Inner label shrinks once the fraction no longer fits the 48px hole of a 56px ring. */
+/** Inner label shrinks once the fraction no longer fits the hole of a 72px ring. */
 export function ringFontSize(label: string): number {
-  if (label.length <= 4) return 12;
-  if (label.length <= 5) return 10;
-  return 9;
+  if (label.length <= 4) return 15;
+  if (label.length <= 5) return 13;
+  return 11;
 }
 
 /** Arc length is score/9 of the circumference, and never longer than one full turn. */
