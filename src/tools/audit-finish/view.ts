@@ -20,6 +20,7 @@ import {
 } from './report';
 import { scenarioLine } from '../../lib/niche-presets';
 import { buildDashboard } from './dashboard';
+import { priorityBoard, readinessRing } from './viz';
 import { buildInsights } from './insights';
 import { buildProgress, progressChart } from './progress';
 import { buildWeekPlan } from './week-plan';
@@ -108,6 +109,88 @@ function paintBrandButton(button: HTMLButtonElement, label: string, glyph: strin
   button.replaceChildren(icon, text);
 }
 
+function priorityBlock(
+  priority: { readonly results: { readonly ranking: readonly { readonly title: string; readonly score: number }[] } } | null,
+): HTMLElement {
+  const block = document.createElement('article');
+  block.className = 'finish-priority';
+  const label = document.createElement('h3');
+  label.className = 'finish-card__label';
+  label.textContent = 'Приоритет';
+  block.append(label);
+  const ranking = priority?.results.ranking;
+  if (!ranking || ranking.length === 0) {
+    const value = document.createElement('p');
+    value.className = 'finish-card__value';
+    value.textContent = '—';
+    const note = document.createElement('p');
+    note.className = 'finish-card__note';
+    note.textContent = 'не замерено';
+    block.append(value, note);
+    return block;
+  }
+  const board = priorityBoard(ranking);
+  const list = document.createElement('div');
+  list.className = 'finish-bars';
+  for (const bar of board.bars) {
+    const row = document.createElement('div');
+    const head = document.createElement('div');
+    head.className = 'finish-bar__head';
+    const name = document.createElement('span');
+    name.className = 'finish-bar__name';
+    name.textContent = bar.title;
+    const score = document.createElement('span');
+    score.className = 'finish-bar__score';
+    score.textContent = bar.scoreLabel;
+    head.append(name, score);
+    const mark = document.createElement('div');
+    mark.className = bar.leader ? 'finish-bar finish-bar--leader' : 'finish-bar';
+    mark.style.width = `${bar.widthPercent}%`;
+    mark.setAttribute('aria-hidden', 'true');
+    row.append(head, mark);
+    list.append(row);
+  }
+  block.append(list);
+  if (board.gapLine) {
+    const gap = document.createElement('p');
+    gap.className = 'finish-bar__gap';
+    gap.textContent = board.gapLine;
+    block.append(gap);
+  }
+  return block;
+}
+
+function readinessRingSvg(score: number): SVGSVGElement {
+  const ring = readinessRing(score);
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'finish-ring');
+  svg.setAttribute('width', String(ring.size));
+  svg.setAttribute('height', String(ring.size));
+  svg.setAttribute('viewBox', `0 0 ${String(ring.size)} ${String(ring.size)}`);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', ring.label);
+  const center = String(ring.size / 2);
+  const track = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  track.setAttribute('class', 'finish-ring__track');
+  track.setAttribute('cx', center);
+  track.setAttribute('cy', center);
+  track.setAttribute('r', String(ring.radius));
+  const arc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  arc.setAttribute('class', 'finish-ring__value');
+  arc.setAttribute('cx', center);
+  arc.setAttribute('cy', center);
+  arc.setAttribute('r', String(ring.radius));
+  arc.setAttribute('stroke-dasharray', `${String(ring.filled)} ${String(ring.gap)}`);
+  arc.setAttribute('transform', `rotate(-90 ${center} ${center})`);
+  const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  text.setAttribute('x', center);
+  text.setAttribute('y', center);
+  text.setAttribute('font-size', String(ring.fontSize));
+  text.textContent = ring.label;
+  svg.append(track, arc, text);
+  return svg;
+}
+
 export function renderAuditFinish(
   container: HTMLElement,
   ctx: Omit<ToolStubRenderContext, 'meta'>,
@@ -191,10 +274,15 @@ export function renderAuditFinish(
     const label = document.createElement('h3');
     label.className = 'finish-card__label';
     label.textContent = item.label;
-    const value = document.createElement('p');
-    value.className = 'finish-card__value';
-    value.textContent = item.value;
-    tile.append(label, value);
+    tile.append(label);
+    if (item.id === 'readiness' && sources.readiness) {
+      tile.append(readinessRingSvg(sources.readiness.results.score));
+    } else {
+      const value = document.createElement('p');
+      value.className = 'finish-card__value';
+      value.textContent = item.value;
+      tile.append(value);
+    }
     if (item.note) {
       const note = document.createElement('p');
       note.className = 'finish-card__note';
@@ -206,7 +294,7 @@ export function renderAuditFinish(
   const scenario = document.createElement('p');
   scenario.className = 'finish-dashboard__scenario';
   scenario.textContent = scenarioLine(dossier.read().niche);
-  dashboard.append(scenario, dashboardGrid);
+  dashboard.append(scenario, priorityBlock(sources.priority), dashboardGrid);
   card.append(dashboard);
 
   const insights = buildInsights(sources);
