@@ -11,6 +11,8 @@ import {
   journeyIndex,
   localProgressPercent,
   nextMove,
+  routineNeighborStep,
+  routineVisibleStep,
   resolveInitialStep,
   stepCountFor,
 } from './wizard';
@@ -82,5 +84,12 @@ describe('wizard steps', () => {
     expect(isRoutineStepValid(3, {})).toBe(true);
     expect(isRoutineStepValid(4, { hourlyRate: 'не число' })).toBe(false);
     expect(isRoutineStepValid(4, {})).toBe(true);
+    expect(routineNeighborStep(1, 1, true)).toBe(4);
+    expect(routineNeighborStep(4, -1, true)).toBe(1);
+    expect(routineNeighborStep(1, 1, false)).toBe(2);
+    expect(routineNeighborStep(4, -1, false)).toBe(3);
+    expect(routineVisibleStep(2, true)).toBe(4);
+    expect(routineVisibleStep(3, true)).toBe(4);
+    expect(routineVisibleStep(4, true)).toBe(4);
   });
 });

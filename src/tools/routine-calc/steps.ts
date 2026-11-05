@@ -7,7 +7,15 @@ import {
   type RoutineInput,
 } from './calc';
 
-/** Range step that keeps a weighted share such as 65.85. Step 1 still snaps it. */
+/** True when the stored niche list is exactly the selected routine presets. */
+export function nicheRoutineMatch(
+  nicheIds: readonly string[] | null,
+  presetIds: readonly string[],
+  customEntry: boolean,
+): boolean {
+  if (!nicheIds || customEntry) return false;
+  return nicheIds.length === presetIds.length && nicheIds.every((id) => presetIds.includes(id));
+}
 export const SHARE_INPUT_STEP = '0.01';
 
 /** Visual marker that the manual switch is leaving preset numbers. Not aria-pressed. */
@@ -72,6 +80,7 @@ export function routineStepModel(input: {
   readonly operations: string;
   readonly minutes: string;
   readonly share: string;
+  readonly allowManualSwitch?: boolean;
 }): RoutineStepModel {
   const breakdown = input.presetIds.length > 0 && !input.customEntry;
   if (!breakdown) {
@@ -110,7 +119,7 @@ export function routineStepModel(input: {
     kind: 'breakdown',
     cards: lines,
     totalHours: total.hoursPerMonth,
-    manualSwitch: true,
+    manualSwitch: input.allowManualSwitch !== false,
     controls: [
       control('operations', false, ''),
       control('minutes', false, ''),

@@ -19,6 +19,7 @@ import {
   nicheConversionCardTitle,
   nicheIdFromConversionPreset,
   nichePromptKind,
+  nichePromptVisibility,
   nicheTitle,
   planNicheApply,
   revenueNicheFields,
@@ -93,6 +94,9 @@ describe('niche presets', () => {
       expect(storedNicheConversionCard(preset.id)).not.toBeNull();
     }
     expect(storedNicheConversionCard(null)).toBeNull();
+    expect(nichePromptVisibility(false, false)).toBe('prompt');
+    expect(nichePromptVisibility(true, true)).toBe('undo');
+    expect(nichePromptVisibility(true, false)).toBe('own');
     const view = readFileSync(
       resolve(dirname(fileURLToPath(import.meta.url)), '../tools/revenue-risk/view.ts'),
       'utf8',

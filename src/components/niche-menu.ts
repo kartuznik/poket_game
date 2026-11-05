@@ -6,6 +6,7 @@ import {
   NICHE_QUIET_BUTTON,
   formatFieldChange,
   listNichePresets,
+  nichePromptVisibility,
   planNicheApply,
   type BusinessNicheId,
   type NichePreset,
@@ -91,6 +92,7 @@ export function mountNicheMenu(options: {
       options.applyLabel(preset.id);
       list.hidden = true;
       toggle.setAttribute('aria-expanded', 'false');
+      refresh();
       return;
     }
     if (plan === 'confirm') {
@@ -132,6 +134,18 @@ export function mountNicheMenu(options: {
   });
   list.append(own);
 
+  const ownVisible = document.createElement('button');
+  ownVisible.type = 'button';
+  ownVisible.className = 'action-btn action-btn--secondary';
+  ownVisible.textContent = 'Своя ниша';
+  ownVisible.hidden = true;
+  ownVisible.addEventListener('click', () => {
+    options.applyLabel(null);
+    list.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    refresh();
+  });
+
   const undoBtn = document.createElement('button');
   undoBtn.type = 'button';
   undoBtn.className = 'action-btn action-btn--secondary';
@@ -157,11 +171,19 @@ export function mountNicheMenu(options: {
   });
 
   function refresh(): void {
-    undoBtn.hidden = !options.hasUndo();
+    const nicheOn = options.dossier.read().niche !== null;
+    const mode = nichePromptVisibility(nicheOn, options.hasUndo());
+    opener.hidden = mode !== 'prompt';
+    if (mode !== 'prompt') {
+      list.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    undoBtn.hidden = mode !== 'undo';
+    ownVisible.hidden = mode !== 'own';
   }
 
   refresh();
-  root.append(opener, list, undoBtn, dialog);
+  root.append(opener, list, ownVisible, undoBtn, dialog);
   return { element: root, refresh };
 }
 

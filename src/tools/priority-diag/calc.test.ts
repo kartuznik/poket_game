@@ -258,8 +258,10 @@ describe('resolvePriority', () => {
     expect(90_200).toBeGreaterThan(15_840);
     expect(routineWins).toMatchObject({ source: 'money', processId: 'booking' });
     expect(routineWins.reason).toBe(
-      `Лидер — «Запись и заказы»: экономия рутины ${formatRubles(90_200)}, это больше выручки под риском ${formatRubles(15_840)}.`,
+      `Лидер — «Запись и заказы»: деньги разводят процессы, экономия рутины ${formatRubles(90_200)}, это больше выручки под риском ${formatRubles(15_840)}.`,
     );
+    expect(routineWins.reason).toContain('деньги разводят процессы');
+    expect(routineWins.reason).not.toContain('вы выбрали');
     expectMoneyAgrees(routineWins.reason, 15_840, 90_200);
 
     const sameError = classifyBoard(boardOf(4, { reports: pain(1) }));

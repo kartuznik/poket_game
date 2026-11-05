@@ -28,6 +28,7 @@ export function createWizard(options: {
   readonly onStep: (step: number) => void;
   readonly onFinish: () => void;
   readonly onRecalculate?: () => void;
+  readonly neighborStep?: (step: number, direction: 1 | -1) => number;
 }): WizardController {
   const count = options.panels.length;
   let step = Math.min(count, Math.max(1, options.initialStep));
@@ -243,10 +244,19 @@ export function createWizard(options: {
     revealResult = false;
   }
 
-  const goBack = (): void => {
-    if (step === 1) return;
-    step -= 1;
+  const goAdjacent = (direction: 1 | -1): void => {
+    if (direction < 0 && step === 1) return;
+    const target = options.neighborStep?.(step, direction) ?? step + direction;
+    const next = Math.min(count, Math.max(1, Math.trunc(target)));
+    if (next === step) return;
+    step = next;
+    const panel = options.panels[step - 1];
+    if (direction > 0 && step === count && panel?.querySelector('input, textarea')) holdFields = true;
     paint(true);
+  };
+
+  const goBack = (): void => {
+    goAdjacent(-1);
   };
   back.addEventListener('click', goBack);
   backTop.addEventListener('click', goBack);
@@ -265,10 +275,7 @@ export function createWizard(options: {
       options.onFinish();
       return;
     }
-    step += 1;
-    const landed = options.panels[step - 1];
-    if (step === count && landed?.querySelector('input, textarea')) holdFields = true;
-    paint(true);
+    goAdjacent(1);
   });
 
   const onFieldKeyDown = (event: KeyboardEvent): void => {
@@ -291,10 +298,7 @@ export function createWizard(options: {
       showResult();
       return;
     }
-    step += 1;
-    const landed = options.panels[step - 1];
-    if (step === count && landed?.querySelector('input, textarea')) holdFields = true;
-    paint(true);
+    goAdjacent(1);
   };
   for (const panel of options.panels) panel.addEventListener('keydown', onFieldKeyDown);
 

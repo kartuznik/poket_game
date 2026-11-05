@@ -160,7 +160,11 @@ export function activeConversionNiche(
   return dossierNiche;
 }
 
-/** Card heading: «Ваша ниша: Кафе и еда — 25%». */
+/** Which niche control stays after a preset is stored. Undo wins over «Своя ниша». */
+export function nichePromptVisibility(nicheSet: boolean, hasUndo: boolean): 'prompt' | 'undo' | 'own' {
+  if (!nicheSet) return 'prompt';
+  return hasUndo ? 'undo' : 'own';
+}
 export function nicheConversionCardTitle(niche: NichePreset): string {
   return `Ваша ниша: ${niche.title} — ${String(niche.conversionPercent)}%`;
 }

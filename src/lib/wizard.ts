@@ -127,6 +127,19 @@ export function isRoutineStartChosen(presetChosen: boolean, customEntry: boolean
   return presetChosen || customEntry;
 }
 
+/** Niche presets skip the two identical breakdown steps and open the rate. */
+export function routineNeighborStep(step: number, direction: 1 | -1, skipBreakdown: boolean): number {
+  if (skipBreakdown && direction > 0 && step === 1) return 4;
+  if (skipBreakdown && direction < 0 && step === 4) return 1;
+  return step + direction;
+}
+
+/** A saved visit must not reopen a skipped breakdown step. */
+export function routineVisibleStep(step: number, skipBreakdown: boolean): number {
+  if (skipBreakdown && (step === 2 || step === 3)) return 4;
+  return step;
+}
+
 export function isRoutineStepValid(step: number, errors: RoutineFieldErrors): boolean {
   if (step <= 1) return true;
   if (step === 2) return errors.operationsPerWeek === undefined;

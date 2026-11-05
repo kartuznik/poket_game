@@ -16,7 +16,7 @@ import {
   type BusinessNicheId,
   type NichePreset as BusinessNichePreset,
 } from '../../lib/niche-presets';
-import { isRoutineStartChosen, isRoutineStepValid, resolveInitialStep } from '../../lib/wizard';
+import { isRoutineStartChosen, isRoutineStepValid, resolveInitialStep, routineNeighborStep, routineVisibleStep } from '../../lib/wizard';
 import {
   formatCountWithNoun,
   formatRubles,
@@ -35,7 +35,7 @@ import {
   type RoutineFieldErrors,
   type RoutineResult,
 } from './calc';
-import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, manualSwitchClass, routineStepModel } from './steps';
+import { EMPTY_RATE_HINT, SHARE_INPUT_STEP, collapsePresetsToManual, manualSwitchClass, nicheRoutineMatch, routineStepModel } from './steps';
 
 const HELP = {
   operations:
@@ -105,7 +105,16 @@ export function renderRoutineCalcTool(
       ? ''
       : String(saved.inputs.hourlyRate);
   let lastErrors: RoutineFieldErrors = {};
-  const openedStep = resolveInitialStep(4, initialStep, draft?.step ?? null);
+  const nichePresetsActive = (): boolean =>
+    nicheRoutineMatch(
+      nicheById(dossier.read().niche)?.routinePresetIds ?? null,
+      presetIds,
+      customEntry,
+    );
+  const openedStep = routineVisibleStep(
+    resolveInitialStep(4, initialStep, draft?.step ?? null),
+    nichePresetsActive(),
+  );
 
   releaseHelpTipsWithin(container);
   container.innerHTML = '';
@@ -221,7 +230,9 @@ export function renderRoutineCalcTool(
     for (const [id, button] of presetButtons) {
       button.setAttribute('aria-pressed', String(!customEntry && presetIds.includes(id)));
     }
+    const matched = nichePresetsActive();
     ownNumbersBtn?.setAttribute('aria-pressed', String(customEntry && presetIds.length === 0));
+    if (ownNumbersBtn) ownNumbersBtn.hidden = matched;
     const niche = nicheById(dossier.read().niche);
     const same =
       niche !== null &&
@@ -235,6 +246,7 @@ export function renderRoutineCalcTool(
       operations: operationsRaw,
       minutes: minutesRaw,
       share: shareRaw,
+      allowManualSwitch: !matched,
     });
     const breakdown = model.kind === 'breakdown';
     for (const host of breakdownHosts) paintBreakdownHost(host, model);
@@ -750,6 +762,7 @@ export function renderRoutineCalcTool(
     },
     onFinish: finishRoutine,
     onRecalculate: recalculate,
+    neighborStep: (step, direction) => routineNeighborStep(step, direction, nichePresetsActive()),
   });
   function nicheNote(): HTMLParagraphElement {
     const note = document.createElement('p');
@@ -808,6 +821,7 @@ export function renderRoutineCalcTool(
     applyNumbers: applyRoutineNiche,
     applyLabel: (id) => {
       dossier.update((current) => ({ ...current, niche: id }));
+      if (id === null && presetIds.length > 0 && !customEntry) enterManualMode();
       paintNicheNotes();
     },
     undo: () => {

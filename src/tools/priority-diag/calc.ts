@@ -307,7 +307,7 @@ export function resolvePriority(
     return {
       source: 'money',
       processId: winner.id,
-      reason: `Лидер — «${winner.title}»: ${sumsPhrase(money.revenue as number, money.routine as number)}.`,
+      reason: `Лидер — «${winner.title}»: деньги разводят процессы, ${sumsPhrase(money.revenue as number, money.routine as number)}.`,
     };
   }
   const ambiguous =
