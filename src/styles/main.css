@@ -1019,6 +1019,10 @@ a.action-btn {
   border-top: 4px solid var(--accent-primary);
 }
 
+.result-card:has(.wizard-edit) {
+  padding-top: 12px;
+}
+
 .result-banner {
   display: flex;
   align-items: center;
