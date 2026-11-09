@@ -1,92 +1,123 @@
 :root {
   color-scheme: light;
-  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-sans);
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, monospace;
+  --serif: "Prata", Georgia, "Times New Roman", serif;
+  --sans: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Editorial light surfaces, cobalt interactive accent, 1px hairlines */
-  --bg-page: #f6f6f3;
+  --font-sans: var(--sans);
+  --font-display: var(--serif);
+  --font-mono: var(--mono);
+
+  --r-card: 20px;
+  --r-pill: 999px;
+  --r-sm: 10px;
+
+  /* Direction B «Ночной сейф» — Light Copper */
+  --bg: #f5f3f0;
+  --surface: #ffffff;
+  --raise: #eeebe6;
+  --line: #e2ddd5;
+  --line-strong: #cbc4b9;
+  --text: #121010;
+  --text-2: #4f4a45;
+  --muted: #6b655e;
+  --accent: #8f532b;
+  --on-accent: #ffffff;
+  --accent-text: #8f532b;
+  --danger: #a32020;
+
+  /* Mapped project tokens */
+  --bg-page: #f5f3f0;
   --bg-surface: #ffffff;
-  --bg-subtle: #ededeb;
-  --bg-result: #f0f4ff;
-  --bg-badge: #e6ecff;
-  --bg-warning: #fffbeb;
-  --bg-danger: #fef2f2;
+  --bg-subtle: #eeebe6;
+  --bg-result: #eeebe6;
+  --bg-badge: #eeebe6;
+  --bg-warning: #eeebe6;
+  --bg-danger: rgba(163, 32, 32, 0.08);
 
-  --text-primary: #16181d;
-  --text-secondary: #434956;
-  --text-muted: #646b7a;
-  --text-accent: #1d4ed8;
-  --text-on-accent: #ffffff;
-  --text-danger: #b91c1c;
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --text-muted: var(--muted);
+  --text-accent: var(--accent-text);
+  --text-on-accent: var(--on-accent);
+  --text-danger: var(--danger);
 
-  --accent-primary: #1d4ed8;
-  --accent-hover: #1e40af;
-  --focus-ring: #2563eb;
+  --accent-primary: var(--accent);
+  --accent-hover: #7c4623;
+  --focus-ring: var(--accent);
 
-  /* 1px hairline contour, zero drop shadows, 0–2px radius discipline */
-  --border-color: #d0d4dc;
-  --border-strong: #16181d;
+  --border-color: var(--line);
+  --border-strong: var(--line-strong);
   --border-width: 1px;
 
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 2px;
-  --radius-pill: 2px;
+  --radius-sm: var(--r-sm);
+  --radius-md: 14px;
+  --radius-lg: var(--r-card);
+  --radius-pill: var(--r-pill);
 
   --shadow-card: none;
   --shadow-result: none;
   --shadow-button: none;
   --shadow-inset: none;
   --disclaimer-bg: transparent;
-  --disclaimer-border: #d0d4dc;
+  --disclaimer-border: var(--line-strong);
   --prior-bg: transparent;
 
-  /* Messenger marks, kept off the calculation accent. */
-  --brand-threads: #16181d;
-  --brand-threads-ink: #ffffff;
-  --brand-telegram: #2aabee;
-  --brand-telegram-ink: #ffffff;
+  --brand-threads: var(--accent);
+  --brand-threads-ink: var(--on-accent);
+  --brand-telegram: transparent;
+  --brand-telegram-ink: var(--text);
 }
 
-/* Deep editorial dark canvas, 1px hairlines, cobalt interactive states */
+/* Direction B «Ночной сейф» — Dark Copper */
 :root[data-color-scheme="dark"] {
   color-scheme: dark;
 
-  --bg-page: #0e1014;
-  --bg-surface: #15181e;
-  --bg-subtle: #11141a;
-  --bg-result: #181d27;
-  --bg-badge: #1c2436;
-  --bg-warning: #241f16;
-  --bg-danger: #26181a;
+  --bg: #08080a;
+  --surface: #111216;
+  --raise: #17181d;
+  --line: #1f2026;
+  --line-strong: #2e3038;
+  --text: #ededf0;
+  --text-2: #acafb9;
+  --muted: #818490;
+  --accent: #c98a5b;
+  --on-accent: #1a0f07;
+  --accent-text: #d9a27a;
+  --danger: #f0a3a3;
 
-  --text-primary: #f3f5f8;
-  --text-secondary: #9ba3b2;
-  --text-muted: #6e7787;
-  --text-accent: #8eb0ff;
-  --text-on-accent: #f7f8fb;
-  --text-danger: #f3b4b4;
+  --bg-page: #08080a;
+  --bg-surface: #111216;
+  --bg-subtle: #17181d;
+  --bg-result: #17181d;
+  --bg-badge: #17181d;
+  --bg-warning: #17181d;
+  --bg-danger: rgba(240, 163, 163, 0.1);
 
-  --accent-primary: #3b63d9;
-  --accent-hover: #3255be;
-  --focus-ring: #8eb0ff;
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --text-muted: var(--muted);
+  --text-accent: var(--accent-text);
+  --text-on-accent: var(--on-accent);
+  --text-danger: var(--danger);
 
-  --border-color: #282d37;
-  --border-strong: #3e4656;
+  --accent-primary: var(--accent);
+  --accent-hover: #d99868;
+  --focus-ring: var(--accent);
+
+  --border-color: var(--line);
+  --border-strong: var(--line-strong);
 
   --shadow-card: none;
   --shadow-result: none;
   --shadow-button: none;
   --shadow-inset: none;
   --disclaimer-bg: transparent;
-  --disclaimer-border: #3e4656;
+  --disclaimer-border: var(--line-strong);
   --prior-bg: transparent;
 
-  --brand-threads: #15181e;
-  --brand-threads-ink: #f3f5f8;
-  --brand-telegram: #2aabee;
-  --brand-telegram-ink: #ffffff;
+  --brand-threads: var(--accent);
+  --brand-threads-ink: var(--on-accent);
+  --brand-telegram: transparent;
+  --brand-telegram-ink: var(--text);
 }

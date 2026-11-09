@@ -1,4 +1,3 @@
-import { formatCompletionStamp } from './tear-off-stub';
 import {
   JOURNEY_LENGTH,
   enterAdvances,
@@ -79,7 +78,7 @@ export function createWizard(options: {
   const backTop = document.createElement('button');
   backTop.type = 'button';
   backTop.className = 'action-btn action-btn--secondary wizard-nav__back wizard-nav__back--top';
-  backTop.textContent = '← Назад';
+  backTop.textContent = 'Назад';
   progress.append(backTop);
 
   const nav = document.createElement('div');
@@ -90,7 +89,7 @@ export function createWizard(options: {
   const back = document.createElement('button');
   back.type = 'button';
   back.className = 'action-btn action-btn--secondary wizard-nav__back';
-  back.textContent = '← Назад';
+  back.textContent = 'Назад';
 
   const next = document.createElement('button');
   next.type = 'button';
@@ -135,10 +134,6 @@ export function createWizard(options: {
   editBtn.type = 'button';
   editBtn.className = 'wizard-edit';
   editBtn.textContent = 'Изменить цифры';
-
-  const stepStamp = document.createElement('p');
-  stepStamp.className = 'audit-stamp audit-stamp--step';
-  stepStamp.hidden = true;
 
   function answerCard(): HTMLElement | null {
     for (const extra of options.extras ?? []) {
@@ -186,13 +181,9 @@ export function createWizard(options: {
 
     if (answerVisible && panel && answer) {
       panel.hidden = true;
-      stepStamp.textContent = formatCompletionStamp(Date.now(), 'step');
-      stepStamp.hidden = false;
-      if (stepStamp.parentElement !== answer) answer.prepend(stepStamp);
       if (editBtn.parentElement !== answer) answer.prepend(editBtn);
       return true;
     }
-    stepStamp.hidden = true;
     return false;
   }
 
@@ -223,7 +214,7 @@ export function createWizard(options: {
     options.onStep(step);
     const collapsed = applyResultMode();
     next.textContent =
-      step === count ? (collapsed ? options.finishLabel : 'Показать расчёт') : 'Дальше →';
+      step === count ? (collapsed ? options.finishLabel : 'Показать расчёт') : 'Дальше';
     resultWasShown = collapsed;
     if (!moveFocus) return;
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
