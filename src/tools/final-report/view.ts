@@ -1,5 +1,4 @@
 import { releaseHelpTipsWithin } from '../../components/tooltip';
-import { triggerPrintPulse } from '../../components/tear-off-stub';
 import type { ToolBridge } from '../../lib/bridge';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
@@ -126,7 +125,6 @@ export function renderFinalReportTool(
   csvBtn.addEventListener('click', () => {
     const savedAt = Date.now();
     const filename = reportCsvFilename(savedAt);
-    triggerPrintPulse(csvBtn, `[ ✓ ВЫГРУЖЕНО · ${filename} ]`);
     downloadTextFile(
       filename,
       buildReportCsv(collectReportSources(ctx.bridge), [], savedAt, ctx.dossier.read().niche),

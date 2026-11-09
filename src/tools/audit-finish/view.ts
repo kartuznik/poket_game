@@ -1,8 +1,8 @@
-import { ICON_DOWNLOAD, ICON_EDIT, paintLabeledButton } from '../../components/action-icon';
+import { ICON_EDIT, paintLabeledButton } from '../../components/action-icon';
 import {
-  createTearOffStub,
+  createTearOffTicket,
   formatCompletionStamp,
-  triggerPrintPulse,
+  type DossierTicketRow,
 } from '../../components/tear-off-stub';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
@@ -401,38 +401,60 @@ export function renderAuditFinish(
     card.append(blocks);
   }
 
-  if (summary.hasData) {
-    const stamp = document.createElement('p');
-    stamp.className = 'audit-stamp audit-stamp--dossier print-receipt-row';
-    stamp.style.setProperty('--receipt-row', '5');
-    stamp.setAttribute('role', 'status');
-    stamp.textContent = formatCompletionStamp(Date.now(), 'dossier');
-    card.append(stamp);
-  }
-
   const toast = document.createElement('p');
   toast.className = 'status-toast';
   toast.setAttribute('role', 'status');
   toast.hidden = true;
 
-  const downloadHtml = (): void => {
-    const savedAt = Date.now();
-    const filename = reportHtmlFilename(savedAt);
-    downloadTextFile(filename, buildHtmlReport(dossier.read(), savedAt), 'text/html;charset=utf-8');
-    showStatusToast(toast, `HTML-отчёт скачан: ${filename}.`);
-  };
+  const nowMs = Date.now();
+  const moscowIso = new Date(nowMs + 3 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
+    .replace(/-/g, '\u2011');
+  const dashboardCards = buildDashboard(sources);
+  const topRanking = sources.priority?.results.ranking[0];
+  const ticketRows: DossierTicketRow[] = [
+    { label: 'Под риском, мес', value: dashboardCards[0]?.value ?? '—' },
+    { label: 'Можно вернуть, мес', value: dashboardCards[1]?.value ?? '—' },
+    { label: 'Рутина, мес', value: dashboardCards[2]?.value ?? '—' },
+    {
+      label: 'Первым',
+      value: topRanking ? `${topRanking.title} · ${String(topRanking.score)}` : '—',
+      numeric: false,
+    },
+    { label: 'Чек‑лист', value: dashboardCards[3]?.value ?? '—' },
+  ];
 
-  const stub = createTearOffStub({
+  const nicheRaw = scenarioLine(dossier.read().niche).replace(/^Сценарий:\s*/i, '');
+  const ticketEl = createTearOffTicket({
     disabled: !summary.hasData,
-    onTearOff: downloadHtml,
+    nicheLabel: `Досье · ${nicheRaw.toLowerCase()}`,
+    dateLabel: moscowIso,
+    rows: ticketRows,
+    stampText: formatCompletionStamp(nowMs),
+    onTearOff: () => {
+      const savedAt = Date.now();
+      const filename = reportHtmlFilename(savedAt);
+      downloadTextFile(filename, buildHtmlReport(dossier.read(), savedAt), 'text/html;charset=utf-8');
+      return filename;
+    },
+    onCopyFallback: async () => {
+      const copied = await copyTextToClipboard(
+        buildAuditHandoff(collectReportSources(bridge), dossier.read().history, Date.now()),
+        'отчёт для Ефима',
+      );
+      return copied.ok;
+    },
   });
-  if (stub) {
-    card.append(stub);
+
+  const finaleGrid = document.createElement('div');
+  finaleGrid.className = 'finale-grid';
+  if (ticketEl) {
+    finaleGrid.append(ticketEl);
   }
 
   const actions = document.createElement('div');
-  actions.className = 'audit-actions print-receipt-row';
-  actions.style.setProperty('--receipt-row', '6');
+  actions.className = 'audit-actions share';
   const share = document.createElement('div');
   share.className = 'share-brand';
   const shareTitle = document.createElement('h3');
@@ -440,30 +462,35 @@ export function renderAuditFinish(
   shareTitle.textContent = 'Обсудить цифры с Ефимом';
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
-  copyBtn.className = 'share-brand__btn share-brand__btn--threads';
+  copyBtn.className = 'btn share-brand__btn share-brand__btn--threads';
   paintBrandButton(copyBtn, 'Threads · @_kartuzzz', THREADS_GLYPH);
   const telegramBtn = document.createElement('button');
   telegramBtn.type = 'button';
-  telegramBtn.className = 'share-brand__btn share-brand__btn--telegram';
+  telegramBtn.className = 'ghost share-brand__btn share-brand__btn--telegram';
   paintBrandButton(telegramBtn, 'Telegram · @kartuznik', TELEGRAM_GLYPH);
   share.append(shareTitle, copyBtn, telegramBtn);
 
+  const tertiary = document.createElement('div');
+  tertiary.className = 'tertiary';
+
   const htmlBtn = document.createElement('button');
   htmlBtn.type = 'button';
-  htmlBtn.className = 'action-btn action-btn--secondary';
-  paintLabeledButton(htmlBtn, 'Скачать HTML', ICON_DOWNLOAD);
+  htmlBtn.className = 'tertiary__link';
+  htmlBtn.textContent = 'Скачать HTML';
 
   const csvBtn = document.createElement('button');
   csvBtn.type = 'button';
-  csvBtn.className = 'action-btn action-btn--secondary';
-  paintLabeledButton(csvBtn, 'Таблица .CSV', ICON_DOWNLOAD);
+  csvBtn.className = 'tertiary__link';
+  csvBtn.textContent = 'Таблица .CSV';
 
   const pdfBtn = document.createElement('button');
   pdfBtn.type = 'button';
-  pdfBtn.className = 'action-btn action-btn--secondary';
-  paintLabeledButton(pdfBtn, 'Печать PDF', ICON_DOWNLOAD);
+  pdfBtn.className = 'tertiary__link';
+  pdfBtn.textContent = 'Печать PDF';
 
-  actions.append(share, htmlBtn, csvBtn, pdfBtn);
+  tertiary.append(htmlBtn, csvBtn, pdfBtn);
+  actions.append(share, tertiary);
+  finaleGrid.append(actions);
 
   csvBtn.disabled = !summary.hasData;
   htmlBtn.disabled = !summary.hasData;
@@ -473,7 +500,6 @@ export function renderAuditFinish(
     if (csvBtn.disabled) return;
     const savedAt = Date.now();
     const filename = reportCsvFilename(savedAt);
-    triggerPrintPulse(csvBtn, `[ ✓ ВЫГРУЖЕНО · ${filename} ]`);
     downloadTextFile(
       filename,
       buildReportCsv(collectReportSources(bridge), dossier.read().history, savedAt, dossier.read().niche),
@@ -486,7 +512,6 @@ export function renderAuditFinish(
     if (htmlBtn.disabled) return;
     const savedAt = Date.now();
     const filename = reportHtmlFilename(savedAt);
-    triggerPrintPulse(htmlBtn, `[ ✓ ВЫГРУЖЕНО · ${filename} ]`);
     downloadTextFile(filename, buildHtmlReport(dossier.read(), savedAt), 'text/html;charset=utf-8');
     showStatusToast(toast, `HTML-отчёт скачан: ${filename}.`);
   });
@@ -516,7 +541,6 @@ export function renderAuditFinish(
 
   pdfBtn.addEventListener('click', () => {
     if (pdfBtn.disabled) return;
-    triggerPrintPulse(pdfBtn, '[ ✓ ПЕЧАТЬ PDF... ]');
     const html = buildHtmlReport(dossier.read(), Date.now());
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -533,7 +557,7 @@ export function renderAuditFinish(
     });
   });
 
-  card.append(actions, toast);
+  card.append(finaleGrid, toast);
 
   const resetBtn = document.createElement('button');
   resetBtn.type = 'button';

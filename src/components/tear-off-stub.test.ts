@@ -4,48 +4,47 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   ENABLE_TEAR_OFF_STUB,
-  TEAR_OFF_MICROCOPY,
-  TEAR_OFF_THRESHOLD_PX,
-  clampTearOffset,
+  computeTearThreshold,
   formatCompletionStamp,
-  shouldCompleteTearOff,
+  normalizeTearProgress,
 } from './tear-off-stub';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-describe('tear-off stub and completion stamp', () => {
-  it('uses a single canonical microcopy and 72px drag threshold', () => {
+describe('real tear-off stub and Night Vault stamp', () => {
+  it('computes ~1/3 width threshold clamped to 84..140px and normalizes progress', () => {
     expect(ENABLE_TEAR_OFF_STUB).toBe(true);
-    expect(TEAR_OFF_MICROCOPY).toBe('СВАЙП ДЛЯ ОТРЫВА');
-    expect(TEAR_OFF_THRESHOLD_PX).toBe(72);
-    expect(shouldCompleteTearOff(71)).toBe(false);
-    expect(shouldCompleteTearOff(72)).toBe(true);
-    expect(shouldCompleteTearOff(140)).toBe(true);
-    expect(shouldCompleteTearOff(Number.NaN)).toBe(false);
-    expect(clampTearOffset(-15)).toBe(0);
-    expect(clampTearOffset(45)).toBe(45);
-    expect(clampTearOffset(240, 108)).toBe(108);
+    expect(computeTearThreshold(200)).toBe(84);
+    expect(computeTearThreshold(300)).toBeCloseTo(96, 2);
+    expect(computeTearThreshold(600)).toBe(140);
+    expect(normalizeTearProgress(48, 96)).toBeCloseTo(0.5, 4);
+    expect(normalizeTearProgress(120, 96)).toBe(1);
+    expect(normalizeTearProgress(-20, 96)).toBe(0);
   });
 
-  it('formats the editorial completion stamp with Moscow date', () => {
-    const stamp = formatCompletionStamp(Date.UTC(2026, 10, 9, 10, 0, 0), 'dossier');
-    expect(stamp).toBe('[ ✓ АУДИТ ПРОЙДЕН · 2026-11-09 ]');
-    const stepStamp = formatCompletionStamp(Date.UTC(2026, 10, 9, 10, 0, 0), 'step');
-    expect(stepStamp).toBe('[ ✓ РАСЧЁТ ПОДТВЕРЖДЁН · 2026-11-09 ]');
+  it('formats the completion stamp without brackets or unicode checkmarks', () => {
+    const stamp = formatCompletionStamp(Date.UTC(2026, 10, 9, 10, 0, 0));
+    expect(stamp).toBe('Аудит пройден · 2026\u201111\u201109');
+    expect(stamp).not.toContain('[');
+    expect(stamp).not.toContain('✓');
   });
 
-  it('keeps first-level export buttons alongside the reversible stub and disables animations on reduced motion', () => {
+  it('mounts the real tear-off ticket, copy fallback, and tertiary links without clipping perforation notches', () => {
+    const stubSource = readFileSync(resolve(root, 'src/components/tear-off-stub.ts'), 'utf8');
+    expect(stubSource).toContain('Скопировать текст отчёта');
+    expect(stubSource).toContain('if (event.target === stub)');
+
     const finishView = readFileSync(resolve(root, 'src/tools/audit-finish/view.ts'), 'utf8');
-    expect(finishView).toContain("paintLabeledButton(htmlBtn, 'Скачать HTML'");
-    expect(finishView).toContain("paintLabeledButton(csvBtn, 'Таблица .CSV'");
-    expect(finishView).toContain("paintLabeledButton(pdfBtn, 'Печать PDF'");
-    expect(finishView).toContain('createTearOffStub(');
+    expect(finishView).toContain('createTearOffTicket(');
+    expect(finishView).toContain("htmlBtn.textContent = 'Скачать HTML'");
+    expect(finishView).toContain("csvBtn.textContent = 'Таблица .CSV'");
+    expect(finishView).toContain("pdfBtn.textContent = 'Печать PDF'");
 
     const css = readFileSync(resolve(root, 'src/styles/main.css'), 'utf8');
-    expect(css).toContain('@keyframes print-carriage');
-    expect(css).toContain('@keyframes receipt-feed');
-    expect(css).toContain('@keyframes stamp-strike');
-    expect(css).toContain('@keyframes print-head-sweep');
+    expect(css).toContain('@keyframes stub-away');
+    expect(css).toContain('@keyframes stub-print');
+    expect(css).toContain('clip-path: inset(12px 0 100% 0)');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(css).toContain('opacity: 0.35 !important');
   });
 });

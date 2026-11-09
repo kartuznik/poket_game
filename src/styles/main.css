@@ -986,8 +986,12 @@ a {
 
 .finish-dashboard__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  overflow: hidden;
 }
 
 .finish-card {
@@ -995,40 +999,34 @@ a {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 0;
+  padding: 18px 16px;
   border: 0;
   border-radius: 0;
-  background: transparent;
+  background: var(--bg);
   box-shadow: none;
   cursor: default;
 }
 
 .finish-card__label {
   margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font: 400 11px/1.5 var(--mono);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  line-height: 1.3;
+  color: var(--muted);
 }
 
 .finish-card__value {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
+  margin: 10px 0 2px;
+  font: 400 30px/1.1 var(--serif);
+  font-variant-numeric: lining-nums tabular-nums;
   overflow-wrap: anywhere;
 }
 
 .finish-card__note {
   margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.8125rem;
-  line-height: 1.3;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .finish-priority {
@@ -1036,6 +1034,10 @@ a {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 22px;
+  background: var(--surface);
 }
 
 .finish-bars {
@@ -1053,25 +1055,24 @@ a {
 
 .finish-bar__name {
   min-width: 0;
-  font-size: 0.875rem;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 400;
 }
 
 .finish-bar__score {
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  font-weight: 700;
+  font: 400 12px var(--mono);
+  color: var(--text-2);
 }
 
 .finish-bar {
-  height: 8px;
-  margin-top: 4px;
-  border-radius: 999px;
-  background: var(--text-muted);
+  height: 2px;
+  margin-top: 6px;
+  border-radius: 2px;
+  background: var(--text-2);
 }
 
 .finish-bar--leader {
-  background: var(--accent-primary);
+  background: var(--text);
 }
 
 .finish-bar__gap {
@@ -2414,243 +2415,377 @@ a:focus-visible {
 }
 
 /* =========================================================================
-   Printing Micro-interactions (Points A / B / C), Audit Stamp & Tear-Off Stub
+   Night Vault Dossier Ticket, Real Tear-Off Stub & Share Hierarchy
    ========================================================================= */
 
-@keyframes print-carriage {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
+.finale-grid {
+  display: grid;
+  gap: 24px;
+  margin-top: 12px;
 }
 
-@keyframes receipt-feed {
-  from {
-    clip-path: inset(0 0 100% 0);
-    transform: translateY(-4px);
-    opacity: 0.25;
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-    transform: translateY(0);
-    opacity: 1;
-  }
+.ticket-wrap {
+  min-width: 0;
 }
 
-@keyframes stamp-strike {
-  0% {
-    clip-path: inset(0 100% 0 0);
-    transform: scale(1.04) rotate(-0.8deg);
-  }
-  75% {
-    clip-path: inset(0 0 0 0);
-    transform: scale(0.99) rotate(-0.4deg);
-  }
-  100% {
-    clip-path: inset(0 0 0 0);
-    transform: scale(1) rotate(-0.4deg);
-  }
+.ticket {
+  position: relative;
 }
 
-@keyframes stub-hint-nudge {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  45% {
-    transform: translateX(6px);
-  }
+.ticket__body {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  padding: 22px 22px 18px;
+  font: 400 13px/1.75 var(--mono);
 }
 
-@keyframes print-head-sweep {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-
-/* Point A: Step transition line-by-line number printing */
-.step-panel:not([hidden]) .field-unit,
-.result-card:not([hidden]) .result-card__value,
-.result-card:not([hidden]) .metric-box__value,
-.result-card:not([hidden]) .result-card__corridor {
-  animation: print-carriage 180ms steps(14, end) both;
-  animation-delay: calc(var(--line-index, 0) * 55ms);
-}
-
-/* Point B: Final dossier top-to-bottom receipt feed */
-.print-receipt-row {
-  animation: receipt-feed 220ms steps(8, end) both;
-  animation-delay: calc(var(--receipt-row, 0) * 65ms);
-}
-
-.finish-bars .finish-bar {
-  transform-origin: left center;
-  animation: print-carriage 220ms steps(10, end) both;
-  animation-delay: calc(180ms + var(--bar-index, 0) * 35ms);
-}
-
-/* Editorial completion stamp (replaces confetti) */
-.audit-stamp {
-  margin: 0;
-  align-self: flex-start;
-  padding: 4px 10px;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-accent);
-  background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
-  border: 1px solid var(--accent-primary);
-  transform: rotate(-0.4deg);
-  animation: stamp-strike 240ms steps(10, end) both;
-}
-
-.audit-stamp--dossier {
-  animation-delay: calc(var(--receipt-row, 5) * 65ms);
-}
-
-/* Isolated Tear-Off Stub Module (Variant A: bottom receipt perforation) */
-.tear-stub {
+.ticket__head {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.ticket .r {
+  display: flex;
+  justify-content: space-between;
   gap: 12px;
-  margin-top: 4px;
 }
 
-.tear-stub__perforation {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 -16px;
+.ticket .r span:first-child {
+  color: var(--text-2);
 }
 
-@media (min-width: 480px) {
-  .tear-stub__perforation {
-    margin: 0 -32px;
-  }
-}
-
-.tear-stub__perforation::before,
-.tear-stub__perforation::after {
-  content: "";
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--bg-page);
-  border: 1px solid var(--border-color);
-  flex: none;
-}
-
-.tear-stub__perforation::before {
-  margin-left: -7px;
-}
-
-.tear-stub__perforation::after {
-  margin-right: -7px;
-}
-
-.tear-stub__rule {
-  flex: 1;
-  border-top: 1px dashed var(--border-strong);
-}
-
-.tear-stub__hint {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+.stamp {
+  display: inline-block;
+  margin-top: 12px;
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  white-space: nowrap;
+  color: var(--text);
+  padding: 7px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
 }
 
-.tear-stub__handle {
+/* Perforation: notches cut into both edges + dashed seam */
+.seam {
+  position: relative;
+  height: 0;
+  border-top: 1px dashed var(--line-strong);
+  margin: 0 14px;
+}
+
+.ticket::before,
+.ticket::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  z-index: 2;
+  top: var(--seam-y, 0);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.ticket::before {
+  left: -12px;
+  clip-path: inset(0 0 0 50%);
+}
+
+.ticket::after {
+  right: -12px;
+  clip-path: inset(0 50% 0 0);
+}
+
+.stub {
+  position: relative;
+  display: block;
   width: 100%;
-  min-height: 44px;
-  padding: 10px 14px;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 var(--r-card) var(--r-card);
+  padding: 16px 22px 18px;
+  font: inherit;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  transform-origin: 0% 0%;
+  transform: translate(calc(var(--p, 0) * 28px), calc(var(--p, 0) * 10px))
+    rotate(calc(var(--p, 0) * 7deg));
+  will-change: transform;
+}
+
+.stub:active {
+  cursor: grabbing;
+}
+
+.stub:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stub.is-dragging {
+  transition: none;
+}
+
+.stub.is-snap {
+  transition: transform 0.38s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.stub__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
-  border: 1px solid var(--accent-primary);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: grab;
-  touch-action: pan-y;
-  transform: translateX(var(--tear-offset, 0px));
-  transition: transform 140ms ease;
-  animation: stub-hint-nudge 420ms ease 440ms 1;
 }
 
-.tear-stub__handle:active {
-  cursor: grabbing;
+.stub__title {
+  display: block;
+  font: 500 15px var(--sans);
 }
 
-.tear-stub__handle:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  animation: none;
+.stub__hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-2);
 }
 
-.tear-stub__handle-meta {
-  color: var(--text-accent);
-  font-size: 0.6875rem;
+.stub__grip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 500 12px var(--mono);
+  letter-spacing: 0.04em;
 }
 
-.tear-stub--torn .tear-stub__handle {
-  transform: translateY(6px) rotate(0.7deg);
+.stub__grip svg {
+  width: 14px;
+  height: 14px;
 }
 
-/* Point C: Mini print head on export controls */
-[data-printing="true"] {
-  position: relative;
-  overflow: hidden;
-  border-color: var(--accent-primary) !important;
-  color: var(--text-accent) !important;
-}
-
-[data-printing="true"]::after {
-  content: "";
+.stub__meter {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--accent-primary) 28%, transparent) 50%,
-    var(--accent-primary) 52%,
-    transparent 54%
-  );
-  animation: print-head-sweep 320ms steps(12, end) forwards;
+  left: 22px;
+  right: 22px;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--text) calc(var(--p, 0) * 100%), transparent 0);
+}
+
+.stub.is-torn {
+  animation: stub-away 0.46s cubic-bezier(0.5, 0, 0.75, 0) forwards;
   pointer-events: none;
 }
 
+/* Starts 12px below seam top so the semicircular perforation notches are never clipped */
+.stub.is-reprint {
+  animation: stub-print 0.52s steps(9, end) both;
+}
+
+@keyframes stub-away {
+  from {
+    transform: translate(28px, 10px) rotate(7deg);
+    opacity: 1;
+  }
+  to {
+    transform: translate(70%, 120px) rotate(18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes stub-print {
+  from {
+    clip-path: inset(12px 0 100% 0);
+  }
+  to {
+    clip-path: inset(12px 0 0 0);
+  }
+}
+
+.h-key {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .h-key {
+    display: inline;
+  }
+  .h-touch {
+    display: none;
+  }
+}
+
+.tear-status {
+  min-height: 22px;
+  margin: 12px 2px 0;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.tear-status__copy {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Share hierarchy: primary Threads → secondary Telegram → tertiary downloads */
+.audit-actions.share {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.share-brand {
+  display: grid;
+  gap: 12px;
+}
+
+.share-brand__title {
+  font: 400 24px/1.2 var(--serif);
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.share-brand__btn--threads {
+  width: 100%;
+  height: 52px;
+  border-radius: var(--r-pill);
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 500 16px var(--sans);
+}
+
+.share-brand__btn--threads:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+  filter: brightness(1.06);
+}
+
+.share-brand__btn--telegram {
+  width: 100%;
+  height: 52px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font: 500 16px var(--sans);
+}
+
+.share-brand__btn--telegram:hover {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--text-2);
+  filter: none;
+}
+
+.tertiary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.tertiary__link {
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  color: var(--text-2);
+  font: 400 14px var(--sans);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.tertiary__link:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.tertiary__link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.site-foot {
+  border-top: 1px solid var(--line);
+  padding-block: 20px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.site-foot a {
+  color: var(--accent-text);
+  text-underline-offset: 3px;
+}
+
+@media (min-width: 760px) {
+  .finish-dashboard__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .finish-card {
+    padding: 26px 24px;
+  }
+
+  .finish-card__value {
+    font-size: 40px;
+  }
+
+  .finale-grid {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 24px;
+    align-items: start;
+    margin-top: 24px;
+  }
+
+  .site-foot {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .step-panel:not([hidden]) .field-unit,
-  .result-card:not([hidden]) .result-card__value,
-  .result-card:not([hidden]) .metric-box__value,
-  .result-card:not([hidden]) .result-card__corridor,
-  .print-receipt-row,
-  .finish-bars .finish-bar,
-  .audit-stamp,
-  .tear-stub__handle,
-  .tear-stub--torn .tear-stub__handle,
-  [data-printing="true"]::after {
-    animation: none !important;
-    transition: none !important;
-    clip-path: none !important;
+  .stub,
+  .stub.is-snap {
     transform: none !important;
-    opacity: 1 !important;
+    transition: none !important;
+  }
+  .stub.is-torn {
+    animation: none !important;
+    opacity: 0.35 !important;
+    border-style: dashed !important;
+  }
+  .stub.is-reprint {
+    animation: none !important;
   }
 }
 
