@@ -1,5 +1,7 @@
 import './styles/main.css';
+import { createHeroPreview, type HeroPreviewController } from './components/hero-preview';
 import { createToolNav } from './components/nav-tabs';
+import { createStickyScore } from './components/sticky-score';
 import { createThemeSwitch } from './components/theme-switch';
 import {
   DEFAULT_THEME_ID,
@@ -10,6 +12,12 @@ import {
 } from './lib/bridge';
 import { createColorSchemeController } from './lib/color-scheme';
 import { defaultDossierStore, draftStepFor, hydrateBridge } from './lib/dossier';
+import {
+  applyNicheGuess,
+  nicheById,
+  nicheConversionPresetId,
+  type BusinessNicheId,
+} from './lib/niche-presets';
 import { defaultColorSchemeStore, defaultScenarioStore } from './lib/storage';
 import type { ToolId } from './lib/types';
 import { migrateRoutineStep, resolveInitialStep, stepCountFor } from './lib/wizard';
@@ -17,13 +25,15 @@ import { renderAuditFinish } from './tools/audit-finish/view';
 import { renderFinalReportTool } from './tools/final-report/view';
 import { renderPriorityDiagTool } from './tools/priority-diag/view';
 import { renderReadinessCheckTool } from './tools/readiness-check/view';
+import { defaultUncertainty } from './tools/revenue-risk/calc';
 import { renderRevenueRiskTool } from './tools/revenue-risk/view';
 import { renderRoutineCalcTool } from './tools/routine-calc/view';
 
-function buildHeroSection(
-  onStartRevenue: () => void,
-  onOpenNicheExample: () => void,
-): HTMLElement {
+function buildHeroSection(options: {
+  readonly initialNiche: BusinessNicheId;
+  readonly onStartRevenue: () => void;
+  readonly onApplyNicheAndStart: (nicheId: BusinessNicheId) => void;
+}): { readonly element: HTMLElement; readonly preview: HeroPreviewController } {
   const hero = document.createElement('section');
   hero.className = 'hero';
 
@@ -50,7 +60,7 @@ function buildHeroSection(
   primaryCta.textContent = 'Посчитать выручку под риском';
   primaryCta.addEventListener('click', (event) => {
     event.preventDefault();
-    onStartRevenue();
+    options.onStartRevenue();
   });
 
   const secondaryCta = document.createElement('a');
@@ -59,53 +69,19 @@ function buildHeroSection(
   secondaryCta.textContent = 'Взять пример ниши';
   secondaryCta.addEventListener('click', (event) => {
     event.preventDefault();
-    onOpenNicheExample();
+    options.onApplyNicheAndStart(preview.getSelectedNiche());
   });
 
   actions.append(primaryCta, secondaryCta);
   left.append(meta, h1, lead, actions);
 
-  const figure = document.createElement('aside');
-  figure.className = 'figure';
-  figure.setAttribute('aria-label', 'Пример расчёта');
+  const preview = createHeroPreview({
+    initialNiche: options.initialNiche,
+    onApplyNicheAndStart: options.onApplyNicheAndStart,
+  });
 
-  const figMeta = document.createElement('div');
-  figMeta.className = 'meta';
-  figMeta.textContent = 'Пример · кафе и еда · сценарное допущение';
-
-  const big = document.createElement('div');
-  big.className = 'big num';
-  big.textContent = '16\u00A0200\u00A0₽';
-
-  const sub = document.createElement('p');
-  sub.className = 'sub';
-  sub.textContent = 'выручки в месяц под риском из‑за поздних ответов';
-
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', 'spark');
-  svg.setAttribute('viewBox', '0 0 360 56');
-  svg.setAttribute('preserveAspectRatio', 'none');
-  svg.setAttribute('aria-hidden', 'true');
-  const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-  poly.setAttribute('fill', 'none');
-  poly.setAttribute('stroke-width', '1.5');
-  poly.setAttribute('vector-effect', 'non-scaling-stroke');
-  poly.setAttribute('points', '0,46 40,42 80,44 120,35 160,37 200,26 240,29 280,17 320,19 360,8');
-  svg.append(poly);
-
-  const foot = document.createElement('div');
-  foot.className = 'foot';
-  const footLabel = document.createElement('span');
-  footLabel.className = 'meta';
-  footLabel.textContent = 'Можно вернуть';
-  const footVal = document.createElement('span');
-  footVal.className = 'num';
-  footVal.textContent = '8\u00A0100\u00A0₽/мес';
-  foot.append(footLabel, footVal);
-
-  figure.append(figMeta, big, sub, svg, foot);
-  hero.append(left, figure);
-  return hero;
+  hero.append(left, preview.element);
+  return { element: hero, preview };
 }
 
 function mountApp(root: HTMLElement): void {
@@ -125,6 +101,19 @@ function mountApp(root: HTMLElement): void {
   );
   let activeToolId: ToolId = initialRoute.toolId;
   let activeStep: number | null = stepFor(initialRoute.toolId, initialRoute.step);
+
+  const hasConfirmedTools = (): boolean =>
+    Boolean(
+      defaultToolBridge.getRevenueRiskResult() ||
+        defaultToolBridge.getRoutineResult() ||
+        defaultToolBridge.getPriorityResult() ||
+        defaultToolBridge.getReadinessResult(),
+    );
+
+  let hasStarted =
+    hadInitialHash ||
+    hasConfirmedTools() ||
+    (activeStep !== null && activeStep > 1);
 
   function stepFor(toolId: ToolId, routeStep: number | null | undefined): number | null {
     const count = stepCountFor(toolId);
@@ -146,6 +135,15 @@ function mountApp(root: HTMLElement): void {
   wordmark.className = 'brand-header__title wordmark';
   wordmark.href = '#top';
   wordmark.textContent = 'Игра в бизнес';
+  wordmark.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (!hasConfirmedTools()) {
+      hasStarted = false;
+      syncPreviewAndScore();
+    }
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   const authorBadge = document.createElement('a');
   authorBadge.className = 'brand-header__author pill';
@@ -164,31 +162,64 @@ function mountApp(root: HTMLElement): void {
 
   header.append(wordmark, headerTools);
 
-  // 2. Hero Section («Сколько стоит ручная работа в вашем бизнесе» + карточка-пример)
-  const hero = buildHeroSection(
-    () => {
+  function applyNichePresetToStepOne(nicheId: BusinessNicheId): void {
+    const preset = nicheById(nicheId);
+    if (!preset) return;
+    dossier.update((current) => ({
+      ...current,
+      niche: preset.id,
+      revenueDraft: {
+        step: 1,
+        leadsPerMonth: String(preset.leadsPerMonth),
+        lateSharePercent: String(preset.lateSharePercent),
+        conversionPercent: String(preset.conversionPercent),
+        avgCheck: String(preset.avgCheck),
+        lossFactorPercent: String(Math.round(100 - preset.recoveryPercent)),
+        mode: 'preset',
+        presetId: nicheConversionPresetId(preset.id),
+        uncertainty: applyNicheGuess(current.revenueDraft?.uncertainty ?? defaultUncertainty('preset')),
+        botCoverage: current.revenueDraft?.botCoverage ?? null,
+      },
+    }));
+  }
+
+  // 2. Hero Section («Сколько стоит ручная работа в вашем бизнесе» + живая карточка-пример)
+  const hero = buildHeroSection({
+    initialNiche: dossier.read().niche ?? 'cafe-food',
+    onStartRevenue: () => {
+      hasStarted = true;
       navigateToTool('revenue-risk', true, 1, true);
     },
-    () => {
+    onApplyNicheAndStart: (nicheId) => {
+      applyNichePresetToStepOne(nicheId);
+      hasStarted = true;
       navigateToTool('revenue-risk', true, 1, true);
-      const nicheBtn = mainStage.querySelector<HTMLButtonElement>(
-        '.niche-intro__btn, .niche-menu__toggle',
-      );
-      if (nicheBtn && nicheBtn.getAttribute('aria-expanded') === 'false') {
-        nicheBtn.click();
-      }
     },
-  );
+  });
 
   // 3. Steps Strip
   const nav = createToolNav(activeToolId, (id) => {
+    hasStarted = true;
     navigateToTool(id, true, undefined, true);
   });
 
-  // 4. Active Tool Stage
+  // 4. Active Tool Stage + Sticky Score Panel
+  const stageLayout = document.createElement('div');
+  stageLayout.className = 'stage-layout';
+
   const mainStage = document.createElement('main');
   mainStage.id = 'tool-stage';
   mainStage.setAttribute('role', 'tabpanel');
+
+  const stickyScore = createStickyScore();
+  stageLayout.append(mainStage, stickyScore.element);
+
+  mainStage.addEventListener('input', () => {
+    if (!hasStarted) {
+      hasStarted = true;
+      syncPreviewAndScore();
+    }
+  });
 
   // 5. Footer
   const footer = document.createElement('footer');
@@ -205,9 +236,25 @@ function mountApp(root: HTMLElement): void {
   });
   footer.append(footerNote, finishLink);
 
-  shell.append(header, hero, nav.element, mainStage, footer);
+  shell.append(header, hero.element, nav.element, stageLayout, footer);
   root.innerHTML = '';
   root.appendChild(shell);
+
+  function syncPreviewAndScore(): void {
+    const isFinal = activeToolId === 'audit-finish' || activeToolId === 'final-report';
+    const collapsePreview = (hasStarted || hasConfirmedTools()) && !isFinal;
+    hero.preview.setCollapsed(collapsePreview);
+    const model = stickyScore.update(
+      {
+        revenue: defaultToolBridge.getRevenueRiskResult(),
+        routine: defaultToolBridge.getRoutineResult(),
+        readiness: defaultToolBridge.getReadinessResult(),
+      },
+      activeToolId,
+      hasStarted,
+    );
+    stageLayout.classList.toggle('stage-layout--with-score', model.visible);
+  }
 
   function syncUrlHash(): void {
     const targetHash = buildRouteHash(activeToolId, DEFAULT_THEME_ID, activeStep);
@@ -228,9 +275,14 @@ function mountApp(root: HTMLElement): void {
       initialStep: activeStep,
       onWizardStep: (step: number) => {
         activeStep = step;
+        if (step > 1) hasStarted = true;
         syncUrlHash();
+        syncPreviewAndScore();
       },
-      onNavigateTool: (target: ToolId, step?: number) => navigateToTool(target, true, step, true),
+      onNavigateTool: (target: ToolId, step?: number) => {
+        hasStarted = true;
+        navigateToTool(target, true, step, true);
+      },
     };
 
     switch (activeToolId) {
@@ -253,6 +305,7 @@ function mountApp(root: HTMLElement): void {
         renderAuditFinish(mainStage, sharedCtx);
         break;
     }
+    syncPreviewAndScore();
   }
 
   function navigateToTool(
@@ -286,8 +339,16 @@ function mountApp(root: HTMLElement): void {
   }
 
   window.addEventListener('hashchange', () => {
+    if (window.location.hash === '' || window.location.hash === '#top') {
+      if (!hasConfirmedTools()) {
+        hasStarted = false;
+        syncPreviewAndScore();
+      }
+      return;
+    }
     const next = parseRouteState(window.location.search, window.location.hash);
     if (shouldRedrawOnRoute(activeToolId, next.toolId, activeStep, next.step)) {
+      hasStarted = true;
       navigateToTool(next.toolId, false, next.step, true);
     }
   });

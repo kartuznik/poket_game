@@ -2787,5 +2787,235 @@ a:focus-visible {
   .stub.is-reprint {
     animation: none !important;
   }
+  .figure,
+  .sticky-score__row--flash {
+    transition: none !important;
+    animation: none !important;
+  }
 }
+
+/* =========================================================================
+   Hero Live Preview (Niche Chips + Counter + CTA) & Sticky Score Panel
+   ========================================================================= */
+
+.figure {
+  transition: opacity 0.28s ease, max-height 0.32s ease, margin 0.28s ease, padding 0.28s ease;
+  max-height: 760px;
+  overflow: hidden;
+}
+
+.figure--collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin: 0 !important;
+  border-width: 0 !important;
+  pointer-events: none;
+}
+
+.figure__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.figure__chip {
+  height: 30px;
+  padding: 0 11px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-2);
+  font: 500 12px var(--sans);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.figure__chip:hover {
+  color: var(--text);
+  border-color: var(--text-2);
+}
+
+.figure__chip--active,
+.figure__chip[aria-checked="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.figure__more {
+  position: relative;
+}
+
+.figure__more-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.figure__cta {
+  width: 100%;
+  height: 46px;
+  margin-top: 16px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+/* Stage layout with sticky score panel */
+.stage-layout {
+  display: block;
+  min-width: 0;
+}
+
+/* Mobile (< 960px): sticky bottom strip <= 56px that expands on tap */
+.sticky-score {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  background: var(--surface);
+  border-top: 1px solid var(--line-strong);
+}
+
+.sticky-score__bar {
+  width: 100%;
+  height: 52px;
+  max-height: 56px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font: 500 14px var(--sans);
+  cursor: pointer;
+  text-align: left;
+}
+
+.sticky-score__title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sticky-score__title {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.sticky-score__progress {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  font: 400 11px/1 var(--mono);
+  color: var(--text-2);
+}
+
+.sticky-score__summary {
+  font: 400 12px var(--mono);
+  color: var(--accent-text);
+}
+
+.sticky-score__body {
+  display: none;
+  padding: 4px 20px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.sticky-score--open .sticky-score__body {
+  display: grid;
+  gap: 8px;
+}
+
+.sticky-score__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.sticky-score__label {
+  color: var(--text-2);
+}
+
+.sticky-score__val {
+  font: 400 13px var(--mono);
+  color: var(--text);
+}
+
+@keyframes copper-flash {
+  0% {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+    color: var(--accent-text);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.sticky-score__row--flash {
+  animation: copper-flash 0.7s ease;
+}
+
+.sticky-score__row--flash .sticky-score__val {
+  color: var(--accent-text);
+}
+
+@media (max-width: 959px) {
+  .stage-layout--with-score {
+    padding-bottom: 64px;
+  }
+}
+
+@media (min-width: 960px) {
+  .stage-layout--with-score {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .sticky-score {
+    position: sticky;
+    top: 24px;
+    margin-top: 64px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    background: var(--surface);
+    z-index: 5;
+  }
+
+  .sticky-score__bar {
+    height: auto;
+    max-height: none;
+    padding: 18px 20px 14px;
+    cursor: default;
+  }
+
+  .sticky-score__summary {
+    display: none;
+  }
+
+  .sticky-score__body,
+  .sticky-score--open .sticky-score__body {
+    display: grid;
+    gap: 6px;
+    padding: 12px 14px 16px;
+    border-top: 1px solid var(--line);
+  }
+}
+
 
