@@ -1,3 +1,4 @@
+import { formatCompletionStamp } from './tear-off-stub';
 import {
   JOURNEY_LENGTH,
   enterAdvances,
@@ -135,6 +136,10 @@ export function createWizard(options: {
   editBtn.className = 'wizard-edit';
   editBtn.textContent = 'Изменить цифры';
 
+  const stepStamp = document.createElement('p');
+  stepStamp.className = 'audit-stamp audit-stamp--step';
+  stepStamp.hidden = true;
+
   function answerCard(): HTMLElement | null {
     for (const extra of options.extras ?? []) {
       if (extra.querySelector('.result-banner')) return extra;
@@ -181,15 +186,28 @@ export function createWizard(options: {
 
     if (answerVisible && panel && answer) {
       panel.hidden = true;
+      stepStamp.textContent = formatCompletionStamp(Date.now(), 'step');
+      stepStamp.hidden = false;
+      if (stepStamp.parentElement !== answer) answer.prepend(stepStamp);
       if (editBtn.parentElement !== answer) answer.prepend(editBtn);
       return true;
     }
+    stepStamp.hidden = true;
     return false;
   }
 
   function paint(moveFocus: boolean): void {
     options.panels.forEach((panel, index) => {
-      panel.hidden = index !== step - 1;
+      const isCurrent = index === step - 1;
+      panel.hidden = !isCurrent;
+      if (isCurrent) {
+        const rows = panel.querySelectorAll<HTMLElement>(
+          '.field-group, .process-card, .routine-table__row, .preset-card-wrap',
+        );
+        rows.forEach((row, rowIndex) => {
+          row.style.setProperty('--line-index', String(rowIndex));
+        });
+      }
     });
     for (const extra of options.extras ?? []) {
       extra.hidden = step !== count;

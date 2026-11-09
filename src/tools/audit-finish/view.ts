@@ -1,4 +1,9 @@
 import { ICON_DOWNLOAD, ICON_EDIT, paintLabeledButton } from '../../components/action-icon';
+import {
+  createTearOffStub,
+  formatCompletionStamp,
+  triggerPrintPulse,
+} from '../../components/tear-off-stub';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { metricsFromDossier, type BusinessDossier, type MetricSnapshot } from '../../lib/dossier';
@@ -131,8 +136,9 @@ function priorityBlock(
   const board = priorityBoard(ranking);
   const list = document.createElement('div');
   list.className = 'finish-bars';
-  for (const bar of board.bars) {
+  board.bars.forEach((bar, index) => {
     const row = document.createElement('div');
+    row.style.setProperty('--bar-index', String(index));
     const head = document.createElement('div');
     head.className = 'finish-bar__head';
     const name = document.createElement('span');
@@ -151,7 +157,7 @@ function priorityBlock(
       row.append(mark);
     }
     list.append(row);
-  }
+  });
   block.append(list);
   if (board.gapLine) {
     const gap = document.createElement('p');
@@ -213,7 +219,8 @@ export function renderAuditFinish(
   card.className = 'tool-card';
 
   const header = document.createElement('div');
-  header.className = 'tool-card__header';
+  header.className = 'tool-card__header print-receipt-row';
+  header.style.setProperty('--receipt-row', '0');
   const title = document.createElement('h2');
   title.className = 'tool-card__title';
   title.id = 'tool-heading-audit-finish';
@@ -253,7 +260,8 @@ export function renderAuditFinish(
   const thesisPieces = buildThesisPieces(sources);
   if (thesisPieces.length > 0) {
     const thesis = document.createElement('p');
-    thesis.className = 'finish-thesis';
+    thesis.className = 'finish-thesis print-receipt-row';
+    thesis.style.setProperty('--receipt-row', '1');
     for (const piece of thesisPieces) {
       if (piece.strong) {
         const strong = document.createElement('strong');
@@ -267,9 +275,11 @@ export function renderAuditFinish(
   }
 
   const dashboard = document.createElement('section');
-  dashboard.className = 'finish-dashboard';
+  dashboard.className = 'finish-dashboard print-receipt-row';
+  dashboard.style.setProperty('--receipt-row', '2');
   const dashboardGrid = document.createElement('div');
-  dashboardGrid.className = 'finish-dashboard__grid';
+  dashboardGrid.className = 'finish-dashboard__grid print-receipt-row';
+  dashboardGrid.style.setProperty('--receipt-row', '3');
   for (const item of buildDashboard(sources)) {
     const tile = document.createElement('article');
     tile.className = 'finish-card';
@@ -304,7 +314,8 @@ export function renderAuditFinish(
   const insights = buildInsights(sources);
   if (insights.length > 0) {
     const insightBlock = document.createElement('section');
-    insightBlock.className = 'finish-insights';
+    insightBlock.className = 'finish-insights print-receipt-row';
+    insightBlock.style.setProperty('--receipt-row', '4');
     const insightTitle = document.createElement('h3');
     insightTitle.className = 'finish-insights__title';
     insightTitle.textContent = 'Перекрёстные выводы';
@@ -320,11 +331,16 @@ export function renderAuditFinish(
   }
 
   const progressCard = progressView(dossier.read(), Date.now());
-  if (progressCard) card.append(progressCard);
+  if (progressCard) {
+    progressCard.classList.add('print-receipt-row');
+    progressCard.style.setProperty('--receipt-row', '4');
+    card.append(progressCard);
+  }
 
   if (weekPlan.length > 0) {
     const plan = document.createElement('section');
-    plan.className = 'week-plan';
+    plan.className = 'week-plan print-receipt-row';
+    plan.style.setProperty('--receipt-row', '4');
     const planTitle = document.createElement('h3');
     planTitle.className = 'week-plan__title';
     planTitle.textContent = 'Что сделать на этой неделе';
@@ -348,7 +364,8 @@ export function renderAuditFinish(
 
   if (summary.hasData) {
     const blocks = document.createElement('div');
-    blocks.className = 'report-blocks';
+    blocks.className = 'report-blocks print-receipt-row';
+    blocks.style.setProperty('--receipt-row', '4');
     for (const block of summary.blocks) {
       const item = document.createElement('article');
       item.className = 'metric-box';
@@ -384,8 +401,38 @@ export function renderAuditFinish(
     card.append(blocks);
   }
 
+  if (summary.hasData) {
+    const stamp = document.createElement('p');
+    stamp.className = 'audit-stamp audit-stamp--dossier print-receipt-row';
+    stamp.style.setProperty('--receipt-row', '5');
+    stamp.setAttribute('role', 'status');
+    stamp.textContent = formatCompletionStamp(Date.now(), 'dossier');
+    card.append(stamp);
+  }
+
+  const toast = document.createElement('p');
+  toast.className = 'status-toast';
+  toast.setAttribute('role', 'status');
+  toast.hidden = true;
+
+  const downloadHtml = (): void => {
+    const savedAt = Date.now();
+    const filename = reportHtmlFilename(savedAt);
+    downloadTextFile(filename, buildHtmlReport(dossier.read(), savedAt), 'text/html;charset=utf-8');
+    showStatusToast(toast, `HTML-отчёт скачан: ${filename}.`);
+  };
+
+  const stub = createTearOffStub({
+    disabled: !summary.hasData,
+    onTearOff: downloadHtml,
+  });
+  if (stub) {
+    card.append(stub);
+  }
+
   const actions = document.createElement('div');
-  actions.className = 'audit-actions';
+  actions.className = 'audit-actions print-receipt-row';
+  actions.style.setProperty('--receipt-row', '6');
   const share = document.createElement('div');
   share.className = 'share-brand';
   const shareTitle = document.createElement('h3');
@@ -400,33 +447,33 @@ export function renderAuditFinish(
   telegramBtn.className = 'share-brand__btn share-brand__btn--telegram';
   paintBrandButton(telegramBtn, 'Telegram · @kartuznik', TELEGRAM_GLYPH);
   share.append(shareTitle, copyBtn, telegramBtn);
-  const csvBtn = document.createElement('button');
-  csvBtn.type = 'button';
-  csvBtn.className = 'action-btn action-btn--secondary';
-  paintLabeledButton(csvBtn, 'Скачать таблицу (.csv)', ICON_DOWNLOAD);
+
   const htmlBtn = document.createElement('button');
   htmlBtn.type = 'button';
   htmlBtn.className = 'action-btn action-btn--secondary';
-  paintLabeledButton(htmlBtn, 'Скачать HTML-отчёт', ICON_DOWNLOAD);
+  paintLabeledButton(htmlBtn, 'Скачать HTML', ICON_DOWNLOAD);
+
+  const csvBtn = document.createElement('button');
+  csvBtn.type = 'button';
+  csvBtn.className = 'action-btn action-btn--secondary';
+  paintLabeledButton(csvBtn, 'Таблица .CSV', ICON_DOWNLOAD);
+
   const pdfBtn = document.createElement('button');
   pdfBtn.type = 'button';
   pdfBtn.className = 'action-btn action-btn--secondary';
-  paintLabeledButton(pdfBtn, 'Скачать PDF', ICON_DOWNLOAD);
-  actions.append(share, csvBtn, htmlBtn, pdfBtn);
+  paintLabeledButton(pdfBtn, 'Печать PDF', ICON_DOWNLOAD);
+
+  actions.append(share, htmlBtn, csvBtn, pdfBtn);
 
   csvBtn.disabled = !summary.hasData;
   htmlBtn.disabled = !summary.hasData;
   pdfBtn.disabled = !summary.hasData;
 
-  const toast = document.createElement('p');
-  toast.className = 'status-toast';
-  toast.setAttribute('role', 'status');
-  toast.hidden = true;
-
   csvBtn.addEventListener('click', () => {
     if (csvBtn.disabled) return;
     const savedAt = Date.now();
     const filename = reportCsvFilename(savedAt);
+    triggerPrintPulse(csvBtn, `[ ✓ ВЫГРУЖЕНО · ${filename} ]`);
     downloadTextFile(
       filename,
       buildReportCsv(collectReportSources(bridge), dossier.read().history, savedAt, dossier.read().niche),
@@ -439,6 +486,7 @@ export function renderAuditFinish(
     if (htmlBtn.disabled) return;
     const savedAt = Date.now();
     const filename = reportHtmlFilename(savedAt);
+    triggerPrintPulse(htmlBtn, `[ ✓ ВЫГРУЖЕНО · ${filename} ]`);
     downloadTextFile(filename, buildHtmlReport(dossier.read(), savedAt), 'text/html;charset=utf-8');
     showStatusToast(toast, `HTML-отчёт скачан: ${filename}.`);
   });
@@ -468,6 +516,7 @@ export function renderAuditFinish(
 
   pdfBtn.addEventListener('click', () => {
     if (pdfBtn.disabled) return;
+    triggerPrintPulse(pdfBtn, '[ ✓ ПЕЧАТЬ PDF... ]');
     const html = buildHtmlReport(dossier.read(), Date.now());
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);

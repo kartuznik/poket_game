@@ -1,4 +1,5 @@
 import { releaseHelpTipsWithin } from '../../components/tooltip';
+import { triggerPrintPulse } from '../../components/tear-off-stub';
 import type { ToolBridge } from '../../lib/bridge';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
@@ -106,7 +107,9 @@ export function renderFinalReportTool(
   const csvBtn = document.createElement('button');
   csvBtn.type = 'button';
   csvBtn.className = 'action-btn action-btn--secondary';
-  csvBtn.textContent = 'Скачать таблицу (.csv)';
+  const csvLabel = document.createElement('span');
+  csvLabel.textContent = 'Таблица .CSV';
+  csvBtn.append(csvLabel);
   csvBtn.disabled = !summary.hasData;
   actions.append(copyBtn, csvBtn);
 
@@ -123,6 +126,7 @@ export function renderFinalReportTool(
   csvBtn.addEventListener('click', () => {
     const savedAt = Date.now();
     const filename = reportCsvFilename(savedAt);
+    triggerPrintPulse(csvBtn, `[ ✓ ВЫГРУЖЕНО · ${filename} ]`);
     downloadTextFile(
       filename,
       buildReportCsv(collectReportSources(ctx.bridge), [], savedAt, ctx.dossier.read().niche),
