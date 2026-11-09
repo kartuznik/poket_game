@@ -1,0 +1,5 @@
+Copyright 2017 The IBM Plex Project Authors (https://github.com/IBM/plex)
+Copyright 2020 The Inter Project Authors (https://github.com/rsms/inter)
+
+Licensed under the SIL Open Font License, Version 1.1.
+See /OFL.txt in the repository root for full license text.
