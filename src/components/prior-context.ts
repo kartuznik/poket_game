@@ -106,11 +106,7 @@ export function appendPriorContext(
 
   const head = document.createElement('div');
   head.className = 'prior-context__head';
-  head.append(createChartIcon(), titleElement());
-
-  const note = document.createElement('p');
-  note.className = 'prior-context__note';
-  note.textContent = PRIOR_CONTEXT_NOTE;
+  head.append(titleElement());
 
   const list = document.createElement('ul');
   list.className = 'prior-context__list';
@@ -130,7 +126,7 @@ export function appendPriorContext(
     list.append(item);
   }
 
-  box.append(head, note, list);
+  box.append(head, list);
   parent.append(box);
 }
 
@@ -139,21 +135,4 @@ function titleElement(): HTMLParagraphElement {
   title.className = 'prior-context__title';
   title.textContent = PRIOR_CONTEXT_TITLE;
   return title;
-}
-
-function createChartIcon(): SVGSVGElement {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('width', '22');
-  svg.setAttribute('height', '22');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.classList.add('prior-context__icon');
-  const bars = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  bars.setAttribute('fill', 'currentColor');
-  bars.setAttribute(
-    'd',
-    'M4 20h16v2H2V2h2v18zm3-3h3V10H7v7zm5 0h3V6h-3v11zm5 0h3v-6h-3v6z',
-  );
-  svg.append(bars);
-  return svg;
 }

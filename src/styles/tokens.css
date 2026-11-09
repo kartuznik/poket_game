@@ -6,7 +6,7 @@
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, monospace;
 
-  /* Color Palette from Direction 1 (Cobalt-Indigo Accent) */
+  /* Editorial light surfaces, cobalt interactive accent, 1px hairlines */
   --bg-page: #f6f6f3;
   --bg-surface: #ffffff;
   --bg-subtle: #ededeb;
@@ -26,68 +26,67 @@
   --accent-hover: #1e40af;
   --focus-ring: #2563eb;
 
-  /* Tactile Card Structure from Direction 2 (2px contour + hard offset shadow) */
-  --border-color: #16181d;
+  /* 1px hairline contour, zero drop shadows, 0–2px radius discipline */
+  --border-color: #d0d4dc;
   --border-strong: #16181d;
-  --border-width: 2px;
+  --border-width: 1px;
 
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --radius-pill: 999px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-pill: 2px;
 
-  --shadow-card: 3px 3px 0 #16181d;
-  --shadow-result: 4px 4px 0 #16181d;
-  --shadow-button: 2px 2px 0 #16181d;
-  --shadow-inset: inset 0 1px 2px rgba(22, 24, 29, 0.06);
-  --disclaimer-bg: rgba(185, 28, 28, 0.08);
-  --disclaimer-border: rgba(185, 28, 28, 0.45);
-  --prior-bg: rgba(29, 78, 216, 0.08);
+  --shadow-card: none;
+  --shadow-result: none;
+  --shadow-button: none;
+  --shadow-inset: none;
+  --disclaimer-bg: transparent;
+  --disclaimer-border: #d0d4dc;
+  --prior-bg: transparent;
 
   /* Messenger marks, kept off the calculation accent. */
-  --brand-threads: #000000;
+  --brand-threads: #16181d;
   --brand-threads-ink: #ffffff;
   --brand-telegram: #2aabee;
   --brand-telegram-ink: #ffffff;
 }
 
-/* Dark gray surfaces, muted cobalt, light contour. Offset uses the same ink as the border. */
+/* Deep editorial dark canvas, 1px hairlines, cobalt interactive states */
 :root[data-color-scheme="dark"] {
   color-scheme: dark;
 
-  --bg-page: #1b1d22;
-  --bg-surface: #262932;
-  --bg-subtle: #20232a;
-  --bg-result: #222838;
-  --bg-badge: #2c3348;
-  --bg-warning: #3a3324;
-  --bg-danger: #3a2628;
+  --bg-page: #0e1014;
+  --bg-surface: #15181e;
+  --bg-subtle: #11141a;
+  --bg-result: #181d27;
+  --bg-badge: #1c2436;
+  --bg-warning: #241f16;
+  --bg-danger: #26181a;
 
-  --text-primary: #f3f4f6;
-  --text-secondary: #c8cdd6;
-  --text-muted: #aeb4c0;
-  --text-accent: #b7c9f7;
+  --text-primary: #f3f5f8;
+  --text-secondary: #9ba3b2;
+  --text-muted: #6e7787;
+  --text-accent: #8eb0ff;
   --text-on-accent: #f7f8fb;
   --text-danger: #f3b4b4;
 
-  --accent-primary: #3f62c4;
-  --accent-hover: #3556b0;
-  --focus-ring: #b7c9f7;
+  --accent-primary: #3b63d9;
+  --accent-hover: #3255be;
+  --focus-ring: #8eb0ff;
 
-  --border-color: #8f96a4;
-  --border-strong: #aeb4c0;
+  --border-color: #282d37;
+  --border-strong: #3e4656;
 
-  --shadow-card: 3px 3px 0 #aeb4c0;
-  --shadow-result: 4px 4px 0 #aeb4c0;
-  --shadow-button: 2px 2px 0 #aeb4c0;
-  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.35);
-  --disclaimer-bg: rgba(243, 180, 180, 0.12);
-  --disclaimer-border: rgba(243, 180, 180, 0.55);
-  --prior-bg: rgba(183, 201, 247, 0.14);
+  --shadow-card: none;
+  --shadow-result: none;
+  --shadow-button: none;
+  --shadow-inset: none;
+  --disclaimer-bg: transparent;
+  --disclaimer-border: #3e4656;
+  --prior-bg: transparent;
 
-  /* Threads stays a black brand button with white ink; Telegram stays blue. */
-  --brand-threads: #000000;
-  --brand-threads-ink: #ffffff;
+  --brand-threads: #15181e;
+  --brand-threads-ink: #f3f5f8;
   --brand-telegram: #2aabee;
   --brand-telegram-ink: #ffffff;
 }

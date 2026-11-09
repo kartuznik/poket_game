@@ -623,7 +623,7 @@ export function renderRevenueRiskTool(
 
   const eyebrow = document.createElement('div');
   eyebrow.className = 'result-card__eyebrow';
-  eyebrow.innerHTML = `<span>МОЖНО ВЕРНУТЬ</span><span>@_kartuzzz</span>`;
+  eyebrow.innerHTML = `<span>МОЖНО ВЕРНУТЬ</span>`;
 
   const mainValueEl = document.createElement('p');
   mainValueEl.className = 'result-card__value';

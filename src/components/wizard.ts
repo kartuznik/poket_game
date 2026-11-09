@@ -1,4 +1,3 @@
-import { celebrate } from './confetti';
 import {
   JOURNEY_LENGTH,
   enterAdvances,
@@ -129,9 +128,7 @@ export function createWizard(options: {
   let holdFields = false;
   /** One paint after «Показать расчёт»: hide the fields even if a control still has focus. */
   let revealResult = false;
-  /** Confetti follows the result card turning visible, and skips the first paint. */
   let resultWasShown = false;
-  let celebrateArmed = false;
 
   const editBtn = document.createElement('button');
   editBtn.type = 'button';
@@ -209,9 +206,7 @@ export function createWizard(options: {
     const collapsed = applyResultMode();
     next.textContent =
       step === count ? (collapsed ? options.finishLabel : 'Показать расчёт') : 'Дальше →';
-    if (celebrateArmed && collapsed && !resultWasShown) celebrate();
     resultWasShown = collapsed;
-    celebrateArmed = true;
     if (!moveFocus) return;
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 'auto'

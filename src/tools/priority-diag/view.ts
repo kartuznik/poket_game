@@ -131,11 +131,18 @@ export function renderPriorityDiagTool(
 
   const stepPanel = document.createElement('div');
   stepPanel.className = 'step-panel';
+  const scaleHeader = createFieldHeading(
+    'pd-inquiries-pain',
+    'Насколько каждый процесс болит',
+    '1–5',
+    PAIN_HELP,
+    () => stepPanel,
+  );
   const hint = document.createElement('p');
   hint.className = 'field-hint';
   hint.textContent =
-    'Оцените, насколько каждый процесс болит, от 1 до 5. Единица — почти не болит, пятёрка — болит сильно.';
-  stepPanel.append(hint);
+    'Оцените от 1 до 5: единица — почти не болит, пятёрка — болит сильно.';
+  stepPanel.append(scaleHeader.row, hint);
 
   for (const process of PRIORITY_PROCESSES) {
     const card = document.createElement('article');
@@ -143,8 +150,6 @@ export function renderPriorityDiagTool(
     const heading = document.createElement('h3');
     heading.className = 'process-card__title';
     heading.textContent = process.title;
-    const group = document.createElement('div');
-    group.className = 'field-group';
     const scale = document.createElement('div');
     scale.className = 'choice-scale';
     scale.setAttribute('role', 'group');
@@ -172,11 +177,7 @@ export function renderPriorityDiagTool(
 
     const labelId = `pd-${process.id}-pain`;
     scale.id = labelId;
-    group.append(
-      createFieldHeading(labelId, 'Насколько это больно', '1–5', PAIN_HELP, () => scale).row,
-      scale,
-    );
-    card.append(heading, group);
+    card.append(heading, scale);
     if (hasMixedScores(scores[process.id])) {
       const mixed = document.createElement('p');
       mixed.className = 'field-hint process-card__mixed';
@@ -192,7 +193,7 @@ export function renderPriorityDiagTool(
   resultCard.setAttribute('aria-live', 'polite');
   const eyebrow = document.createElement('div');
   eyebrow.className = 'result-card__eyebrow';
-  eyebrow.innerHTML = '<span>ВАШИ ПРИОРИТЕТЫ</span><span>@_kartuzzz</span>';
+  eyebrow.innerHTML = '<span>ВАШИ ПРИОРИТЕТЫ</span>';
   const noteEl = document.createElement('p');
   noteEl.className = 'result-card__note';
   const questionEl = document.createElement('p');

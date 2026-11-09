@@ -153,7 +153,7 @@ export function renderReadinessCheckTool(
   resultCard.setAttribute('aria-live', 'polite');
   const eyebrow = document.createElement('div');
   eyebrow.className = 'result-card__eyebrow';
-  eyebrow.innerHTML = '<span>ГОТОВНОСТЬ К АВТОМАТИЗАЦИИ</span><span>@_kartuzzz</span>';
+  eyebrow.innerHTML = '<span>ГОТОВНОСТЬ К АВТОМАТИЗАЦИИ</span>';
   const valueEl = document.createElement('p');
   valueEl.className = 'result-card__value';
   const noteEl = document.createElement('p');

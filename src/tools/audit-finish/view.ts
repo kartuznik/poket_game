@@ -1,5 +1,4 @@
 import { ICON_DOWNLOAD, ICON_EDIT, paintLabeledButton } from '../../components/action-icon';
-import { celebrate } from '../../components/confetti';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
 import { metricsFromDossier, type BusinessDossier, type MetricSnapshot } from '../../lib/dossier';
@@ -527,8 +526,4 @@ export function renderAuditFinish(
 
   panel.append(card, resetBtn, dialog);
   container.append(panel);
-
-  if (sources.revenue && sources.routine && sources.priority && sources.readiness) {
-    celebrate();
-  }
 }

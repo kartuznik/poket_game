@@ -550,7 +550,7 @@ export function renderRoutineCalcTool(
   resultCard.setAttribute('aria-live', 'polite');
   const eyebrow = document.createElement('div');
   eyebrow.className = 'result-card__eyebrow';
-  eyebrow.innerHTML = '<span>ЧАСЫ НА РУТИНЕ В МЕСЯЦ</span><span>@_kartuzzz</span>';
+  eyebrow.innerHTML = '<span>ЧАСЫ НА РУТИНЕ В МЕСЯЦ</span>';
   const valueEl = document.createElement('p');
   valueEl.className = 'result-card__value';
   const noteEl = document.createElement('p');

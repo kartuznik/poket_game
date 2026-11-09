@@ -60,7 +60,7 @@ export function renderFinalReportTool(
     result.className = 'result-card';
     const eyebrow = document.createElement('div');
     eyebrow.className = 'result-card__eyebrow';
-    eyebrow.innerHTML = '<span>ИТОГИ</span><span>@_kartuzzz</span>';
+    eyebrow.innerHTML = '<span>ИТОГИ</span>';
     const headline = document.createElement('p');
     headline.className = 'result-card__value';
     headline.textContent = summary.headline;
