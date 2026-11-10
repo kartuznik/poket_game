@@ -46,6 +46,7 @@ import {
   type NichePresetId,
   REVENUE_RISK_DEFAULTS,
   BOT_COVERAGE_CHOICES,
+  UNCERTAINTY_INPUT_ACCUSATIVE,
   UNCERTAINTY_INPUT_LABELS,
   UNCERTAINTY_TAG_LABELS,
   calculateRevenueRisk,
@@ -1053,8 +1054,8 @@ export function renderRevenueRiskTool(
     const showMeasure = shouldShowMeasureFirst(corridor);
     measureBlock.hidden = !showMeasure;
     if (showMeasure) {
-      const names = topUncertainInputs(tags).map((id) => UNCERTAINTY_INPUT_LABELS[id]);
-      measureTargets.textContent = `Сначала уточните: ${names.join(' и ')}.`;
+      const names = topUncertainInputs(tags).map((id) => UNCERTAINTY_INPUT_ACCUSATIVE[id]);
+      measureTargets.textContent = `Сначала уточните ${names.join(' и ')}`;
     }
     paintWhatIf();
   }

@@ -107,7 +107,7 @@ describe('buildWeekPlan', () => {
     const plan = buildWeekPlan({ ...none, revenue: revenue(1000) });
     expect(plan).toHaveLength(3);
     expect(plan[0]?.id).toBe('measure');
-    expect(plan[0]?.text).toContain('Сначала уточните:');
+    expect(plan[0]?.text).toContain('Сначала уточните ');
     expect(plan.map((step) => step.id)).not.toContain('revenue-response');
   });
 

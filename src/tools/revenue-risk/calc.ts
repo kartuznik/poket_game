@@ -332,6 +332,14 @@ export const UNCERTAINTY_INPUT_LABELS: Readonly<Record<UncertaintyInputId, strin
   recoveryShare: 'доля возврата',
 };
 
+export const UNCERTAINTY_INPUT_ACCUSATIVE: Readonly<Record<UncertaintyInputId, string>> = {
+  leads: 'обращения',
+  lateShare: 'долю поздних',
+  conversion: 'конверсию',
+  check: 'средний чек',
+  recoveryShare: 'долю возврата',
+};
+
 export const UNCERTAINTY_TAG_LABELS: Readonly<Record<UncertaintyTag, string>> = {
   precise: 'точно',
   rough: 'примерно',

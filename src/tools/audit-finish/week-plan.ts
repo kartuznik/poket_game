@@ -5,7 +5,7 @@ import {
   defaultUncertainty,
   shouldShowMeasureFirst,
   topUncertainInputs,
-  UNCERTAINTY_INPUT_LABELS,
+  UNCERTAINTY_INPUT_ACCUSATIVE,
 } from '../revenue-risk/calc';
 import type { RevenueRiskBridgeSnapshot } from '../../lib/types';
 
@@ -41,9 +41,9 @@ const FILLERS: readonly WeekStep[] = [
 function measureStep(revenue: RevenueRiskBridgeSnapshot): WeekStep | null {
   const tags = revenue.uncertainty ?? defaultUncertainty(revenue.inputs.mode);
   if (!shouldShowMeasureFirst(computeCorridor(revenue.inputs, tags))) return null;
-  const names = topUncertainInputs(tags).map((id) => UNCERTAINTY_INPUT_LABELS[id]);
+  const names = topUncertainInputs(tags).map((id) => UNCERTAINTY_INPUT_ACCUSATIVE[id]);
   if (names.length === 0) return null;
-  return { id: 'measure', text: `Сначала уточните: ${names.join(' и ')}.` };
+  return { id: 'measure', text: `Сначала уточните ${names.join(' и ')}` };
 }
 
 /** Three concrete actions for the week. Empty when nothing is confirmed yet. */
