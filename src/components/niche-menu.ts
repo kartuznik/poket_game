@@ -92,6 +92,7 @@ export function mountNicheMenu(options: {
       options.applyLabel(preset.id);
       list.hidden = true;
       toggle.setAttribute('aria-expanded', 'false');
+      ownVisible.setAttribute('aria-expanded', 'false');
       refresh();
       return;
     }
@@ -110,6 +111,7 @@ export function mountNicheMenu(options: {
     options.applyNumbers(preset);
     list.hidden = true;
     toggle.setAttribute('aria-expanded', 'false');
+    ownVisible.setAttribute('aria-expanded', 'false');
     refresh();
   }
 
@@ -125,11 +127,12 @@ export function mountNicheMenu(options: {
   const own = document.createElement('button');
   own.type = 'button';
   own.className = 'action-btn action-btn--secondary';
-  own.textContent = 'Своя ниша';
+  own.textContent = 'Свои цифры';
   own.addEventListener('click', () => {
     options.applyLabel(null);
     list.hidden = true;
     toggle.setAttribute('aria-expanded', 'false');
+    ownVisible.setAttribute('aria-expanded', 'false');
     refresh();
   });
   list.append(own);
@@ -137,13 +140,12 @@ export function mountNicheMenu(options: {
   const ownVisible = document.createElement('button');
   ownVisible.type = 'button';
   ownVisible.className = 'action-btn action-btn--secondary';
-  ownVisible.textContent = 'Своя ниша';
+  ownVisible.textContent = 'Сменить нишу ▾';
+  ownVisible.setAttribute('aria-expanded', 'false');
   ownVisible.hidden = true;
   ownVisible.addEventListener('click', () => {
-    options.applyLabel(null);
-    list.hidden = true;
-    toggle.setAttribute('aria-expanded', 'false');
-    refresh();
+    list.hidden = !list.hidden;
+    ownVisible.setAttribute('aria-expanded', String(!list.hidden));
   });
 
   const undoBtn = document.createElement('button');
@@ -167,6 +169,7 @@ export function mountNicheMenu(options: {
     options.applyNumbers(preset);
     list.hidden = true;
     toggle.setAttribute('aria-expanded', 'false');
+    ownVisible.setAttribute('aria-expanded', 'false');
     refresh();
   });
 
@@ -174,16 +177,17 @@ export function mountNicheMenu(options: {
     const nicheOn = options.dossier.read().niche !== null;
     const mode = nichePromptVisibility(nicheOn, options.hasUndo());
     opener.hidden = mode !== 'prompt';
-    if (mode !== 'prompt') {
+    if (mode === 'undo') {
       list.hidden = true;
       toggle.setAttribute('aria-expanded', 'false');
+      ownVisible.setAttribute('aria-expanded', 'false');
     }
     undoBtn.hidden = mode !== 'undo';
     ownVisible.hidden = mode !== 'own';
   }
 
   refresh();
-  root.append(opener, list, ownVisible, undoBtn, dialog);
+  root.append(opener, ownVisible, list, undoBtn, dialog);
   return { element: root, refresh };
 }
 
