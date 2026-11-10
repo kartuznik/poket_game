@@ -13,7 +13,7 @@ const STEP_ITEMS: ReadonlyArray<{
   readonly desc: string;
 }> = [
   { id: 'revenue-risk', meta: '01', title: 'Выручка', desc: 'под риском' },
-  { id: 'routine-calc', meta: '02', title: 'Рутина', desc: 'часы в неделю' },
+  { id: 'routine-calc', meta: '02', title: 'Рутина', desc: 'часы в месяц' },
   { id: 'priority-diag', meta: '03', title: 'Приоритет', desc: 'что первым' },
   { id: 'readiness-check', meta: '04 · итоги', title: 'Готовность', desc: 'чек-лист из 9' },
 ];
