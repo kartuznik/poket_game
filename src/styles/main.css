@@ -2450,6 +2450,8 @@ a:focus-visible {
 .ticket__head {
   display: flex;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
   color: var(--muted);
   font-size: 11px;
   letter-spacing: 0.04em;
@@ -2766,13 +2768,6 @@ a:focus-visible {
     font-size: 28px;
   }
 
-  .finale-grid {
-    grid-template-columns: minmax(0, 1fr) 400px;
-    gap: 24px;
-    align-items: start;
-    margin-top: 24px;
-  }
-
   .site-foot {
     flex-direction: row;
     justify-content: space-between;
@@ -3008,6 +3003,13 @@ a:focus-visible {
 
   .figure .big {
     font-size: 72px;
+  }
+
+  .finale-grid {
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 24px;
+    align-items: start;
+    margin-top: 24px;
   }
 
   .stage-layout--with-score {
