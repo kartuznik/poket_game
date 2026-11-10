@@ -823,6 +823,7 @@ export function renderRoutineCalcTool(
   rateInput.addEventListener('input', () => {
     rateRaw = rateInput.value;
     recalculate();
+    persistRoutineDraft(wizard.currentStep());
   });
   shareInput.addEventListener('input', () => {
     shareSlider.value = shareInput.value;
@@ -840,7 +841,9 @@ export function renderRoutineCalcTool(
     field.addEventListener('change', () => {
       if (field === shareSlider) shareInput.value = shareSlider.value;
       if (field === shareInput) shareSlider.value = shareInput.value;
+      rateRaw = rateInput.value;
       recalculate();
+      persistRoutineDraft(wizard.currentStep());
     });
   }
 
@@ -985,6 +988,7 @@ export function renderRoutineCalcTool(
   const wizard = createWizard({
     toolId: 'routine-calc',
     initialStep: openedStep,
+    initialHoldFields: saved === null,
     panels: [presetStep, detailStep],
     extras: [resultCard],
     isStepValid: (step) =>

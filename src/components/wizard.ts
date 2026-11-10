@@ -21,6 +21,7 @@ export interface WizardController {
 export function createWizard(options: {
   readonly toolId: JourneyToolId;
   readonly initialStep: number;
+  readonly initialHoldFields?: boolean;
   readonly panels: readonly HTMLElement[];
   readonly extras?: readonly HTMLElement[];
   readonly isStepValid: (step: number) => boolean;
@@ -125,7 +126,7 @@ export function createWizard(options: {
    * Text entry on the last step stays put until «Показать расчёт».
    * Choice scales do not set this, so their last click still reveals the result.
    */
-  let holdFields = false;
+  let holdFields = Boolean(options.initialHoldFields);
   /** One paint after «Показать расчёт»: hide the fields even if a control still has focus. */
   let revealResult = false;
   let resultWasShown = false;

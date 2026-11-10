@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { aggregateRoutine, calculateRoutine, getRoutinePresetById, validateRoutineDraft } from './calc';
 import {
@@ -159,5 +162,16 @@ describe('routine step model', () => {
         niche: 'beauty',
       }),
     ).toEqual([]);
+  });
+
+  it('persists hourlyRate on input and keeps step 2 fields open on reload before confirmation', () => {
+    const viewPath = resolve(dirname(fileURLToPath(import.meta.url)), './view.ts');
+    const source = readFileSync(viewPath, 'utf8');
+    const rateBlock = source.slice(
+      source.indexOf("rateInput.addEventListener('input'"),
+      source.indexOf("shareInput.addEventListener('input'"),
+    );
+    expect(rateBlock).toContain('persistRoutineDraft(wizard.currentStep())');
+    expect(source).toContain('initialHoldFields: saved === null');
   });
 });
