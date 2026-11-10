@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   computeNichePreview,
@@ -43,6 +46,16 @@ describe('hero live preview recalculation', () => {
 
     expect(interpolateCounterValue(16200, 25920, 0)).toBe(16200);
     expect(interpolateCounterValue(16200, 25920, 1)).toBe(25920);
+  });
+
+  it('marks collapsed hero preview as inert and removes child controls from tab order', () => {
+    const source = readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), './hero-preview.ts'),
+      'utf8',
+    );
+    const collapseFn = source.slice(source.indexOf('function setCollapsed'));
+    expect(collapseFn).toContain("figure.setAttribute('inert', '')");
+    expect(collapseFn).toContain('el.tabIndex = -1');
   });
 });
 

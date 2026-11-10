@@ -321,6 +321,16 @@ export function createHeroPreview(options: {
     collapsed = nextCollapsed;
     figure.classList.toggle('figure--collapsed', collapsed);
     figure.setAttribute('aria-hidden', String(collapsed));
+    if (collapsed) {
+      figure.setAttribute('inert', '');
+      for (const el of figure.querySelectorAll<HTMLElement>('button, a')) {
+        el.tabIndex = -1;
+      }
+    } else {
+      figure.removeAttribute('inert');
+      ctaBtn.tabIndex = 0;
+      syncChips();
+    }
   }
 
   syncChips();
