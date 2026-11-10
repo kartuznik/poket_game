@@ -17,13 +17,13 @@ describe('hero live preview recalculation', () => {
     expect(cafe.recoverable).toBe(8100);
     expect(cafe.riskFormatted).toBe('16\u00A0200\u00A0₽');
     expect(cafe.recoverableFormatted).toBe('8\u00A0100\u00A0₽/мес');
-    expect(cafe.caption).toBe('Пример · кафе и еда · сценарное допущение');
+    expect(cafe.caption).toBe('Пример · кафе и еда · примерные цифры');
 
     const school = computeNichePreview('school');
     // 40 leads * 45% late = 18 * 12% conv * 12000 check = 25920 risk; 58% recovery = 15033.6
     expect(school.risk).toBe(25920);
     expect(school.recoverable).toBeCloseTo(15033.6, 1);
-    expect(school.caption).toBe('Пример · онлайн-школа и коуч · сценарное допущение');
+    expect(school.caption).toBe('Пример · онлайн-школа и коуч · примерные цифры');
     expect(school.sparklinePoints).not.toBe(cafe.sparklinePoints);
 
     const beauty = computeNichePreview('beauty');

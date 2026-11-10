@@ -45,7 +45,7 @@ export function computeNichePreview(nicheId: BusinessNicheId): NichePreviewModel
   return {
     id: preset.id,
     title: preset.title,
-    caption: `Пример · ${preset.title.toLowerCase()} · сценарное допущение`,
+    caption: `Пример · ${preset.title.toLowerCase()} · примерные цифры`,
     risk,
     recoverable,
     riskFormatted: formatRubles(risk),

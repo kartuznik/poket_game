@@ -407,7 +407,7 @@ export function renderRevenueRiskTool(
   modePresetBtn.type = 'button';
   modePresetBtn.className = segmentedButtonClass(mode === 'preset');
   modePresetBtn.id = 'rr-mode-preset';
-  modePresetBtn.textContent = 'Сценарное допущение';
+  modePresetBtn.textContent = 'Пример по нише';
   modePresetBtn.setAttribute('aria-pressed', 'false');
 
   segmented.append(

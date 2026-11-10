@@ -143,7 +143,7 @@ describe('niche presets', () => {
     expect(nicheCaptionVisible('181', 180)).toBe(false);
     expect(nicheCaptionVisible('', 180)).toBe(false);
     expect(tags.leads).toBe('guess');
-    expect(NICHE_CAPTION).toContain('сценарное допущение');
+    expect(NICHE_CAPTION).toContain('примерные цифры');
   });
 
   it('uses the accent prompt only while every niche field is empty', () => {

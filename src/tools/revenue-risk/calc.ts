@@ -28,7 +28,7 @@ export const MARKET_AVERAGE_BADGE_DISCLAIMER =
   'Это пример, а не статистика. Поставьте свою цифру';
 
 export const MARKET_AVERAGE_RESULT_DISCLAIMER =
-  'Сценарное допущение, не замер вашего бизнеса. Даже если цифра грубая, виден порядок потерь.';
+  'Примерные цифры, не замер вашего бизнеса. Даже если оценка грубая, виден порядок потерь.';
 
 export const DEFAULT_LOSS_FACTOR = 0.3;
 export const DEFAULT_LOSS_FACTOR_PERCENT = 30;

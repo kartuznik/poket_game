@@ -24,7 +24,7 @@ export const NICHE_REVENUE_TAGS = {
   check: 'guess',
 } as const;
 
-export const NICHE_CAPTION = 'значение ниши, сценарное допущение — замените своим замером';
+export const NICHE_CAPTION = 'примерные цифры ниши — замените своим замером';
 
 export const NICHE_ACCENT_TITLE = 'Цифр под рукой нет? Возьмите пример ниши.';
 export const NICHE_ACCENT_TEXT =
