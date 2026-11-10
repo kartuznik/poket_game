@@ -113,7 +113,7 @@ export function renderPriorityDiagTool(
   const title = document.createElement('h2');
   title.className = 'tool-card__title';
   title.id = 'tool-heading-priority-diag';
-  title.textContent = meta.title;
+  title.textContent = 'Что автоматизировать первым';
   const subtitle = document.createElement('p');
   subtitle.className = 'tool-card__subtitle';
   subtitle.textContent = meta.subtitle;

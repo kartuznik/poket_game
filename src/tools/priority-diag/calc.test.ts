@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { formatRubles } from '../../lib/format';
 import type { PriorityProcessId, PriorityScoreInput } from '../../lib/types';
@@ -320,5 +323,13 @@ describe('resolvePriority', () => {
     expect(tieQuestion(2)).toContain('2 процесса');
     expect(tieQuestion(5)).toContain('5 процессов');
     expect(tieQuestion(3)).toContain('Что сгорит первым');
+  });
+
+  it('renders the shortened screen heading without the redundant Диагностика prefix (Q27)', () => {
+    const viewSource = readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), './view.ts'),
+      'utf8',
+    );
+    expect(viewSource).toContain("title.textContent = 'Что автоматизировать первым'");
   });
 });
