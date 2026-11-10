@@ -735,10 +735,8 @@ export function renderRevenueRiskTool(
   const whatIfTable = document.createElement('div');
   whatIfTable.className = 'what-if__table';
   const whatIfNow = document.createElement('p');
-  const whatIfBot = document.createElement('p');
-  const whatIfPrevented = document.createElement('p');
   const whatIfHours = document.createElement('p');
-  whatIfTable.append(whatIfNow, whatIfBot, whatIfPrevented, whatIfHours);
+  whatIfTable.append(whatIfNow, whatIfHours);
   whatIf.append(
     whatIfTitle,
     whatIfCaption,
@@ -1097,9 +1095,7 @@ export function renderRevenueRiskTool(
       },
       coverage,
     );
-    whatIfNow.textContent = `Сейчас: ${formatRubles(outcome.lostNow)}/мес`;
-    whatIfBot.textContent = `С ботом: ${formatRubles(outcome.lostWithBot)}/мес`;
-    whatIfPrevented.textContent = `Предотвращено: ${formatRubles(outcome.prevented)}/мес`;
+    whatIfNow.textContent = `Теряете сейчас: ${formatRubles(outcome.lostNow)}/мес · С ботом: ${formatRubles(outcome.lostWithBot)} · Бот сбережёт: ${formatRubles(outcome.prevented)}`;
     const routine = bridge.getRoutineResult();
     whatIfHours.hidden = routine === null;
     if (routine) {
