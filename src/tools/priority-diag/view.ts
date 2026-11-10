@@ -221,7 +221,7 @@ export function renderPriorityDiagTool(
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
-  saveBtn.textContent = 'Запомнить «До»';
+  saveBtn.textContent = 'Сохранить как «до» — сравним через месяц';
   const earlyReportBtn = document.createElement('button');
   earlyReportBtn.type = 'button';
   earlyReportBtn.className = 'early-report-link';

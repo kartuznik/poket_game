@@ -772,7 +772,7 @@ export function renderRevenueRiskTool(
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';
   saveBtn.id = 'rr-save-btn';
-  paintLabeledButton(saveBtn, 'Запомнить «До»', ICON_PIN);
+  paintLabeledButton(saveBtn, 'Сохранить как «до» — сравним через месяц', ICON_PIN);
 
   actions.append(copyBtn, saveBtn);
 
