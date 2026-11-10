@@ -281,13 +281,8 @@ export function renderRoutineCalcTool(
     const matched = nichePresetsActive();
     ownNumbersBtn?.setAttribute('aria-pressed', String(customEntry && presetIds.length === 0));
     if (ownNumbersBtn) ownNumbersBtn.hidden = matched;
-    const niche = nicheById(dossier.read().niche);
-    const same =
-      niche !== null &&
-      niche.routinePresetIds.length === presetIds.length &&
-      niche.routinePresetIds.every((id) => presetIds.includes(id));
-    checklistCaption.hidden = !same;
-    checklistCaption.textContent = same && niche ? niche.conversionCaption : '';
+    checklistCaption.hidden = true;
+    checklistCaption.textContent = '';
     const lines: Record<string, { operations: string; minutes: string }> = {};
     for (const id of presetIds) lines[id] = lineOf(id);
     const detail = routineDetailModel({

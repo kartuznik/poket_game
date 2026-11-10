@@ -885,7 +885,8 @@ export function renderRevenueRiskTool(
     nicheCardTitle.textContent = nicheConversionCardTitle(niche);
     nicheCardConv.textContent = '';
     nicheCardConv.hidden = true;
-    nicheCardCaption.textContent = niche.conversionCaption;
+    nicheCardCaption.textContent = '';
+    nicheCardCaption.hidden = true;
   }
 
   function getActiveConversionRaw(): string {
