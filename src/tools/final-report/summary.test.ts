@@ -113,6 +113,21 @@ describe('buildFinalSummary', () => {
     expect(summary.blocks).toHaveLength(1);
     expect(summary.blocks[0]?.text).toContain('Насколько вы уверены в цифрах');
     expect(summary.blocks[0]?.text).toContain('От ');
+
+    const allGuessSummary = buildFinalSummary({
+      ...empty,
+      revenue: {
+        ...revenue,
+        uncertainty: {
+          leads: 'guess',
+          lateShare: 'guess',
+          conversion: 'guess',
+          check: 'guess',
+          recoveryShare: 'guess',
+        },
+      },
+    });
+    expect(allGuessSummary.blocks[0]?.text).toContain('Все пять цифр — наугад (пример ниши)');
   });
 
   it('joins priority, savings and revenue into one lead', () => {

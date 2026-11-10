@@ -4,7 +4,7 @@ import {
   computeCorridor,
   defaultUncertainty,
   formatCorridorLine,
-  formatUncertaintyProfile,
+  formatSummaryUncertaintyProfile,
 } from '../revenue-risk/calc';
 import type {
   PriorityBridgeSnapshot,
@@ -126,7 +126,7 @@ export function buildFinalSummary(sources: ReportSources): FinalSummary {
     const corridor = computeCorridor(revenue.inputs, tags);
     blocks.push({
       title: 'Насколько цифра плавает',
-      text: `${formatCorridorLine(corridor, tags)}. Насколько вы уверены в цифрах: ${formatUncertaintyProfile(tags)}.`,
+      text: `${formatCorridorLine(corridor, tags)}. ${formatSummaryUncertaintyProfile(tags)}.`,
       sourceToolId: 'revenue-risk',
       editStep: editStepFor('revenue-risk'),
     });

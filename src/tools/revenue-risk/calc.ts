@@ -430,6 +430,23 @@ export function formatUncertaintyProfile(tags: UncertaintyProfile): string {
   ).join(', ');
 }
 
+export function formatSummaryUncertaintyProfile(tags: UncertaintyProfile): string {
+  const values = UNCERTAINTY_INPUTS.map((id) => tags[id]);
+  if (values.every((tag) => tag === 'guess')) {
+    return 'Все пять цифр — наугад (пример ниши)';
+  }
+  if (values.every((tag) => tag === 'precise')) {
+    return 'Все пять цифр — точно';
+  }
+  if (values.every((tag) => tag === 'rough')) {
+    return 'Все пять цифр — примерно';
+  }
+  const confident = UNCERTAINTY_INPUTS.filter((id) => tags[id] !== 'guess').map(
+    (id) => `${UNCERTAINTY_INPUT_LABELS[id]} — ${UNCERTAINTY_TAG_LABELS[tags[id]]}`,
+  );
+  return `Насколько вы уверены в цифрах: ${confident.join(', ')}`;
+}
+
 export function formatCorridorLine(corridor: RevenueCorridor, tags: UncertaintyProfile): string {
   if (isAllPrecise(tags)) return `${formatRubles(corridor.base)}/мес. ${CORRIDOR_POINT_LINE}`;
   return `От ${formatRubles(corridor.low)} до ${formatRubles(corridor.high)} — пока цифры примерные`;
