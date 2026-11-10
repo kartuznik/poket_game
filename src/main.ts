@@ -40,7 +40,7 @@ function buildHeroSection(options: {
   const left = document.createElement('div');
   const meta = document.createElement('div');
   meta.className = 'meta';
-  meta.textContent = 'Четыре расчёта · без регистрации · счёт в браузере';
+  meta.textContent = 'Без регистрации · расчёт сразу на экране';
 
   const h1 = document.createElement('h1');
   h1.className = 'hero__title';
@@ -49,7 +49,7 @@ function buildHeroSection(options: {
   const lead = document.createElement('p');
   lead.className = 'lead';
   lead.textContent =
-    'Выручка, рутина, приоритет и готовность. Четыре пошаговых расчёта показывают порядок потерь и с чего начать автоматизацию.';
+    'Выручка, рутина, приоритет и готовность — покажем, где теряются деньги и что автоматизировать первым';
 
   const actions = document.createElement('div');
   actions.className = 'actions';
