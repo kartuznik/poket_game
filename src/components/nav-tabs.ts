@@ -15,7 +15,7 @@ const STEP_ITEMS: ReadonlyArray<{
   { id: 'revenue-risk', meta: '01', title: 'Выручка', desc: 'под риском' },
   { id: 'routine-calc', meta: '02', title: 'Рутина', desc: 'часы в месяц' },
   { id: 'priority-diag', meta: '03', title: 'Приоритет', desc: 'что первым' },
-  { id: 'readiness-check', meta: '04 · итоги', title: 'Готовность', desc: 'чек-лист из 9' },
+  { id: 'readiness-check', meta: '04', title: 'Готовность', desc: 'чек-лист из 9' },
 ];
 
 /** Four-step 2x2 mobile / 4x1 desktop navigation strip from the Night Vault mockup. */
