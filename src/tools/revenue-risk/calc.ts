@@ -25,7 +25,7 @@ export interface NichePreset {
 }
 
 export const MARKET_AVERAGE_BADGE_DISCLAIMER =
-  'Условный сценарий. Это не статистика по России и не ваши цифры. Значение можно заменить на своё.';
+  'Это пример, а не статистика. Поставьте свою цифру';
 
 export const MARKET_AVERAGE_RESULT_DISCLAIMER =
   'Сценарное допущение, не замер вашего бизнеса. Даже если цифра грубая, виден порядок потерь.';

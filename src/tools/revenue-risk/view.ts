@@ -423,26 +423,10 @@ export function renderRevenueRiskTool(
   const scenarioNote = document.createElement('aside');
   scenarioNote.className = 'scenario-disclaimer';
   scenarioNote.setAttribute('role', 'note');
-  const scenarioLabel = document.createElement('p');
-  scenarioLabel.className = 'scenario-disclaimer__label';
-  const scenarioIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  scenarioIcon.setAttribute('viewBox', '0 0 24 24');
-  scenarioIcon.setAttribute('width', '18');
-  scenarioIcon.setAttribute('height', '18');
-  scenarioIcon.setAttribute('aria-hidden', 'true');
-  scenarioIcon.setAttribute('focusable', 'false');
-  const scenarioPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  scenarioPath.setAttribute('fill', 'currentColor');
-  scenarioPath.setAttribute(
-    'd',
-    'M12 3.2 2.4 20.2h19.2L12 3.2zm0 5.3c.5 0 .9.4.9.9v4.6a.9.9 0 0 1-1.8 0V9.4c0-.5.4-.9.9-.9zm0 8.2a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3z',
-  );
-  scenarioIcon.append(scenarioPath);
-  scenarioLabel.append(scenarioIcon, document.createTextNode('ДИСКЛЕЙМЕР'));
   const scenarioText = document.createElement('p');
   scenarioText.className = 'scenario-disclaimer__text';
   scenarioText.textContent = MARKET_AVERAGE_BADGE_DISCLAIMER;
-  scenarioNote.append(scenarioLabel, scenarioText);
+  scenarioNote.append(scenarioText);
 
   const presetsGrid = document.createElement('div');
   presetsGrid.className = 'presets-grid';
