@@ -753,10 +753,11 @@ export function renderRoutineCalcTool(
       : null;
     const shareText = lines
       ? `${lines
-          .map(
-            (line) =>
-              `${String(line.automationSharePercent)}% у ${getRoutinePresetById(line.presetId).title}`,
-          )
+          .map((line, index) => {
+            const title = getRoutinePresetById(line.presetId).title;
+            const cased = index === 0 ? title : `${title.charAt(0).toLowerCase()}${title.slice(1)}`;
+            return `${cased} — ${String(line.automationSharePercent)}%`;
+          })
           .join(', ')}, вместе ${String(weightedAutomationShare(lines)).replace('.', ',')}%`
       : null;
     valueEl.textContent = formatWorkHours(result.hoursPerMonth);
