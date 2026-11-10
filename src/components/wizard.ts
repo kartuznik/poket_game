@@ -11,6 +11,36 @@ import {
   type JourneyToolId,
 } from '../lib/wizard';
 
+interface RevealedControl {
+  readonly hidden: boolean;
+  readonly parentElement: { closest(selector: string): unknown } | null;
+  focus(options: FocusOptions): void;
+}
+
+export interface RevealedResultHost {
+  readonly hidden: boolean;
+  querySelectorAll(selectors: string): Iterable<RevealedControl>;
+  scrollIntoView(options: ScrollIntoViewOptions): void;
+}
+
+/**
+ * Puts the revealed calculation in view and moves focus into it.
+ * An instant scroll is required: a smooth one is cancelled when hiding the
+ * step panel drops focus on the document, which leaves the reader at the top.
+ */
+export function placeRevealedResult(card: RevealedResultHost, behavior: ScrollBehavior): void {
+  if (card.hidden) return;
+  const target = firstShownField(
+    [...card.querySelectorAll('button, a[href], input, textarea, summary')].map((element) => ({
+      element,
+      hidden: element.hidden,
+      inHiddenSubtree: element.parentElement?.closest('[hidden]') != null,
+    })),
+  );
+  target?.element.focus({ preventScroll: true });
+  card.scrollIntoView({ block: 'start', behavior });
+}
+
 export interface WizardController {
   readonly progress: HTMLElement;
   readonly nav: HTMLElement;
@@ -226,7 +256,7 @@ export function createWizard(options: {
     const panel = options.panels[step - 1];
     if (collapsed) {
       const card = answerCard();
-      if (card && !card.hidden) card.scrollIntoView({ block: 'start', behavior });
+      if (card) placeRevealedResult(card, 'auto');
       return;
     }
     if (inputsOpen && panel) {
