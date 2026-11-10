@@ -204,7 +204,9 @@ export function createWizard(options: {
     for (const extra of options.extras ?? []) {
       extra.hidden = step !== count;
     }
-    stepLabel.textContent = `Шаг ${step} из ${count}`;
+    stepRow.hidden = count <= 1;
+    progress.hidden = count <= 1;
+    stepLabel.textContent = count <= 1 ? '' : `Шаг ${step} из ${count}`;
     stepTrack.setAttribute('aria-valuenow', String(step));
     stepTrack.setAttribute('aria-valuetext', `Шаг ${step} из ${count}`);
     stepFill.style.width = `${localProgressPercent(step, count)}%`;

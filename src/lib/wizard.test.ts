@@ -108,6 +108,8 @@ describe('wizard steps', () => {
   });
 
   it('does not keep a neighbor step hook', () => {
-    expect(readFileSync(wizardView, 'utf8')).not.toContain('neighborStep');
+    const source = readFileSync(wizardView, 'utf8');
+    expect(source).not.toContain('neighborStep');
+    expect(source).toContain('stepRow.hidden = count <= 1');
   });
 });
