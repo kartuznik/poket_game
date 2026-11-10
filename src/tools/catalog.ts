@@ -15,7 +15,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     maxInput: 50000,
     stepInput: 10,
     nextToolId: 'routine-calc',
-    nextToolCta: 'Перейти к Калькулятору рутины →',
+    nextToolCta: 'Дальше: рутина →',
   },
   'routine-calc': {
     id: 'routine-calc',
@@ -31,7 +31,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     maxInput: 10000,
     stepInput: 15,
     nextToolId: 'priority-diag',
-    nextToolCta: 'Перейти к Диагностике приоритетов →',
+    nextToolCta: 'Дальше: что первым →',
   },
   'priority-diag': {
     id: 'priority-diag',
@@ -46,7 +46,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     maxInput: 100,
     stepInput: 5,
     nextToolId: 'readiness-check',
-    nextToolCta: 'Перейти к Чек-листу готовности →',
+    nextToolCta: 'Дальше: готовность →',
   },
   'readiness-check': {
     id: 'readiness-check',
