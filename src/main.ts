@@ -19,6 +19,7 @@ import {
   type BusinessNicheId,
 } from './lib/niche-presets';
 import { defaultColorSchemeStore, defaultScenarioStore } from './lib/storage';
+import { applyTypographyToSubtree } from './lib/typography';
 import type { ToolId } from './lib/types';
 import { migrateRoutineStep, resolveInitialStep, stepCountFor } from './lib/wizard';
 import { renderAuditFinish } from './tools/audit-finish/view';
@@ -255,6 +256,23 @@ function mountApp(root: HTMLElement): void {
   root.innerHTML = '';
   root.appendChild(shell);
 
+  let applyingTypography = false;
+  const runTypography = (): void => {
+    if (applyingTypography) return;
+    applyingTypography = true;
+    try {
+      applyTypographyToSubtree(shell);
+    } finally {
+      applyingTypography = false;
+    }
+  };
+  if (typeof MutationObserver !== 'undefined') {
+    const observer = new MutationObserver(() => {
+      runTypography();
+    });
+    observer.observe(shell, { childList: true, subtree: true, characterData: true });
+  }
+
   function syncPreviewAndScore(): void {
     const isFinal = activeToolId === 'audit-finish' || activeToolId === 'final-report';
     const collapsePreview = (hasStarted || hasConfirmedTools()) && !isFinal;
@@ -321,6 +339,7 @@ function mountApp(root: HTMLElement): void {
         break;
     }
     syncPreviewAndScore();
+    runTypography();
   }
 
   function navigateToTool(
