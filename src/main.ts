@@ -218,7 +218,7 @@ function mountApp(root: HTMLElement): void {
   const stageLayout = document.createElement('div');
   stageLayout.className = 'stage-layout';
 
-  const mainStage = document.createElement('main');
+  const mainStage = document.createElement('div');
   mainStage.id = 'tool-stage';
   mainStage.setAttribute('role', 'tabpanel');
 
@@ -247,7 +247,11 @@ function mountApp(root: HTMLElement): void {
   });
   footer.append(footerNote, finishLink);
 
-  shell.append(header, hero.element, nav.element, stageLayout, footer);
+  const pageMain = document.createElement('main');
+  pageMain.className = 'page-main';
+  pageMain.append(hero.element, nav.element, stageLayout);
+
+  shell.append(header, pageMain, footer);
   root.innerHTML = '';
   root.appendChild(shell);
 
