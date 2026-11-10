@@ -82,7 +82,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
   'audit-finish': {
     id: 'audit-finish',
     shortTitle: 'Сводка',
-    title: 'Ваш бизнес-аудит завершён',
+    title: 'Готово. Вот ваши цифры',
     subtitle: 'Цифры, которые вы подтвердили. Их можно скопировать и отправить Ефиму.',
     badge: 'После четырёх инструментов',
     inputLabel: 'Сводка',
