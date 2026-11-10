@@ -4,15 +4,20 @@ const HANGING_WORDS_RE =
 const BEFORE_PUNCT_RE = / +(—|–|·|→|▾)/gu;
 const AFTER_DOT_RE = /(·) +/gu;
 const TRAILING_SHORT_WORD_RE = / +([0-9]+%?|[а-яёa-z₽%]{1,4}[.!?»)]?)$/iu;
+const SLASH_UNIT_RE = /([а-яё₽%0-9])\/([а-яё0-9])/giu;
 
 /**
  * Binds Russian prepositions, conjunctions, particles, mid-dots, em-dashes,
- * and short trailing words with non-breaking spaces so lines never end on a
- * hanging short word or punctuation mark.
+ * short trailing words with non-breaking spaces, and unit slashes («₽/мес»)
+ * with word-joiners (U+2060) so lines never break mid-unit or leave hanging words.
  */
 export function bindRussianTypography(input: string): string {
-  if (!input || !input.includes(' ')) return input;
+  if (!input) return input;
   let result = input;
+  if (result.includes('/')) {
+    result = result.replace(SLASH_UNIT_RE, '$1\u2060/\u2060$2');
+  }
+  if (!result.includes(' ')) return result;
   // Run twice so chains like «и не» or «по России и не» bind both words
   result = result.replace(HANGING_WORDS_RE, '$1$2\u00A0');
   result = result.replace(HANGING_WORDS_RE, '$1$2\u00A0');
