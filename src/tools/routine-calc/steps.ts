@@ -1,4 +1,5 @@
 import type { RoutinePresetId } from '../../lib/types';
+import { nicheById, type BusinessNicheId } from '../../lib/niche-presets';
 import {
   aggregateRoutine,
   calculateRoutine,
@@ -6,6 +7,39 @@ import {
   weightedAutomationShare,
   type RoutineInput,
 } from './calc';
+
+/**
+ * Resolves initial routine preset IDs on entry:
+ * uses draft or saved snapshot if present; when neither exists and a niche is active,
+ * pre-populates that niche's routinePresetIds.
+ */
+export function initialRoutinePresetIds(input: {
+  readonly draft: {
+    readonly presetIds?: readonly RoutinePresetId[];
+    readonly presetId?: RoutinePresetId | null;
+  } | null;
+  readonly saved: {
+    readonly inputs: {
+      readonly presetId: RoutinePresetId | null;
+      readonly items?: readonly { readonly presetId: RoutinePresetId | null }[];
+    };
+  } | null;
+  readonly niche: BusinessNicheId | null;
+}): RoutinePresetId[] {
+  const { draft, saved, niche } = input;
+  if (draft?.presetIds) return [...draft.presetIds];
+  if (draft?.presetId) return [draft.presetId];
+  if (saved) {
+    const fromItems = saved.inputs.items?.flatMap((item) => (item.presetId ? [item.presetId] : []));
+    if (fromItems && fromItems.length > 0) return fromItems;
+    return saved.inputs.presetId ? [saved.inputs.presetId] : [];
+  }
+  if (!draft) {
+    const nichePreset = nicheById(niche);
+    if (nichePreset) return [...nichePreset.routinePresetIds];
+  }
+  return [];
+}
 
 /** True when the stored niche list is exactly the selected routine presets. */
 export function nicheRoutineMatch(

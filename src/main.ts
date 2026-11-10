@@ -180,6 +180,17 @@ function mountApp(root: HTMLElement): void {
         uncertainty: applyNicheGuess(current.revenueDraft?.uncertainty ?? defaultUncertainty('preset')),
         botCoverage: current.revenueDraft?.botCoverage ?? null,
       },
+      routineDraft: {
+        step: current.routineDraft?.step ?? 1,
+        presetId:
+          preset.routinePresetIds.length === 1 ? preset.routinePresetIds[0]! : null,
+        presetIds: [...preset.routinePresetIds],
+        customEntry: false,
+        operationsPerWeek: current.routineDraft?.operationsPerWeek ?? '',
+        minutesPerOperation: current.routineDraft?.minutesPerOperation ?? '',
+        automationSharePercent: current.routineDraft?.automationSharePercent ?? '',
+        hourlyRate: current.routineDraft?.hourlyRate ?? '',
+      },
     }));
   }
 

@@ -39,6 +39,7 @@ import {
   EMPTY_RATE_HINT,
   SHARE_INPUT_STEP,
   collapsePresetsToManual,
+  initialRoutinePresetIds,
   manualSwitchClass,
   nicheRoutineMatch,
   routineDetailModel,
@@ -95,13 +96,11 @@ export function renderRoutineCalcTool(
   const saved = bridge.getRoutineResult();
   const draft = dossier.read().routineDraft;
 
-  let presetIds: RoutinePresetId[] = draft?.presetIds
-    ? [...draft.presetIds]
-    : draft?.presetId
-      ? [draft.presetId]
-      : (saved?.inputs.items
-          ?.flatMap((item) => (item.presetId ? [item.presetId] : [])) ??
-        (saved?.inputs.presetId ? [saved.inputs.presetId] : []));
+  let presetIds: RoutinePresetId[] = initialRoutinePresetIds({
+    draft,
+    saved,
+    niche: dossier.read().niche,
+  });
   let customEntry = draft
     ? draft.customEntry
     : saved !== null && presetIds.length === 0;

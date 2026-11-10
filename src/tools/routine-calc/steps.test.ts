@@ -4,6 +4,7 @@ import {
   EMPTY_RATE_HINT,
   SHARE_INPUT_STEP,
   collapsePresetsToManual,
+  initialRoutinePresetIds,
   manualSwitchClass,
   nicheRoutineMatch,
   routineDetailModel,
@@ -135,5 +136,28 @@ describe('routine step model', () => {
     expect(shareFieldError('table', message)).toBe(message);
     expect(shareFieldError('custom', message)).toBe(message);
     expect(shareFieldError('niche', message)).toBeUndefined();
+  });
+
+  it('pre-populates routine presets from the selected niche when no routine draft exists yet', () => {
+    expect(initialRoutinePresetIds({ draft: null, saved: null, niche: 'beauty' })).toEqual([
+      'booking',
+      'answers',
+    ]);
+    expect(initialRoutinePresetIds({ draft: null, saved: null, niche: 'cafe-food' })).toEqual([
+      'orders',
+      'booking',
+    ]);
+    expect(initialRoutinePresetIds({ draft: null, saved: null, niche: 'school' })).toEqual([
+      'answers',
+      'sheets',
+    ]);
+    // Respects an explicitly cleared draft list
+    expect(
+      initialRoutinePresetIds({
+        draft: { presetIds: [], presetId: null },
+        saved: null,
+        niche: 'beauty',
+      }),
+    ).toEqual([]);
   });
 });
