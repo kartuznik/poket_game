@@ -242,7 +242,7 @@ export function renderPriorityDiagTool(
   const howBody = document.createElement('p');
   howBody.className = 'info-details__body';
   const howBase =
-    'Цифра «насколько это больно» записывается сразу в частоту, время и цену ошибки. Балл = частота × 0,4 + время × 0,3 + цена ошибки × 0,3. Равный балл сам лидера не выбирает.';
+    'Одна оценка идёт сразу в частоту, время и цену ошибки. Если баллы равны, первым выбираете вы.';
   howBody.textContent = howBase;
   how.append(howSummary, howBody);
 
