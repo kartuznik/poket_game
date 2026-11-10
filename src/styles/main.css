@@ -387,7 +387,7 @@ a {
 }
 
 .tool-nav__tab.step span.d {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-2);
 }
 
@@ -523,7 +523,7 @@ a {
 
 .journey-progress__label {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -624,7 +624,7 @@ a {
 .tool-card__badge {
   align-self: flex-start;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
   padding: 3px 10px;
   background: var(--bg-badge);
@@ -665,7 +665,7 @@ a {
 .prior-context__title {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -688,7 +688,7 @@ a {
   align-items: baseline;
   column-gap: 0.35em;
   row-gap: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.35;
 }
 
@@ -715,7 +715,7 @@ a {
   background: var(--bg-badge);
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -757,14 +757,14 @@ a {
 .field-unit {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
 .field-hint {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-secondary);
 }
@@ -928,7 +928,7 @@ a {
 .routine-breakdown__detail {
   margin: 4px 0 0;
   color: var(--text-secondary);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -946,7 +946,7 @@ a {
 
 .routine-table__head {
   color: var(--text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -980,7 +980,7 @@ a {
 .field-note {
   margin: 4px 0 0;
   color: var(--text-secondary);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.35;
 }
@@ -1035,7 +1035,7 @@ a {
 .finish-card__note {
   margin: 0;
   color: var(--text-2);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.35;
 }
 
@@ -1070,7 +1070,7 @@ a {
 }
 
 .finish-bar__score {
-  font: 400 12px var(--mono);
+  font: 400 14px var(--mono);
   color: var(--text-2);
 }
 
@@ -1088,7 +1088,7 @@ a {
 .finish-bar__gap {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -1209,7 +1209,7 @@ a {
   border: 0;
   border-radius: 0;
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-accent);
 }
@@ -1247,7 +1247,7 @@ a {
 
 .progress-card__caption {
   color: var(--text-secondary);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -1361,7 +1361,7 @@ a.action-btn {
 
 .field-error {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-danger);
 }
@@ -1412,7 +1412,7 @@ a.action-btn {
   gap: 8px;
   flex-wrap: wrap;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1528,7 +1528,7 @@ a.action-btn {
 .segmented-control--triple .segmented-control__btn {
   min-height: 44px;
   padding: 6px 4px;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -1605,7 +1605,7 @@ a.action-btn {
   background: var(--bg-surface);
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   display: flex;
   flex-direction: column;
@@ -1719,7 +1719,7 @@ a.action-btn.action-btn--quiet {
   box-shadow: none;
   color: var(--text-muted);
   font-family: var(--font-sans);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -1742,7 +1742,7 @@ a.action-btn.action-btn--quiet {
   background: var(--bg-surface);
   border: var(--border-width) solid var(--accent-primary);
   box-shadow: var(--shadow-button);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -1938,7 +1938,7 @@ a:focus-visible {
   min-height: 44px;
   padding: 6px 8px;
   font-family: var(--font-sans);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.2;
   color: var(--text-muted);
@@ -2046,7 +2046,7 @@ a:focus-visible {
 }
 
 .preset-card__desc {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--text-secondary);
 }
 
@@ -2078,7 +2078,7 @@ a:focus-visible {
 
 .check-group {
   margin: 4px 0 0;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2113,7 +2113,7 @@ a:focus-visible {
 }
 
 .choice-scale--3 .choice-scale__btn {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   padding: 6px 4px;
 }
 
@@ -2195,7 +2195,7 @@ a:focus-visible {
 
 .rank-badge {
   margin-left: 0.4em;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-muted);
 }
@@ -2219,7 +2219,7 @@ a:focus-visible {
   gap: 6px;
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1.2;
@@ -2243,7 +2243,7 @@ a:focus-visible {
   background: var(--bg-warning);
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
   display: flex;
@@ -2287,7 +2287,7 @@ a:focus-visible {
 
 .metric-box__label {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2328,7 +2328,7 @@ a:focus-visible {
   background: var(--bg-warning);
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -2347,7 +2347,7 @@ a:focus-visible {
   min-height: 48px;
   padding: 12px 0;
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2373,7 +2373,7 @@ a:focus-visible {
 .info-details__body {
   padding: 0 0 16px;
   border-top: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--text-secondary);
   display: flex;
   flex-direction: column;
@@ -2387,7 +2387,7 @@ a:focus-visible {
   flex-direction: column;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--text-primary);
 }
 
@@ -2448,7 +2448,7 @@ a:focus-visible {
   border-bottom: 0;
   border-radius: var(--r-card) var(--r-card) 0 0;
   padding: 22px 22px 18px;
-  font: 400 13px/1.75 var(--mono);
+  font: 400 14px/1.75 var(--mono);
 }
 
 .ticket__head {
@@ -2572,7 +2572,7 @@ a:focus-visible {
 .stub__hint {
   display: block;
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-2);
 }
 
@@ -2586,7 +2586,7 @@ a:focus-visible {
   border-radius: var(--r-pill);
   background: var(--accent);
   color: var(--on-accent);
-  font: 500 12px var(--mono);
+  font: 500 14px var(--mono);
   letter-spacing: 0.04em;
 }
 
@@ -2756,7 +2756,7 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
 }
 
@@ -2937,7 +2937,7 @@ a:focus-visible {
 }
 
 .sticky-score__summary {
-  font: 400 12px var(--mono);
+  font: 400 14px var(--mono);
   color: var(--accent-text);
 }
 
@@ -2960,7 +2960,7 @@ a:focus-visible {
   gap: 12px;
   padding: 6px 8px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .sticky-score__label {
@@ -2968,7 +2968,7 @@ a:focus-visible {
 }
 
 .sticky-score__val {
-  font: 400 13px var(--mono);
+  font: 400 14px var(--mono);
   color: var(--text);
 }
 
