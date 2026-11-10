@@ -771,7 +771,7 @@ export function renderRoutineCalcTool(
         : `${formatRubles(result.savedMoneyPerMonth)}/мес`;
     metrics.replaceChildren(
       metric('Можно вернуть', `${formatWorkHours(result.savedHoursPerMonth)}/мес`),
-      metric('Рабочих дней экономии в год', formatWorkDays(result.savedWorkDaysPerYear)),
+      metric('Экономия в год', formatWorkDays(result.savedWorkDaysPerYear)),
       metric('Экономия', money),
     );
 
