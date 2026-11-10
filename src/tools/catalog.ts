@@ -37,8 +37,7 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     id: 'priority-diag',
     shortTitle: 'Приоритет',
     title: 'Диагностика «Что автоматизировать первым»',
-    subtitle:
-      'Шесть процессов на одном экране. Одна оценка: насколько это больно.',
+    subtitle: 'Шесть процессов, одна оценка от 1 до 5',
     badge: 'Шаг 3 из 4',
     inputLabel: 'Оценка критичности узкого места',
     inputUnit: 'из 100%',

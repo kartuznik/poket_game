@@ -133,15 +133,14 @@ export function renderPriorityDiagTool(
   stepPanel.className = 'step-panel';
   const scaleHeader = createFieldHeading(
     'pd-inquiries-pain',
-    'Насколько каждый процесс болит',
+    'Что болит сильнее?',
     '1–5',
     PAIN_HELP,
     () => stepPanel,
   );
   const hint = document.createElement('p');
   hint.className = 'field-hint';
-  hint.textContent =
-    'Оцените от 1 до 5: единица — почти не болит, пятёрка — болит сильно.';
+  hint.textContent = '1 — терпимо, 5 — горит';
   stepPanel.append(scaleHeader.row, hint);
 
   for (const process of PRIORITY_PROCESSES) {
