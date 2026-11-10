@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { buildRevenueRiskShareText } from './view';
 import {
   DEFAULT_LOSS_FACTOR,
   DEFAULT_LOSS_FACTOR_PERCENT,
@@ -442,5 +443,33 @@ describe('validateRevenueRiskDraft — form validation rules', () => {
     expect(all.prevented).toBeCloseTo(all.lostNow, 5);
     const half = computeWhatIf({ risk: 31500, lossFactor: 0.3 }, 0.5);
     expect(half.prevented).toBeCloseTo(0.5 * half.lostNow, 5);
+  });
+
+  it('preserves fractional lateLeads (4,5) in share text so arithmetic matches 3 150 ₽', () => {
+    const res = calculateRevenueRisk({
+      leadsPerMonth: 15,
+      lateSharePercent: 30,
+      conversionPercent: 10,
+      avgCheck: 7000,
+      lossFactor: 0.7,
+    });
+    expect(res.lateLeads).toBe(4.5);
+    expect(res.revenueAtRiskMax).toBe(3150);
+    const share = buildRevenueRiskShareText({
+      leadsPerMonth: 15,
+      lateSharePercent: 30,
+      conversionPercent: 10,
+      avgCheck: 7000,
+      lossFactorPercent: 70,
+      mode: 'preset',
+      lateLeads: res.lateLeads,
+      revenueAtRiskMax: res.revenueAtRiskMax,
+      revenueAtRiskPerYear: res.revenueAtRiskPerYear,
+      recoverableRevenue: res.recoverableRevenue,
+      costPerMissedDialog: res.costPerMissedDialog,
+      tags: defaultUncertainty('preset'),
+    });
+    expect(share).toContain('4,5\u00A0обращения/мес');
+    expect(share).not.toContain('5\u00A0обращений/мес');
   });
 });

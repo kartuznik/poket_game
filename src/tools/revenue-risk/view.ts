@@ -30,6 +30,7 @@ import { isRevenueStepValid, resolveInitialStep } from '../../lib/wizard';
 import {
   formatCountWithNoun,
   formatIntegerGrouping,
+  formatNumber,
   formatPercent,
   formatRubles,
   formatWorkHours,
@@ -176,7 +177,7 @@ export function buildRevenueRiskShareText(params: {
     )}`,
     `• Насколько вы уверены в цифрах: ${formatUncertaintyProfile(params.tags)}`,
     `• Выручка под риском в месяц: ${formatRubles(params.revenueAtRiskMax)}`,
-    `• Поздних обращений: ${formatCountWithNoun(Math.round(params.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес`,
+    `• Поздних обращений: ${formatCountWithNoun(params.lateLeads, ['обращение', 'обращения', 'обращений'])}/мес`,
     `• Выручка под риском в год: ${formatRubles(params.revenueAtRiskPerYear)}`,
     `• Один вовремя отвеченный диалог может принести ${formatRubles(params.costPerMissedDialog)}`,
     '',
@@ -1015,11 +1016,12 @@ export function renderRevenueRiskTool(
 
     // Update collapsible "Как посчитано" with live substituted numbers
     const recoveryPercent = recoveryPercentFromLossFactor(normalizedInput.lossFactor);
+    const lateLeadsText = formatNumber(Math.round(calcResult.lateLeads * 10) / 10);
     howBody.innerHTML = `
       <p>Шаги расчёта:</p>
       <ol class="formula-list">
-        <li>Поздние обращения = ${formatIntegerGrouping(normalizedInput.leadsPerMonth)} × ${formatPercent(normalizedInput.lateSharePercent)} = <strong>${formatCountWithNoun(Math.round(calcResult.lateLeads), ['обращение', 'обращения', 'обращений'])}/мес</strong></li>
-        <li>Выручка под риском в месяц = ${Math.round(calcResult.lateLeads)} × ${formatPercent(normalizedInput.conversionPercent)} × ${formatRubles(normalizedInput.avgCheck)} = <strong>${formatRubles(calcResult.revenueAtRiskMax)}</strong></li>
+        <li>Поздние обращения = ${formatIntegerGrouping(normalizedInput.leadsPerMonth)} × ${formatPercent(normalizedInput.lateSharePercent)} = <strong>${formatCountWithNoun(calcResult.lateLeads, ['обращение', 'обращения', 'обращений'])}/мес</strong></li>
+        <li>Выручка под риском в месяц = ${lateLeadsText} × ${formatPercent(normalizedInput.conversionPercent)} × ${formatRubles(normalizedInput.avgCheck)} = <strong>${formatRubles(calcResult.revenueAtRiskMax)}</strong></li>
         <li>Можно вернуть = ${formatRubles(calcResult.revenueAtRiskMax)} × ${formatPercent(recoveryPercent)} = <strong>${formatRubles(calcResult.recoverableRevenue)}/мес</strong></li>
         <li>Выручка под риском в год = ${formatRubles(calcResult.revenueAtRiskMax)} × 12 = <strong>${formatRubles(calcResult.revenueAtRiskPerYear)}</strong></li>
         <li>Один вовремя отвеченный диалог = ${formatRubles(normalizedInput.avgCheck)} × ${formatPercent(normalizedInput.conversionPercent)} = <strong>${formatRubles(calcResult.costPerMissedDialog)}</strong></li>
@@ -1305,7 +1307,7 @@ export function renderRevenueRiskTool(
         15,
         Math.round(calcResult.normalizedInput.leadsPerMonth * 2),
       ),
-      note: `${formatCountWithNoun(calcResult.normalizedInput.leadsPerMonth, ['обращение', 'обращения', 'обращений'])} в месяц, из них ${formatCountWithNoun(Math.round(calcResult.lateLeads), ['позднее обращение', 'поздних обращения', 'поздних обращений'])}`,
+      note: `${formatCountWithNoun(calcResult.normalizedInput.leadsPerMonth, ['обращение', 'обращения', 'обращений'])} в месяц, из них ${formatCountWithNoun(calcResult.lateLeads, ['позднее обращение', 'поздних обращения', 'поздних обращений'])}`,
       revenueRiskSnapshot: bridgeSnapshot,
     });
     window.location.hash = meta.nextToolId;
