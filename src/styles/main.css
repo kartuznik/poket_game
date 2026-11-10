@@ -747,7 +747,7 @@ a {
   min-width: 0;
   max-width: calc(100% - 52px);
   font-weight: 700;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .field-unit {
@@ -1021,9 +1021,11 @@ a {
 
 .finish-card__value {
   margin: 10px 0 2px;
-  font: 400 30px/1.1 var(--serif);
+  font: 400 clamp(20px, 5.2vw, 28px)/1.1 var(--serif);
   font-variant-numeric: lining-nums tabular-nums;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: nowrap;
 }
 
 .finish-card__note {
@@ -2761,7 +2763,7 @@ a:focus-visible {
   }
 
   .finish-card__value {
-    font-size: 40px;
+    font-size: 28px;
   }
 
   .finale-grid {
