@@ -18,7 +18,7 @@ export const ROUTINE_PRESETS: readonly RoutinePreset[] = [
   {
     id: 'answers',
     title: 'Ответы на вопросы',
-    description: 'Типовые сообщения в чатах и личных сообщениях',
+    description: 'Одинаковые вопросы в чатах и личке',
     operationsPerWeek: 40,
     minutesPerOperation: 6,
     automationSharePercent: 70,
