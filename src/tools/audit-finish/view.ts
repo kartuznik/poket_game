@@ -23,7 +23,7 @@ import {
   buildTelegramSummary,
 } from './report';
 import { scenarioLine } from '../../lib/niche-presets';
-import { buildDashboard } from './dashboard';
+import { buildDashboard, dashboardHoursTileValue } from './dashboard';
 import { priorityBoard, readinessRing } from './viz';
 import { buildInsights } from './insights';
 import { buildProgress, progressChart } from './progress';
@@ -292,7 +292,7 @@ export function renderAuditFinish(
     } else {
       const value = document.createElement('p');
       value.className = 'finish-card__value';
-      value.textContent = item.value;
+      value.textContent = item.id === 'hours' ? dashboardHoursTileValue(item.value) : item.value;
       tile.append(value);
     }
     if (item.note) {

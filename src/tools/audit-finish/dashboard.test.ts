@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { ReportSources } from '../final-report/summary';
 import type { ReadinessBridgeSnapshot, RevenueRiskBridgeSnapshot, RoutineBridgeSnapshot } from '../../lib/types';
-import { buildDashboard } from './dashboard';
+import { formatWorkHours } from '../../lib/format';
+import { buildDashboard, dashboardHoursTileValue } from './dashboard';
 
 const revenue = (risk: number): RevenueRiskBridgeSnapshot => ({
   toolId: 'revenue-risk',
@@ -77,7 +78,19 @@ describe('buildDashboard', () => {
     });
     expect(cards[0]?.value).toBe('7\u00A0800\u00A0₽');
     expect(cards[1]?.value).toBe('3\u00A0900\u00A0₽');
+    expect(cards[2]?.value).toBe(formatWorkHours(1.08));
     expect(cards[3]?.value).toBe('4,5/9');
     expect(cards[3]?.note).toBe('Есть пробелы');
+  });
+
+  it('drops the hour noun from the finish tile only (Q09b)', () => {
+    expect(formatWorkHours(30.3)).toBe('30,3\u00A0часа');
+    expect(dashboardHoursTileValue(formatWorkHours(30.3))).toBe('30,3');
+    expect(dashboardHoursTileValue(formatWorkHours(5))).toBe('5');
+    expect(dashboardHoursTileValue('—')).toBe('—');
+    const cards = buildDashboard({ ...empty, revenue: revenue(3150), routine: routine(30.3) });
+    expect(cards[0]?.value).toContain('₽');
+    expect(cards[1]?.value).toContain('₽');
+    expect(cards[2]?.value).toBe(formatWorkHours(30.3));
   });
 });

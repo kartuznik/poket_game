@@ -10,6 +10,16 @@ export interface DashboardCard {
 
 const UNMEASURED = 'не замерено';
 
+/**
+ * The hours tile already says «Часы ручной работы», so the value is only the
+ * number. Threads, Telegram, CSV and the tear-off stub keep formatWorkHours.
+ */
+export function dashboardHoursTileValue(formatted: string): string {
+  const breakAt = formatted.indexOf('\u00A0');
+  if (breakAt === -1) return formatted;
+  return formatted.slice(0, breakAt);
+}
+
 /** Four confirmed metrics. A missing tool is an em dash, never a zero. */
 export function buildDashboard(sources: ReportSources): readonly DashboardCard[] {
   const revenue = sources.revenue;
