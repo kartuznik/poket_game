@@ -522,7 +522,7 @@ export function renderAuditFinish(
       'цифры для Telegram',
     );
     window.open(TELEGRAM_PROFILE_URL, '_blank', 'noopener,noreferrer');
-    showStatusToast(toast, copied.ok ? 'скопировано — вставь в чат' : copied.message);
+    showStatusToast(toast, copied.ok ? 'Скопировано. Вставьте в чат' : copied.message);
   });
 
   copyBtn.addEventListener('click', async () => {
