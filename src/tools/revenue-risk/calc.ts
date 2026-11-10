@@ -432,7 +432,7 @@ export function formatUncertaintyProfile(tags: UncertaintyProfile): string {
 
 export function formatCorridorLine(corridor: RevenueCorridor, tags: UncertaintyProfile): string {
   if (isAllPrecise(tags)) return `${formatRubles(corridor.base)}/мес. ${CORRIDOR_POINT_LINE}`;
-  return `От ${formatRubles(corridor.low)} до ${formatRubles(corridor.high)}/мес — входы ещё не точные`;
+  return `От ${formatRubles(corridor.low)} до ${formatRubles(corridor.high)} — пока цифры примерные`;
 }
 
 /** «3 из 10», «5 из 10», «7 из 10». Other shares round to the nearest tenth. */
