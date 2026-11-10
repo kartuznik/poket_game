@@ -46,6 +46,7 @@ describe('niche presets', () => {
     expect(nicheTitle(null)).toBe('своя');
     expect(nicheById('unknown')).toBeNull();
     expect(scenarioLine('beauty')).toBe('Сценарий: Бьюти-услуги');
+    expect(scenarioLine(null)).toBe('Сценарий: ваши цифры');
     expect(nicheIdFromConversionPreset('niche:cafe-food')).toBe('cafe-food');
     expect(nicheIdFromConversionPreset('beauty-local')).toBeNull();
     expect(activeConversionNiche('cafe-food', 'preset', 'beauty-local')).toBe('cafe-food');

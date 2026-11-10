@@ -122,7 +122,8 @@ export function nicheTitle(id: BusinessNicheId | null): string {
 }
 
 export function scenarioLine(id: BusinessNicheId | null): string {
-  return `Сценарий: ${nicheTitle(id)}`;
+  const preset = nicheById(id);
+  return `Сценарий: ${preset ? preset.title : 'ваши цифры'}`;
 }
 
 export function applyNicheGuess(tags: UncertaintyProfile): UncertaintyProfile {
