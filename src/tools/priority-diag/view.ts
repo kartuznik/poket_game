@@ -217,7 +217,7 @@ export function renderPriorityDiagTool(
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
   copyBtn.className = 'action-btn action-btn--secondary';
-  copyBtn.textContent = 'Скопировать в Threads';
+  copyBtn.textContent = 'Текст для поста в Threads';
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
   saveBtn.className = 'action-btn action-btn--secondary';

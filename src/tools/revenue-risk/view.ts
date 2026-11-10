@@ -766,7 +766,7 @@ export function renderRevenueRiskTool(
   copyBtn.type = 'button';
   copyBtn.className = 'action-btn action-btn--secondary';
   copyBtn.id = 'rr-copy-btn';
-  paintLabeledButton(copyBtn, 'Скопировать в Threads', ICON_COPY);
+  paintLabeledButton(copyBtn, 'Текст для поста в Threads', ICON_COPY);
 
   const saveBtn = document.createElement('button');
   saveBtn.type = 'button';
