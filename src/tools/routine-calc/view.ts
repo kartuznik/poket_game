@@ -758,7 +758,7 @@ export function renderRoutineCalcTool(
             const cased = index === 0 ? title : `${title.charAt(0).toLowerCase()}${title.slice(1)}`;
             return `${cased} — ${String(line.automationSharePercent)}%`;
           })
-          .join(', ')}, вместе ${String(weightedAutomationShare(lines)).replace('.', ',')}%`
+          .join(', ')}, в среднем ${String(Math.round(weightedAutomationShare(lines)))}%`
       : null;
     valueEl.textContent = formatWorkHours(result.hoursPerMonth);
     noteEl.textContent = presetTitle
