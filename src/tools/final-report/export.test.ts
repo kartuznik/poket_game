@@ -90,6 +90,16 @@ describe('report export', () => {
     });
     expect(nicheMode).toContain('Выручка;Режим;Ниша: Кафе и еда');
     expect(nicheMode).not.toContain('Выручка;Режим;Сценарное допущение');
+    const legacyScenarioMode = buildReportCsv({
+      ...sources,
+      revenue: sources.revenue
+        ? {
+            ...sources.revenue,
+            inputs: { ...sources.revenue.inputs, mode: 'preset', presetId: 'beauty-local' },
+          }
+        : null,
+    });
+    expect(legacyScenarioMode).toContain('Выручка;Режим;Моя конверсия');
     const nicheLine = buildReportCsv(sources, [], 1, 'school')
       .split('\r\n')
       .find((line) => line.startsWith('Выручка;Ниша;'));

@@ -42,9 +42,6 @@ import {
   type ConversionInputMode,
   MARKET_AVERAGE_BADGE_DISCLAIMER,
   MARKET_AVERAGE_RESULT_DISCLAIMER,
-  NICHE_PRESETS,
-  type NichePresetId,
-  REVENUE_RISK_DEFAULTS,
   BOT_COVERAGE_CHOICES,
   UNCERTAINTY_INPUT_ACCUSATIVE,
   UNCERTAINTY_INPUT_LABELS,
@@ -58,7 +55,6 @@ import {
   resolvedBotCoverage,
   segmentedButtonClass,
   formatUncertaintyProfile,
-  getNichePresetById,
   lossFactorFromRecoveryPercent,
   recoveryPercentFromLossFactor,
   shouldShowMeasureFirst,
@@ -196,29 +192,16 @@ export function renderRevenueRiskTool(
   const incomingHandoff = bridge.consume('revenue-risk');
   const saved = bridge.getRevenueRiskResult();
   const draft = dossier.read().revenueDraft;
-  const savedPreset = draft?.presetId ?? saved?.inputs.presetId;
-  const restoredPreset: NichePresetId =
-    savedPreset === 'beauty-local' ||
-    savedPreset === 'ecommerce' ||
-    savedPreset === 'experts-edu' ||
-    savedPreset === 'b2b-services'
-      ? savedPreset
-      : REVENUE_RISK_DEFAULTS.presetId;
 
   let mode: ConversionInputMode = draft?.mode ?? saved?.inputs.mode ?? 'custom';
-  let selectedPresetId: NichePresetId = restoredPreset;
-  const explicitOldScenario =
-    savedPreset === 'beauty-local' ||
-    savedPreset === 'ecommerce' ||
-    savedPreset === 'experts-edu' ||
-    savedPreset === 'b2b-services'
-      ? savedPreset
-      : null;
   let nicheConversionId: BusinessNicheId | null = activeConversionNiche(
     dossier.read().niche,
     mode,
-    explicitOldScenario,
+    null,
   );
+  if (mode === 'preset' && !nicheConversionId) {
+    mode = 'custom';
+  }
   let tags: UncertaintyProfile =
     draft?.uncertainty ?? saved?.uncertainty ?? defaultUncertainty(mode);
   const storedCoverage = draft?.botCoverage ?? saved?.botCoverage ?? null;
@@ -431,39 +414,6 @@ export function renderRevenueRiskTool(
 
   const presetsGrid = document.createElement('div');
   presetsGrid.className = 'presets-grid';
-
-  const presetButtons = new Map<NichePresetId, HTMLButtonElement>();
-
-  for (const preset of NICHE_PRESETS) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'preset-card';
-    btn.dataset.presetId = preset.id;
-    btn.setAttribute('aria-pressed', String(preset.id === selectedPresetId));
-
-    btn.innerHTML = `
-      <span class="preset-card__top">
-        <span class="preset-card__title">${preset.title}</span>
-        <span class="preset-card__conv">${preset.defaultConversionPercent}%</span>
-      </span>
-      <span class="preset-card__desc">${preset.description}</span>
-      <span class="preset-card__range">возврат ${recoveryPercentFromLossFactor(preset.defaultLossFactor)}%</span>
-    `;
-
-    btn.addEventListener('click', () => {
-      nicheConversionId = null;
-      selectedPresetId = preset.id;
-      dossier.update((current) => ({ ...current, niche: null }));
-      syncConversionFieldWithMode();
-      applyPresetRecovery();
-      recalculateAndRender();
-    });
-
-    presetButtons.set(preset.id, btn);
-    presetsGrid.append(
-      withHelp(btn, HELP.preset, 'preset-card-wrap', () => btn),
-    );
-  }
 
   const nicheCard = document.createElement('button');
   nicheCard.type = 'button';
@@ -853,7 +803,8 @@ export function renderRevenueRiskTool(
 
   function storedPresetId(): string | null {
     if (mode !== 'preset') return null;
-    return nicheConversionId ? `niche:${nicheConversionId}` : selectedPresetId;
+    const niche = activeNiche();
+    return niche ? `niche:${niche.id}` : null;
   }
 
   function paintConversionChoice(): void {
@@ -861,9 +812,6 @@ export function renderRevenueRiskTool(
       nicheConversionId = storedNicheConversionCard(dossier.read().niche);
     }
     const niche = mode === 'preset' ? activeNiche() : null;
-    for (const [id, button] of presetButtons) {
-      button.setAttribute('aria-pressed', String(!niche && id === selectedPresetId));
-    }
     nicheCard.hidden = !niche;
     nicheCard.setAttribute('aria-pressed', niche ? 'true' : 'false');
     if (!niche) return;
@@ -878,7 +826,6 @@ export function renderRevenueRiskTool(
     if (mode === 'preset') {
       const niche = activeNiche();
       if (niche) return String(niche.conversionPercent);
-      return String(getNichePresetById(selectedPresetId).defaultConversionPercent);
     }
     return customConversionRaw;
   }
@@ -895,15 +842,14 @@ export function renderRevenueRiskTool(
     lossSlider.removeAttribute('aria-valuetext');
   }
 
-  function applyPresetRecovery(): void {
-    const recovery = recoveryPercentFromLossFactor(
-      getNichePresetById(selectedPresetId).defaultLossFactor,
-    );
-    writeRecovery(String(recovery));
-  }
-
   function syncConversionFieldWithMode(): void {
-    const isPreset = mode === 'preset';
+    const storedNicheId = storedNicheConversionCard(dossier.read().niche);
+    segmented.hidden = storedNicheId === null;
+    if (mode === 'preset' && storedNicheId === null) {
+      mode = 'custom';
+      nicheConversionId = null;
+    }
+    const isPreset = mode === 'preset' && storedNicheId !== null;
     setHelpTipText(convHeading.tip, isPreset ? HELP.presetMode : HELP.customMode);
     modeCustomBtn.className = segmentedButtonClass(!isPreset);
     modePresetBtn.className = segmentedButtonClass(isPreset);
@@ -917,11 +863,9 @@ export function renderRevenueRiskTool(
     paintConversionChoice();
     if (isPreset) {
       const niche = activeNiche();
-      const preset = getNichePresetById(selectedPresetId);
-      convInput.value = niche ? String(niche.conversionPercent) : String(preset.defaultConversionPercent);
+      convInput.value = niche ? String(niche.conversionPercent) : '';
       convInput.readOnly = true;
       convInput.setAttribute('aria-readonly', 'true');
-      if (!niche) applyPresetRecovery();
     } else {
       convInput.readOnly = false;
       convInput.removeAttribute('aria-readonly');
@@ -1186,8 +1130,7 @@ export function renderRevenueRiskTool(
   copyBtn.addEventListener('click', async () => {
     const { calcResult } = recalculateAndRender();
     const { normalizedInput } = calcResult;
-    const preset =
-      mode === 'preset' ? getNichePresetById(selectedPresetId) : undefined;
+    const niche = mode === 'preset' ? activeNiche() : null;
 
     const text = buildRevenueRiskShareText({
       leadsPerMonth: normalizedInput.leadsPerMonth,
@@ -1196,7 +1139,7 @@ export function renderRevenueRiskTool(
       avgCheck: normalizedInput.avgCheck,
       lossFactorPercent: Math.round(normalizedInput.lossFactor * 100),
       mode,
-      ...(preset ? { presetTitle: preset.title } : {}),
+      ...(niche ? { presetTitle: niche.title } : {}),
       lateLeads: calcResult.lateLeads,
       revenueAtRiskMax: calcResult.revenueAtRiskMax,
       revenueAtRiskPerYear: calcResult.revenueAtRiskPerYear,
@@ -1403,14 +1346,15 @@ export function renderRevenueRiskTool(
         nicheConversionId = id;
         const niche = nicheById(id);
         if (niche) writeRecovery(String(niche.recoveryPercent));
+      } else {
+        mode = 'custom';
+        nicheConversionId = null;
       }
       dossier.update((current) => ({ ...current, niche: id }));
-      if (mode === 'preset') {
-        nicheConversionId = storedNicheConversionCard(dossier.read().niche);
-        syncConversionFieldWithMode();
-        recalculateAndRender();
-        persistRevenueDraft(wizard.currentStep());
-      }
+      nicheConversionId = storedNicheConversionCard(dossier.read().niche);
+      syncConversionFieldWithMode();
+      recalculateAndRender();
+      persistRevenueDraft(wizard.currentStep());
       paintNicheNotes();
     },
     undo: () => {

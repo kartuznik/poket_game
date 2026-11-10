@@ -180,14 +180,14 @@ export function storedNicheConversionCard(
   return activeConversionNiche(storedNiche, 'preset', storedNiche === null ? 'beauty-local' : null);
 }
 
-/** CSV «Режим». A niche preset names the niche. The four old scenarios stay a scenario. */
+/** CSV «Режим». A niche preset names the niche; anything else is manual conversion. */
 export function conversionModeCsvLabel(
   mode: 'preset' | 'custom',
   presetId: string | null | undefined,
 ): string {
   if (mode !== 'preset') return 'Моя конверсия';
   const nicheId = nicheIdFromConversionPreset(presetId);
-  return nicheId ? `Ниша: ${nicheTitle(nicheId)}` : 'Сценарное допущение';
+  return nicheId ? `Ниша: ${nicheTitle(nicheId)}` : 'Моя конверсия';
 }
 
 /** Caption stays only while the typed number is still the niche number. */

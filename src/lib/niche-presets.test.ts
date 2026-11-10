@@ -57,7 +57,7 @@ describe('niche presets', () => {
     if (!cafe) throw new Error('missing cafe preset');
     expect(nicheConversionCardTitle(cafe)).toBe('Ваша ниша: Кафе и еда — 25%');
     expect(conversionModeCsvLabel('preset', 'niche:cafe-food')).toBe('Ниша: Кафе и еда');
-    expect(conversionModeCsvLabel('preset', 'beauty-local')).toBe('Сценарное допущение');
+    expect(conversionModeCsvLabel('preset', 'beauty-local')).toBe('Моя конверсия');
     expect(conversionModeCsvLabel('custom', 'niche:cafe-food')).toBe('Моя конверсия');
     const byId = Object.fromEntries(listNichePresets().map((preset) => [preset.id, preset]));
     expect(byId['cafe-food']).toMatchObject({
@@ -106,6 +106,8 @@ describe('niche presets', () => {
     expect(apply.indexOf('dossier.update')).toBeGreaterThanOrEqual(0);
     expect(apply.indexOf('dossier.update')).toBeLessThan(apply.indexOf('syncConversionFieldWithMode'));
     expect(view).toContain('nicheConversionId = storedNicheConversionCard(dossier.read().niche)');
+    expect(view).not.toContain('for (const preset of NICHE_PRESETS)');
+    expect(view).not.toContain('preset-card__range');
     expect(
       listNichePresets().every(
         (preset) =>
