@@ -44,7 +44,7 @@ a {
 }
 
 .meta {
-  font: 400 11px/1.5 var(--mono);
+  font: 400 14px/1.5 var(--mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
@@ -372,7 +372,7 @@ a {
 .tool-nav__tab.step .meta {
   display: block;
   margin-bottom: 6px;
-  font: 400 11px/1.5 var(--mono);
+  font: 400 14px/1.5 var(--mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1017,7 +1017,7 @@ a {
 
 .finish-card__label {
   margin: 0;
-  font: 400 11px/1.5 var(--mono);
+  font: 400 14px/1.5 var(--mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
@@ -1839,7 +1839,7 @@ a.action-btn.action-btn--quiet {
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1;
   color: var(--text-muted);
@@ -2052,7 +2052,7 @@ a:focus-visible {
 
 .preset-card__range {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.875rem;
   color: var(--text-muted);
 }
 
@@ -2457,7 +2457,7 @@ a:focus-visible {
   gap: 8px;
   flex-wrap: wrap;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin-bottom: 10px;
@@ -2476,7 +2476,7 @@ a:focus-visible {
 .stamp {
   display: inline-block;
   margin-top: 12px;
-  font: 500 11px/1 var(--mono);
+  font: 500 14px/1.2 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text);
@@ -2932,7 +2932,7 @@ a:focus-visible {
   padding: 0 8px;
   border-radius: var(--r-pill);
   border: 1px solid var(--line-strong);
-  font: 400 11px/1 var(--mono);
+  font: 400 14px/1 var(--mono);
   color: var(--text-2);
 }
 
