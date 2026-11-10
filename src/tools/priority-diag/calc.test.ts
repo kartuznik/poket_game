@@ -325,11 +325,20 @@ describe('resolvePriority', () => {
     expect(tieQuestion(3)).toContain('Что сгорит первым');
   });
 
-  it('renders the shortened screen heading without the redundant Диагностика prefix (Q27)', () => {
+  it('renders the screen heading as «Что первым?» without splitting the word (Q27b)', () => {
     const viewSource = readFileSync(
       resolve(dirname(fileURLToPath(import.meta.url)), './view.ts'),
       'utf8',
     );
-    expect(viewSource).toContain("title.textContent = 'Что автоматизировать первым'");
+    expect(viewSource).toContain("title.textContent = 'Что первым?'");
+    expect(viewSource).not.toContain('Что автоматизировать первым');
+    const css = readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), '../../styles/main.css'),
+      'utf8',
+    );
+    const titleRule = css.slice(css.indexOf('.tool-card__title {'), css.indexOf('.tool-card__subtitle'));
+    expect(titleRule).toContain('overflow-wrap: normal');
+    expect(titleRule).not.toContain('overflow-wrap: break-word');
+    expect(titleRule).not.toContain('overflow-wrap: anywhere');
   });
 });
