@@ -692,7 +692,7 @@ export function renderRevenueRiskTool(
   whatIf.className = 'what-if';
   const whatIfTitle = document.createElement('h3');
   whatIfTitle.className = 'what-if__title';
-  whatIfTitle.textContent = 'Что если первый ответ — бот';
+  whatIfTitle.textContent = 'А если первым отвечает бот?';
   const whatIfCaption = document.createElement('p');
   whatIfCaption.className = 'what-if__caption';
   whatIfCaption.textContent = 'Доля потерь, которую закроет бот';
