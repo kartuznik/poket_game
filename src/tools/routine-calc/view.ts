@@ -568,7 +568,7 @@ export function renderRoutineCalcTool(
   const earlyReportBtn = document.createElement('button');
   earlyReportBtn.type = 'button';
   earlyReportBtn.className = 'early-report-link';
-  earlyReportBtn.textContent = 'или посмотреть итоги сейчас';
+  earlyReportBtn.textContent = 'Сразу к итогам →';
   actions.append(copyBtn, saveBtn);
 
   const toast = document.createElement('p');
