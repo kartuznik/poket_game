@@ -83,7 +83,8 @@ export const TOOLS_CATALOG: Readonly<Record<ToolId, ToolMeta>> = {
     id: 'audit-finish',
     shortTitle: 'Сводка',
     title: 'Готово. Вот ваши цифры',
-    subtitle: 'Цифры, которые вы подтвердили. Их можно скопировать и отправить Ефиму.',
+    subtitle:
+      'Цифры, которые вы подтвердили. Их можно скопировать и отправить Ефиму — автору расчёта (@_kartuzzz в Threads и @kartuznik в Telegram).',
     badge: 'После четырёх инструментов',
     inputLabel: 'Сводка',
     inputUnit: '',

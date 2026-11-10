@@ -176,6 +176,7 @@ describe('share destinations', () => {
     expect(openedBy('copyBtn')).toBe('THREADS_PROFILE_URL');
     expect(source).not.toContain('t.me/_kartuzzz');
     expect(source).not.toContain('threads.com/@kartuznik');
+    expect(source).toContain('Обсудить цифры с Ефимом — автором расчёта (@_kartuzzz)');
   });
 });
 

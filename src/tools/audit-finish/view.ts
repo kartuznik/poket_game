@@ -459,7 +459,7 @@ export function renderAuditFinish(
   share.className = 'share-brand';
   const shareTitle = document.createElement('h3');
   shareTitle.className = 'share-brand__title';
-  shareTitle.textContent = 'Обсудить цифры с Ефимом';
+  shareTitle.textContent = 'Обсудить цифры с Ефимом — автором расчёта (@_kartuzzz)';
   const copyBtn = document.createElement('button');
   copyBtn.type = 'button';
   copyBtn.className = 'btn share-brand__btn share-brand__btn--threads';
