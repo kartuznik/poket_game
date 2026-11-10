@@ -151,7 +151,7 @@ describe('niche presets', () => {
     expect(nichePromptKind(['10', '', ''])).toBe('quiet');
     expect(nichePromptKind(['', '40', ''])).toBe('quiet');
     expect(NICHE_ACCENT_TITLE).toBe('Цифр под рукой нет? Возьмите пример ниши.');
-    expect(NICHE_ACCENT_TEXT).toContain('сценарное допущение');
+    expect(NICHE_ACCENT_TEXT).toContain('долю поздних ответов');
     expect(NICHE_ACCENT_BUTTON).toBe('Показать пример ниши');
     expect(NICHE_QUIET_BUTTON).toBe('Подставить значения ниши');
   });

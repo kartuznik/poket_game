@@ -28,7 +28,7 @@ export const NICHE_CAPTION = 'значение ниши, сценарное до
 
 export const NICHE_ACCENT_TITLE = 'Цифр под рукой нет? Возьмите пример ниши.';
 export const NICHE_ACCENT_TEXT =
-  'Подставим обращения, опоздания и чек. Это сценарное допущение, не ваш замер.';
+  'Подставим обращения, долю поздних ответов и средний чек — потом замените своими';
 export const NICHE_ACCENT_BUTTON = 'Показать пример ниши';
 export const NICHE_QUIET_BUTTON = 'Подставить значения ниши';
 
