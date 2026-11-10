@@ -447,7 +447,7 @@ export function renderRoutineCalcTool(
     const total = document.createElement('p');
     total.className = 'routine-breakdown__total';
     total.textContent =
-      model.totalHours === null ? '' : `Итого ${formatWorkHours(model.totalHours)}`;
+      model.totalHours === null ? '' : `Итого ${formatWorkHours(model.totalHours)} в месяц`;
     host.append(total);
     if (model.manualSwitch) {
       const button = document.createElement('button');
