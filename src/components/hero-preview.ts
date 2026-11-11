@@ -208,7 +208,7 @@ export function createHeroPreview(options: {
     chipGroup.append(moreWrap);
   }
 
-  // 2. Caption «Пример · <ниша> · сценарное допущение»
+  // 2. Caption «Пример · <ниша> · примерные цифры»
   const figMeta = document.createElement('div');
   figMeta.className = 'meta figure__caption';
   figMeta.textContent = currentModel.caption;
