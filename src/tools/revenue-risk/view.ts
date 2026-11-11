@@ -424,12 +424,10 @@ export function renderRevenueRiskTool(
   nicheCardTitle.className = 'preset-card__title';
   const nicheCardConv = document.createElement('span');
   nicheCardConv.className = 'preset-card__conv';
-  const nicheCardCaption = document.createElement('span');
-  nicheCardCaption.className = 'preset-card__desc';
   const nicheCardTop = document.createElement('span');
   nicheCardTop.className = 'preset-card__top';
   nicheCardTop.append(nicheCardTitle, nicheCardConv);
-  nicheCard.append(nicheCardTop, nicheCardCaption);
+  nicheCard.append(nicheCardTop);
   presetsGrid.append(nicheCard);
 
   presetsWrap.append(scenarioNote, presetsGrid);
@@ -818,8 +816,6 @@ export function renderRevenueRiskTool(
     nicheCardTitle.textContent = nicheConversionCardTitle(niche);
     nicheCardConv.textContent = '';
     nicheCardConv.hidden = true;
-    nicheCardCaption.textContent = '';
-    nicheCardCaption.hidden = true;
   }
 
   function getActiveConversionRaw(): string {

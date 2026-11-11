@@ -230,9 +230,6 @@ export function renderRoutineCalcTool(
   let tableHost: HTMLDivElement | null = null;
   let tableError: HTMLParagraphElement | null = null;
   let tableSignature = '';
-  const checklistCaption = document.createElement('p');
-  checklistCaption.className = 'field-note';
-  checklistCaption.hidden = true;
 
   function presetLine(id: RoutinePresetId) {
     const preset = getRoutinePresetById(id);
@@ -281,8 +278,6 @@ export function renderRoutineCalcTool(
     const matched = nichePresetsActive();
     ownNumbersBtn?.setAttribute('aria-pressed', String(customEntry && presetIds.length === 0));
     if (ownNumbersBtn) ownNumbersBtn.hidden = matched;
-    checklistCaption.hidden = true;
-    checklistCaption.textContent = '';
     const lines: Record<string, { operations: string; minutes: string }> = {};
     for (const id of presetIds) lines[id] = lineOf(id);
     const detail = routineDetailModel({
@@ -463,7 +458,7 @@ export function renderRoutineCalcTool(
 
   const presetStep = document.createElement('div');
   presetStep.className = 'step-panel';
-  presetStep.append(checklistCaption, presetsGrid, ownNumbersBtn);
+  presetStep.append(presetsGrid, ownNumbersBtn);
   cardsHost = document.createElement('div');
   cardsHost.className = 'routine-breakdown';
   cardsHost.hidden = true;
