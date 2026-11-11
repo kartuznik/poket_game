@@ -350,7 +350,7 @@ export function renderAuditFinish(
       item.className = 'week-plan__item';
       const mark = document.createElement('span');
       mark.className = 'week-plan__index';
-      mark.textContent = String(index + 1);
+      mark.textContent = String(index + 1).padStart(2, '0');
       const text = document.createElement('p');
       text.className = 'week-plan__text';
       text.textContent = step.text;
@@ -358,7 +358,7 @@ export function renderAuditFinish(
       planList.append(item);
     });
     plan.append(planTitle, planList);
-    card.append(plan);
+    dashboard.append(plan);
   }
 
   if (summary.hasData) {
