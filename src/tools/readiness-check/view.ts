@@ -1,7 +1,7 @@
 import { createFieldHeading } from '../../components/field-heading';
 import { createResultBanner } from '../../components/result-banner';
 import { appendPriorContext } from '../../components/prior-context';
-import { bindHelpTipHover, releaseHelpTipsWithin } from '../../components/tooltip';
+import { releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
@@ -142,9 +142,8 @@ export function renderReadinessCheckTool(
       scale.append(button);
     }
 
-    const heading = createFieldHeading(scale.id, item.title, '', item.help, () => scale);
-    bindHelpTipHover(heading.tip, heading.row);
-    block.append(heading.row, scale);
+    const heading = createFieldHeading(scale.id, item.title, '');
+    block.append(heading, scale);
     groupPanel.append(block);
   }
 

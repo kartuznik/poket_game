@@ -1,16 +1,13 @@
-import { createHelpTip } from './tooltip';
-
 /**
- * Label row with a separate "?" button.
- * The button stays outside the <label> so a tap on the title still focuses the field.
+ * Label row. The optional note sits under the label, in reading order.
+ * There is no separate "?" control.
  */
 export function createFieldHeading(
   inputId: string,
   title: string,
   unit: string,
-  helpText: string,
-  avoid: () => HTMLElement | null,
-): { readonly row: HTMLDivElement; readonly tip: HTMLButtonElement } {
+  note?: string,
+): HTMLElement {
   const row = document.createElement('div');
   row.className = 'field-label';
 
@@ -19,12 +16,18 @@ export function createFieldHeading(
   label.htmlFor = inputId;
   label.textContent = title;
 
-  const tip = createHelpTip(helpText, { avoid });
-
   const unitEl = document.createElement('span');
   unitEl.className = 'field-unit';
   unitEl.textContent = unit;
 
-  row.append(label, tip, unitEl);
-  return { row, tip };
+  row.append(label, unitEl);
+  if (!note) return row;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'field-copy';
+  const hint = document.createElement('p');
+  hint.className = 'field-hint';
+  hint.textContent = note;
+  wrap.append(row, hint);
+  return wrap;
 }

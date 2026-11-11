@@ -26,9 +26,6 @@ import {
 } from './calc';
 import type { PriorityScoreDraft } from '../../lib/dossier';
 
-const PAIN_HELP =
-  '1 — почти не болит, 5 — болит сильно. Эта цифра записывается сразу в частоту, время и цену ошибки.';
-
 function formatScore(score: number): string {
   return Number.isInteger(score) ? String(score) : score.toFixed(1).replace('.', ',');
 }
@@ -131,17 +128,11 @@ export function renderPriorityDiagTool(
 
   const stepPanel = document.createElement('div');
   stepPanel.className = 'step-panel';
-  const scaleHeader = createFieldHeading(
-    'pd-inquiries-pain',
-    'Что болит сильнее?',
-    '1–5',
-    PAIN_HELP,
-    () => stepPanel,
-  );
+  const scaleHeader = createFieldHeading('pd-inquiries-pain', 'Что болит сильнее?', '1–5');
   const hint = document.createElement('p');
   hint.className = 'field-hint';
   hint.textContent = '1 — терпимо, 5 — горит';
-  stepPanel.append(scaleHeader.row, hint);
+  stepPanel.append(scaleHeader, hint);
 
   for (const process of PRIORITY_PROCESSES) {
     const card = document.createElement('article');

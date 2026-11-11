@@ -2,7 +2,7 @@ import { createFieldHeading } from '../../components/field-heading';
 import { mountNicheMenu } from '../../components/niche-menu';
 import { createResultBanner } from '../../components/result-banner';
 import { appendPriorContext } from '../../components/prior-context';
-import { createHelpTip, releaseHelpTipsWithin } from '../../components/tooltip';
+import { releaseHelpTipsWithin } from '../../components/tooltip';
 import { createWizard } from '../../components/wizard';
 import { showStatusToast } from '../../components/toast';
 import { copyTextToClipboard } from '../../lib/clipboard';
@@ -47,18 +47,10 @@ import {
   shareFieldError,
 } from './steps';
 
-const HELP = {
-  operations:
-    'Сколько раз в неделю вы делаете эту операцию. Звонок, сообщение, запись или строка в таблице — один раз считается одной операцией.',
-  minutes:
-    'Сколько минут занимает один такой раз, от начала до конца. Если обычно 5–10 минут, поставьте своё обычное время, а не самый долгий случай.',
-  rate:
-    'Сколько стоит ваш час. Пустое поле оставляет расчёт в часах и рабочих днях, без рублей.\n\nНоль — это указанная ставка: экономия в рублях будет нулевой.',
-  automation:
-    'Какую долю этих операций можно отдать шаблону или боту. 0% — всё остаётся руками, 100% — операция уходит целиком. Часы и рубли экономии считаются от этой доли.',
-  preset:
-    'Подставляет условный пример для этого вида работы: сколько раз в неделю, сколько минут и какую долю можно отдать автоматизации. Ставку не трогает. Цифры можно сразу заменить.',
-} as const;
+const OPERATIONS_NOTE = 'Один звонок, сообщение или запись — одна операция.';
+const MINUTES_NOTE = 'Обычное время одного раза, не самый долгий случай.';
+const SHARE_NOTE = '0% — всё руками, 100% — операция уходит целиком.';
+const RATE_NOTE = 'Пустое поле оставляет расчёт в часах, без рублей.';
 
 const WORKDAY_FORMS = ['рабочий день', 'рабочих дня', 'рабочих дней'] as const;
 
@@ -344,7 +336,7 @@ export function renderRoutineCalcTool(
     presetButtons.set(preset.id, button);
     const wrap = document.createElement('div');
     wrap.className = 'preset-card-wrap';
-    wrap.append(button, createHelpTip(HELP.preset, { avoid: () => button }));
+    wrap.append(button);
     presetsGrid.append(wrap);
   }
 
@@ -365,7 +357,7 @@ export function renderRoutineCalcTool(
   operationsGroup.className = 'field-group';
   const operationsNote = nicheNote();
   operationsGroup.append(
-    createFieldHeading('rc-ops-input', 'Операций в неделю', 'раз/нед', HELP.operations, () => operationsInput).row,
+    createFieldHeading('rc-ops-input', 'Операций в неделю', 'раз/нед', OPERATIONS_NOTE),
     operationsInput,
     operationsNote,
     operationsError,
@@ -375,7 +367,7 @@ export function renderRoutineCalcTool(
   minutesGroup.className = 'field-group';
   const minutesNote = nicheNote();
   minutesGroup.append(
-    createFieldHeading('rc-minutes-input', 'Минут на операцию', 'мин', HELP.minutes, () => minutesInput).row,
+    createFieldHeading('rc-minutes-input', 'Минут на операцию', 'мин', MINUTES_NOTE),
     minutesInput,
     minutesNote,
     minutesError,
@@ -384,7 +376,7 @@ export function renderRoutineCalcTool(
   const rateGroup = document.createElement('div');
   rateGroup.className = 'field-group';
   rateGroup.append(
-    createFieldHeading('rc-rate-input', 'Ставка', '₽/час', HELP.rate, () => rateInput).row,
+    createFieldHeading('rc-rate-input', 'Ставка', '₽/час', RATE_NOTE),
     rateInput,
     rateError,
   );
@@ -392,7 +384,7 @@ export function renderRoutineCalcTool(
   const shareGroup = document.createElement('div');
   shareGroup.className = 'field-group';
   shareGroup.append(
-    createFieldHeading('rc-share-input', 'Доля автоматизации', '0–100%', HELP.automation, () => shareRow).row,
+    createFieldHeading('rc-share-input', 'Доля автоматизации', '0–100%', SHARE_NOTE),
     shareRow,
     shareError,
   );

@@ -20,7 +20,7 @@ describe('Q17b scenario wording', () => {
     expect(footer).toContain(
       'Сценарное допущение, не замер вашего бизнеса. Счёт идёт в браузере, автор цифры не получает.',
     );
-    expect(read('src/tools/revenue-risk/view.ts')).toContain('«Пример по нише»');
+    expect(read('src/tools/revenue-risk/view.ts')).toContain("textContent = 'Пример по нише'");
     expect(read('src/tools/revenue-risk/calc.ts')).toContain('Примерные цифры, не замер вашего бизнеса');
     expect(read('src/lib/niche-presets.ts')).toContain("return nicheId ? `Ниша: ${nicheTitle(nicheId)}` : 'Моя конверсия'");
   });

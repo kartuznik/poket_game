@@ -738,19 +738,27 @@ a {
   scroll-margin-block: 28px;
 }
 
+.field-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
 .field-label {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2px;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 8px;
   font-size: 0.9375rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .field-label__text {
+  flex: 1;
   min-width: 0;
-  max-width: calc(100% - 52px);
+  max-width: none;
   font-weight: 700;
   overflow-wrap: break-word;
 }
@@ -2039,7 +2047,7 @@ a:focus-visible {
 .preset-card {
   width: 100%;
   min-height: 44px;
-  padding: 10px 40px 10px 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
