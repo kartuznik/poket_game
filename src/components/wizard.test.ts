@@ -2,7 +2,12 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
-import { placeRevealedResult, shouldCollapseToResult, type RevealedResultHost } from './wizard';
+import {
+  placeRevealedResult,
+  shouldCollapseToResult,
+  shouldTransferRevealFocus,
+  type RevealedResultHost,
+} from './wizard';
 
 const wizardSource = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), './wizard.ts'), 'utf8');
 
@@ -99,6 +104,50 @@ describe('placeRevealedResult', () => {
       expect(source).toContain('createResultBanner()');
       expect(source).toContain('onRecalculate:');
     }
+  });
+
+  it.each([
+    ['revenue-risk', 'мышиный клик по Показать расчёт'],
+    ['revenue-risk', 'Enter из поля'],
+    ['revenue-risk', 'Enter по сфокусированной навкнопке'],
+    ['routine-calc', 'мышиный клик по Показать расчёт'],
+    ['routine-calc', 'Enter из поля'],
+    ['routine-calc', 'Enter по сфокусированной навкнопке'],
+    ['priority-diag', 'последний выбор шкалы'],
+    ['priority-diag', 'Space по choice-scale__btn'],
+    ['readiness-check', 'последний ответ'],
+    ['readiness-check', 'Space по Да'],
+    ['readiness-check', 'клик по Частично'],
+  ])('%s after %s focuses the first visible control inside the card', (_tool, _trigger) => {
+    expect(shouldTransferRevealFocus(true, true)).toBe(true);
+    const hidden = control(true);
+    const edit = control(false);
+    const scrollIntoView = vi.fn();
+    const card: RevealedResultHost = {
+      hidden: false,
+      querySelectorAll: () => [hidden, edit],
+      scrollIntoView,
+    };
+    placeRevealedResult(card, 'auto');
+    expect(edit.focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(hidden.focus).not.toHaveBeenCalled();
+  });
+
+  it('does not move focus while the result card stays hidden', () => {
+    expect(shouldTransferRevealFocus(true, false)).toBe(false);
+    expect(shouldTransferRevealFocus(false, false)).toBe(false);
+    expect(shouldTransferRevealFocus(false, true)).toBe(false);
+  });
+
+  it('transfers reveal focus even when paint does not ask to move focus', () => {
+    const paint = wizardSource.slice(
+      wizardSource.indexOf('function paint(moveFocus: boolean)'),
+      wizardSource.indexOf('editBtn.addEventListener'),
+    );
+    const transfer = paint.indexOf('shouldTransferRevealFocus(wasHidden, nowVisible)');
+    const gate = paint.indexOf('if (!moveFocus) return;');
+    expect(transfer).toBeGreaterThan(-1);
+    expect(gate).toBeGreaterThan(transfer);
   });
 
   it('uses the instant reveal helper when the result card opens', () => {

@@ -52,6 +52,15 @@ export function shouldCollapseToResult(input: ResultRevealInput): boolean {
   return !(input.inputsOpen || hold);
 }
 
+/**
+ * A result card that has just become visible takes focus, whichever paint
+ * opened it. Choice scales reveal inside paint(false); the rate step and the
+ * revenue step reveal inside paint(true). Both land on the same first control.
+ */
+export function shouldTransferRevealFocus(wasHidden: boolean, nowVisible: boolean): boolean {
+  return wasHidden && nowVisible;
+}
+
 export function placeRevealedResult(card: RevealedResultHost, behavior: ScrollBehavior): void {
   if (card.hidden) return;
   const target = firstShownField(
@@ -263,6 +272,8 @@ export function createWizard(options: {
   }
 
   function paint(moveFocus: boolean): void {
+    const cardBefore = answerCard();
+    const wasHidden = cardBefore === null || cardBefore.hidden;
     options.panels.forEach((panel, index) => {
       const isCurrent = index === step - 1;
       panel.hidden = !isCurrent;
@@ -294,13 +305,18 @@ export function createWizard(options: {
     next.textContent =
       step === count ? (collapsed ? options.finishLabel : 'Показать расчёт') : 'Дальше';
     resultWasShown = collapsed;
+    const card = answerCard();
+    const nowVisible = card !== null && !card.hidden;
+    if (shouldTransferRevealFocus(wasHidden, nowVisible) && card) {
+      placeRevealedResult(card, 'auto');
+      return;
+    }
     if (!moveFocus) return;
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 'auto'
       : 'smooth';
     const panel = options.panels[step - 1];
     if (collapsed) {
-      const card = answerCard();
       if (card) placeRevealedResult(card, 'auto');
       return;
     }
