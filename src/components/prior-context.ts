@@ -22,10 +22,9 @@ export interface PriorContextLine {
   readonly clauses: readonly string[];
 }
 
-export const PRIOR_CONTEXT_TITLE = 'Данные из предыдущего шага';
+export const PRIOR_CONTEXT_TITLE = 'С прошлых шагов';
 
-export const PRIOR_CONTEXT_NOTE =
-  'Эти цифры мы посчитали на прошлом шаге. Они помогут точнее оценить следующий расчёт.';
+export const PRIOR_CONTEXT_NOTE = 'Для ориентира, не для нового ввода.';
 
 function finite(value: number | null | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value);

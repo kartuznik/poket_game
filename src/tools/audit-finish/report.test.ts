@@ -8,7 +8,7 @@ import {
   buildTelegramSummary,
 } from './report';
 import type { ReadinessBridgeSnapshot, RoutineBridgeSnapshot } from '../../lib/types';
-import { QUIET_TEXT, composePriorityResults } from '../priority-diag/calc';
+import { QUIET_SHARE_TEXT, composePriorityResults } from '../priority-diag/calc';
 import type { ReportSources } from '../final-report/summary';
 import type {
   PriorityBridgeSnapshot,
@@ -221,7 +221,8 @@ describe('telegram summary', () => {
       readiness: null,
     });
     expect(quiet.split('\n').length).toBeLessThanOrEqual(6);
-    expect(quiet.startsWith(QUIET_TEXT)).toBe(true);
+    expect(quiet.startsWith(QUIET_SHARE_TEXT)).toBe(true);
+    expect(quiet).not.toContain('не выше единицы');
     expect(quiet).not.toContain('Первым');
     expect(quiet).not.toContain('Заполните хотя бы один инструмент');
     expect(three).not.toContain('Чек-лист:');

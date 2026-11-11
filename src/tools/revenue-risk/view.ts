@@ -66,6 +66,8 @@ import type { UncertaintyInputId, UncertaintyProfile, UncertaintyTag } from '../
 import { answersAutomationPercent } from '../routine-calc/calc';
 
 const LEADS_NOTE = 'Сообщение, звонок и заявка — одно обращение.';
+const LATE_NOTE =
+  'Доля обращений с поздним ответом или без ответа. Порог задаёте вы: хоть 15 минут, хоть час.';
 
 function fieldHeading(
   inputId: string,
@@ -333,6 +335,7 @@ export function renderRevenueRiskTool(
     'rr-late-input',
     'Доля поздних или пропущенных ответов',
     '0–100%',
+    LATE_NOTE,
   );
 
   const lateError = document.createElement('p');

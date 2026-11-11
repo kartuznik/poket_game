@@ -180,7 +180,15 @@ export interface PriorityMoney {
 }
 
 export const QUIET_TEXT =
+  'Ни один процесс не выше единицы. Ранга нет. Смотрите риск выручки и часы рутины.';
+
+/** Clipboard, Telegram, Threads and the HTML file keep the previous sentence. */
+export const QUIET_SHARE_TEXT =
   'Ни один процесс не болит сильнее единицы. Ранга нет. Смотрите риск выручки и часы рутины.';
+
+export function keepQuietShareText(text: string): string {
+  return text.split(QUIET_TEXT).join(QUIET_SHARE_TEXT);
+}
 
 /** All six scores at 1 are quiet. One strict maximum is a leader. Any other shared maximum is a tie. */
 export function classifyBoard(

@@ -2,7 +2,7 @@ import { metricsFromDossier, type BusinessDossier, type MetricSnapshot } from '.
 import { formatNumber, formatWorkHours } from '../../lib/format';
 import { buildProgress, progressChart } from '../audit-finish/progress';
 import { buildWeekPlan } from '../audit-finish/week-plan';
-import { QUIET_TEXT, confirmedPriorityLeader } from '../priority-diag/calc';
+import { QUIET_SHARE_TEXT, confirmedPriorityLeader, keepQuietShareText } from '../priority-diag/calc';
 import { calculateRoutine, getRoutinePresetById, routineItems } from '../routine-calc/calc';
 import {
   computeCorridor,
@@ -228,7 +228,7 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
     const leader = confirmedPriorityLeader(priority);
     const state =
       priority.results.board === 'quiet'
-        ? priority.results.resolutionReason || QUIET_TEXT
+        ? QUIET_SHARE_TEXT
         : leader
           ? `Лидер: ${leader.title}`
           : 'Лидер не выбран';
@@ -277,9 +277,11 @@ export function buildHtmlReport(dossier: BusinessDossier, now = Date.now()): str
           .join('')}</ol></section>`;
 
   const thesis = hasData
-    ? buildThesisPieces(sources)
-        .map((piece) => (piece.strong ? `<strong>${esc(piece.text)}</strong>` : esc(piece.text)))
-        .join('')
+    ? keepQuietShareText(
+        buildThesisPieces(sources)
+          .map((piece) => (piece.strong ? `<strong>${esc(piece.text)}</strong>` : esc(piece.text)))
+          .join(''),
+      )
     : esc(EMPTY_REPORT_TEXT);
 
   return `<!DOCTYPE html>

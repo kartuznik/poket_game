@@ -88,8 +88,8 @@ function routineLine(hours: number, saved: number, money: number | null) {
 
 describe('buildPriorContextLines', () => {
   it('names the block as figures carried over from the previous tool', () => {
-    expect(PRIOR_CONTEXT_TITLE).toBe('Данные из предыдущего шага');
-    expect(PRIOR_CONTEXT_NOTE).toContain('на прошлом шаге');
+    expect(PRIOR_CONTEXT_TITLE).toBe('С прошлых шагов');
+    expect(PRIOR_CONTEXT_NOTE).toBe('Для ориентира, не для нового ввода.');
   });
 
   it('shows only saved revenue on the routine step', () => {

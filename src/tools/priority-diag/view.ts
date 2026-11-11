@@ -13,6 +13,7 @@ import type { ToolStubRenderContext } from '../stub-factory';
 import { chipBoardModel } from './chips';
 import {
   PRIORITY_PROCESSES,
+  QUIET_SHARE_TEXT,
   QUIET_TEXT,
   classifyBoard,
   composePriorityResults,
@@ -45,7 +46,7 @@ export function buildPriorityShareText(
     .join('\n');
   const lead =
     board.kind === 'quiet'
-      ? QUIET_TEXT
+      ? QUIET_SHARE_TEXT
       : board.kind === 'tied' && resolution.source === 'open'
         ? tieQuestion(board.peers.length)
         : resolution.reason;
@@ -143,7 +144,7 @@ export function renderPriorityDiagTool(
     const scale = document.createElement('div');
     scale.className = 'choice-scale';
     scale.setAttribute('role', 'group');
-    scale.setAttribute('aria-label', `${process.title}: насколько это больно`);
+    scale.setAttribute('aria-label', `${process.title}: оценка`);
     const current = selectedPain(scores[process.id]);
 
     for (let value = 1; value <= 5; value += 1) {
@@ -152,7 +153,7 @@ export function renderPriorityDiagTool(
       button.className = 'choice-scale__btn';
       button.textContent = String(value);
       button.setAttribute('aria-pressed', String(current === value));
-      button.setAttribute('aria-label', `${process.title}, насколько это больно: ${value}`);
+      button.setAttribute('aria-label', `${process.title}, оценка: ${value}`);
       button.addEventListener('click', () => {
         scores[process.id] = scoresFromPain(value);
         for (const child of scale.querySelectorAll('button')) {

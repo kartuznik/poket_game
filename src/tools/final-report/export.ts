@@ -7,7 +7,7 @@ import {
   isAllPrecise,
 } from '../revenue-risk/calc';
 import { READINESS_ITEMS } from '../readiness-check/calc';
-import { confirmedPriorityLeader } from '../priority-diag/calc';
+import { confirmedPriorityLeader, keepQuietShareText } from '../priority-diag/calc';
 import { calculateRoutine, getRoutinePresetById, routineItems } from '../routine-calc/calc';
 import type { MetricSnapshot } from '../../lib/dossier';
 import { conversionModeCsvLabel, nicheTitle, type BusinessNicheId } from '../../lib/niche-presets';
@@ -36,7 +36,7 @@ export function buildEfimReport(sources: ReportSources): string {
   const summary = buildFinalSummary(sources);
   if (!summary.hasData) return EMPTY_REPORT_TEXT;
 
-  const lines = [summary.lead, ''];
+  const lines = [keepQuietShareText(summary.lead), ''];
   for (const block of summary.blocks) {
     lines.push(block.title);
     lines.push(block.text);

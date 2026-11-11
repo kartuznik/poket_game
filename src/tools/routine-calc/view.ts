@@ -49,7 +49,7 @@ import {
 
 const OPERATIONS_NOTE = 'Один звонок, сообщение или запись — одна операция.';
 const MINUTES_NOTE = 'Обычное время одного раза, не самый долгий случай.';
-const SHARE_NOTE = '0% — всё руками, 100% — операция уходит целиком.';
+const SHARE_NOTE = '0% — всё руками, 100% — операция уходит целиком. Часы и рубли считаются от этой доли.';
 const RATE_NOTE = 'Пустое поле оставляет расчёт в часах, без рублей.';
 
 const WORKDAY_FORMS = ['рабочий день', 'рабочих дня', 'рабочих дней'] as const;
@@ -754,7 +754,7 @@ export function renderRoutineCalcTool(
     metrics.replaceChildren(
       metric('Можно вернуть', `${formatWorkHours(result.savedHoursPerMonth)}/мес`),
       metric('Экономия в год', formatWorkDays(result.savedWorkDaysPerYear), 'metric-box--year-days'),
-      metric('Экономия', money),
+      metric('В рублях', money),
     );
 
     const steps = [
@@ -767,7 +767,7 @@ export function renderRoutineCalcTool(
         : `Экономия часов = часы × ${shareRaw}% = ${formatWorkHours(result.savedHoursPerMonth)}.`,
       result.savedMoneyPerMonth === null
         ? EMPTY_RATE_HINT
-        : `Экономия в рублях = часы экономии × ставка = ${formatRubles(result.savedMoneyPerMonth)} в месяц.`,
+        : `Рубли = сохранённые часы × ставка = ${formatRubles(result.savedMoneyPerMonth)} в месяц.`,
     ];
     const formula = document.createElement('ol');
     formula.className = 'formula-list';

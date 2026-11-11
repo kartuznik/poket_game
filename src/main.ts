@@ -241,7 +241,7 @@ function mountApp(root: HTMLElement): void {
     'Сценарное допущение, не замер вашего бизнеса. Счёт идёт в браузере, автор цифры не получает.';
   const finishLink = document.createElement('a');
   finishLink.href = '#audit-finish';
-  finishLink.textContent = 'Итоги аудита';
+  finishLink.textContent = 'Итоги';
   finishLink.addEventListener('click', (event) => {
     event.preventDefault();
     navigateToTool('audit-finish', true, undefined, true);

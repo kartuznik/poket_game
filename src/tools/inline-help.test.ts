@@ -34,7 +34,9 @@ describe('inline help lines', () => {
     expect(revenue).toContain('LEADS_NOTE');
     expect(routine).toContain("const OPERATIONS_NOTE = 'Один звонок, сообщение или запись — одна операция.'");
     expect(routine).toContain("const MINUTES_NOTE = 'Обычное время одного раза, не самый долгий случай.'");
-    expect(routine).toContain("const SHARE_NOTE = '0% — всё руками, 100% — операция уходит целиком.'");
+    expect(routine).toContain(
+      "const SHARE_NOTE = '0% — всё руками, 100% — операция уходит целиком. Часы и рубли считаются от этой доли.'",
+    );
     expect(routine).toContain("const RATE_NOTE = 'Пустое поле оставляет расчёт в часах, без рублей.'");
     expect(priority).toContain("hint.textContent = '1 — терпимо, 5 — горит'");
     expect(priority).not.toContain('почти не болит');

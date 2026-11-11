@@ -1,5 +1,5 @@
 import { formatRubles, formatWorkHours } from '../../lib/format';
-import { confirmedPriorityLeader } from '../priority-diag/calc';
+import { confirmedPriorityLeader, keepQuietShareText } from '../priority-diag/calc';
 import {
   EMPTY_REPORT_TEXT,
   buildFinalSummary,
@@ -90,7 +90,7 @@ export function buildAuditHandoff(
     return lines.join('\n');
   }
 
-  lines.push(summary.lead, '');
+  lines.push(keepQuietShareText(summary.lead), '');
   for (const block of summary.blocks) {
     lines.push(block.title);
     lines.push(block.text);
@@ -132,7 +132,7 @@ export function formatRemeasureBy(sources: ReportSources): string | null {
  */
 export function buildTelegramSummary(sources: ReportSources): string {
   const thesis = buildThesisPieces(sources);
-  const lines = [thesis.length > 0 ? thesisText(thesis) : EMPTY_REPORT_TEXT];
+  const lines = [thesis.length > 0 ? keepQuietShareText(thesisText(thesis)) : EMPTY_REPORT_TEXT];
   if (sources.routine && sources.revenue) {
     lines.push(`Ручная работа: ${formatWorkHours(sources.routine.results.hoursPerMonth)}`);
   }
