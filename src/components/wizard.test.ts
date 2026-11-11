@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
-import { placeRevealedResult, type RevealedResultHost } from './wizard';
+import { placeRevealedResult, shouldCollapseToResult, type RevealedResultHost } from './wizard';
 
 const wizardSource = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), './wizard.ts'), 'utf8');
 
@@ -48,6 +48,54 @@ describe('placeRevealedResult', () => {
     };
     placeRevealedResult(card, 'auto');
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['revenue-risk', { holdFields: false, fieldActive: true, cardHidden: true }],
+    ['routine-calc', { holdFields: true, fieldActive: true, cardHidden: true }],
+    ['priority-diag', { holdFields: false, fieldActive: false, cardHidden: true }],
+    ['readiness-check', { holdFields: false, fieldActive: false, cardHidden: false }],
+  ] as const)('collapses %s when Показать расчёт reveals the card', (_tool, flags) => {
+    expect(
+      shouldCollapseToResult({
+        step: 2,
+        count: 2,
+        revealResult: true,
+        inputsOpen: false,
+        hasCard: true,
+        ...flags,
+      }),
+    ).toBe(true);
+    expect(
+      shouldCollapseToResult({
+        step: 2,
+        count: 2,
+        revealResult: false,
+        inputsOpen: false,
+        hasCard: true,
+        holdFields: true,
+        fieldActive: true,
+        cardHidden: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('reveals after a fresh calculation and keeps hidden panels out of tab order', () => {
+    const show = wizardSource.slice(
+      wizardSource.indexOf('function showResult()'),
+      wizardSource.indexOf('const goAdjacent'),
+    );
+    expect(show.indexOf('options.onRecalculate?.()')).toBeLessThan(show.indexOf('paint(true)'));
+    expect(wizardSource).toContain('panel.inert = true');
+    const tools = ['revenue-risk', 'routine-calc', 'priority-diag', 'readiness-check'];
+    for (const tool of tools) {
+      const source = readFileSync(
+        resolve(dirname(fileURLToPath(import.meta.url)), '../tools', tool, 'view.ts'),
+        'utf8',
+      );
+      expect(source).toContain('createResultBanner()');
+      expect(source).toContain('onRecalculate:');
+    }
   });
 
   it('uses the instant reveal helper when the result card opens', () => {

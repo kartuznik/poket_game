@@ -28,6 +28,30 @@ export interface RevealedResultHost {
  * An instant scroll is required: a smooth one is cancelled when hiding the
  * step panel drops focus on the document, which leaves the reader at the top.
  */
+export interface ResultRevealInput {
+  readonly step: number;
+  readonly count: number;
+  readonly revealResult: boolean;
+  readonly holdFields: boolean;
+  readonly inputsOpen: boolean;
+  readonly fieldActive: boolean;
+  readonly hasCard: boolean;
+  readonly cardHidden: boolean;
+}
+
+/**
+ * «Показать расчёт» collapses the fields on every tool, including a routine
+ * rate step that was still holding its inputs. A choice scale collapses only
+ * once its result card is already on screen.
+ */
+export function shouldCollapseToResult(input: ResultRevealInput): boolean {
+  if (!input.hasCard || input.step !== input.count) return false;
+  if (input.revealResult) return true;
+  if (input.cardHidden) return false;
+  const hold = input.fieldActive ? true : input.holdFields;
+  return !(input.inputsOpen || hold);
+}
+
 export function placeRevealedResult(card: RevealedResultHost, behavior: ScrollBehavior): void {
   if (card.hidden) return;
   const target = firstShownField(
@@ -199,11 +223,30 @@ export function createWizard(options: {
     const answerVisible = answer !== null && !answer.hidden && step === count;
     if (step === count && fieldIsActive(panel) && !revealResult) holdFields = true;
 
+    const collapse = shouldCollapseToResult({
+      step,
+      count,
+      revealResult,
+      holdFields,
+      inputsOpen,
+      fieldActive: fieldIsActive(panel),
+      hasCard: answer !== null,
+      cardHidden: answer?.hidden ?? true,
+    });
+    if (collapse && answer && panel) {
+      if (revealResult) answer.hidden = false;
+      panel.hidden = true;
+      panel.inert = true;
+      if (editBtn.parentElement !== answer) answer.prepend(editBtn);
+      return true;
+    }
+
     const keepFields =
       step === count && panel !== undefined && !revealResult && (inputsOpen || holdFields);
 
     if (keepFields && panel) {
       panel.hidden = false;
+      panel.inert = false;
       if (answerVisible) {
         for (const extra of options.extras ?? []) extra.hidden = true;
       }
@@ -212,6 +255,7 @@ export function createWizard(options: {
 
     if (answerVisible && panel && answer) {
       panel.hidden = true;
+      panel.inert = true;
       if (editBtn.parentElement !== answer) answer.prepend(editBtn);
       return true;
     }
@@ -222,6 +266,7 @@ export function createWizard(options: {
     options.panels.forEach((panel, index) => {
       const isCurrent = index === step - 1;
       panel.hidden = !isCurrent;
+      panel.inert = !isCurrent;
       if (isCurrent) {
         const rows = panel.querySelectorAll<HTMLElement>(
           '.field-group, .process-card, .routine-table__row, .preset-card-wrap',
@@ -281,6 +326,7 @@ export function createWizard(options: {
   });
 
   function showResult(): void {
+    options.onRecalculate?.();
     inputsOpen = false;
     holdFields = false;
     revealResult = true;
