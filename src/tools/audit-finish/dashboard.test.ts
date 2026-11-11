@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { ReportSources } from '../final-report/summary';
 import type { ReadinessBridgeSnapshot, RevenueRiskBridgeSnapshot, RoutineBridgeSnapshot } from '../../lib/types';
 import { formatWorkHours } from '../../lib/format';
-import { buildDashboard, dashboardHoursTileValue } from './dashboard';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildDashboard } from './dashboard';
 
 const revenue = (risk: number): RevenueRiskBridgeSnapshot => ({
   toolId: 'revenue-risk',
@@ -83,14 +86,27 @@ describe('buildDashboard', () => {
     expect(cards[3]?.note).toBe('Есть пробелы');
   });
 
-  it('drops the hour noun from the finish tile only (Q09b)', () => {
-    expect(formatWorkHours(30.3)).toBe('30,3\u00A0часа');
-    expect(dashboardHoursTileValue(formatWorkHours(30.3))).toBe('30,3');
-    expect(dashboardHoursTileValue(formatWorkHours(5))).toBe('5');
-    expect(dashboardHoursTileValue('—')).toBe('—');
-    const cards = buildDashboard({ ...empty, revenue: revenue(3150), routine: routine(30.3) });
+  it('uses the approved short labels and keeps the hour unit on the tile', () => {
+    const cards = buildDashboard({
+      ...empty,
+      revenue: revenue(3150),
+      routine: routine(30.3),
+      readiness: readiness(6.5, 'Закройте пробелы'),
+    });
+    expect(cards.map((card) => card.label)).toEqual([
+      'Риск за мес',
+      'Вернуть за мес',
+      'Ручная работа',
+      'Чек-лист',
+    ]);
+    expect(cards[2]?.value).toBe('30,3\u00A0часа');
+    expect(cards[2]?.value).toBe(formatWorkHours(30.3));
     expect(cards[0]?.value).toContain('₽');
     expect(cards[1]?.value).toContain('₽');
-    expect(cards[2]?.value).toBe(formatWorkHours(30.3));
+    const view = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), './view.ts'), 'utf8');
+    const tile = view.slice(view.indexOf('finish-dashboard__grid'), view.indexOf('finish-dashboard__scenario'));
+    expect(tile).not.toContain('dashboardHoursTileValue');
+    expect(tile).toContain('value.textContent = item.value');
+    expect(tile).toContain('finish-card__note');
   });
 });

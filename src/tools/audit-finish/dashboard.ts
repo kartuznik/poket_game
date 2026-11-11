@@ -11,16 +11,10 @@ export interface DashboardCard {
 const UNMEASURED = 'не замерено';
 
 /**
- * The hours tile already says «Часы ручной работы», so the value is only the
- * number. Threads, Telegram, CSV and the tear-off stub keep formatWorkHours.
+ * Four confirmed metrics. Tile labels are the approved short set.
+ * Values keep their units, including the hour noun. Threads, Telegram,
+ * CSV, HTML and the tear-off stub read the same value strings.
  */
-export function dashboardHoursTileValue(formatted: string): string {
-  const breakAt = formatted.indexOf('\u00A0');
-  if (breakAt === -1) return formatted;
-  return formatted.slice(0, breakAt);
-}
-
-/** Four confirmed metrics. A missing tool is an em dash, never a zero. */
 export function buildDashboard(sources: ReportSources): readonly DashboardCard[] {
   const revenue = sources.revenue;
   const routine = sources.routine;
@@ -28,25 +22,25 @@ export function buildDashboard(sources: ReportSources): readonly DashboardCard[]
   return [
     {
       id: 'risk',
-      label: 'Под риском за месяц',
+      label: 'Риск за мес',
       value: revenue ? formatRubles(revenue.results.revenueAtRiskMax) : '—',
       note: revenue ? '' : UNMEASURED,
     },
     {
       id: 'recoverable',
-      label: 'Можно вернуть за месяц',
+      label: 'Вернуть за мес',
       value: revenue ? formatRubles(revenue.results.recoverableRevenue) : '—',
       note: revenue ? '' : UNMEASURED,
     },
     {
       id: 'hours',
-      label: 'Часы ручной работы',
+      label: 'Ручная работа',
       value: routine ? formatWorkHours(routine.results.hoursPerMonth) : '—',
       note: routine ? '' : UNMEASURED,
     },
     {
       id: 'readiness',
-      label: 'Чек-лист из 9',
+      label: 'Чек-лист',
       value: readiness ? `${formatNumber(readiness.results.score)}/9` : '—',
       note: readiness ? readiness.results.bandLabel : UNMEASURED,
     },

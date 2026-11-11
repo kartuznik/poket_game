@@ -23,7 +23,7 @@ import {
   buildTelegramSummary,
 } from './report';
 import { scenarioLine } from '../../lib/niche-presets';
-import { buildDashboard, dashboardHoursTileValue } from './dashboard';
+import { buildDashboard } from './dashboard';
 import { priorityBoard, readinessRing } from './viz';
 import { buildInsights } from './insights';
 import { buildProgress, progressChart } from './progress';
@@ -286,21 +286,20 @@ export function renderAuditFinish(
     const label = document.createElement('h3');
     label.className = 'finish-card__label';
     label.textContent = item.label;
-    tile.append(label);
+    const slot = document.createElement('div');
+    slot.className = 'finish-card__slot';
     if (item.id === 'readiness' && sources.readiness) {
-      tile.append(readinessRingSvg(sources.readiness.results.score));
+      slot.append(readinessRingSvg(sources.readiness.results.score));
     } else {
       const value = document.createElement('p');
       value.className = 'finish-card__value';
-      value.textContent = item.id === 'hours' ? dashboardHoursTileValue(item.value) : item.value;
-      tile.append(value);
+      value.textContent = item.value;
+      slot.append(value);
     }
-    if (item.note) {
-      const note = document.createElement('p');
-      note.className = 'finish-card__note';
-      note.textContent = item.note;
-      tile.append(note);
-    }
+    const note = document.createElement('p');
+    note.className = 'finish-card__note';
+    note.textContent = item.note;
+    tile.append(label, slot, note);
     dashboardGrid.append(tile);
   }
   const scenario = document.createElement('p');
