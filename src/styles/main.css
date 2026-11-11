@@ -2338,6 +2338,20 @@ a:focus-visible {
   color: var(--text-primary);
 }
 
+/* The year-days line is one unbreakable string. Tighten tracking only while
+   its own cell is narrower than that string, so the 18px baseline of the
+   neighbouring result tiles stays put. */
+.result-card .metric-box--year-days {
+  container-type: inline-size;
+  container-name: year-days;
+}
+
+@container year-days (max-width: 180px) {
+  .result-card .metric-box--year-days .metric-box__value {
+    letter-spacing: -0.08em;
+  }
+}
+
 .metric-box--recoverable .metric-box__value {
   color: var(--text-accent);
 }

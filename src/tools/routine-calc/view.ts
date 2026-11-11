@@ -592,9 +592,9 @@ export function renderRoutineCalcTool(
     input.classList.toggle('field-input--invalid', Boolean(message));
   }
 
-  function metric(label: string, value: string): HTMLElement {
+  function metric(label: string, value: string, variant = ''): HTMLElement {
     const box = document.createElement('div');
-    box.className = 'metric-box';
+    box.className = variant === '' ? 'metric-box' : `metric-box ${variant}`;
     const labelEl = document.createElement('span');
     labelEl.className = 'metric-box__label';
     labelEl.textContent = label;
@@ -761,7 +761,7 @@ export function renderRoutineCalcTool(
         : `${formatRubles(result.savedMoneyPerMonth)}/мес`;
     metrics.replaceChildren(
       metric('Можно вернуть', `${formatWorkHours(result.savedHoursPerMonth)}/мес`),
-      metric('Экономия в год', formatWorkDays(result.savedWorkDaysPerYear)),
+      metric('Экономия в год', formatWorkDays(result.savedWorkDaysPerYear), 'metric-box--year-days'),
       metric('Экономия', money),
     );
 
