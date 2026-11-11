@@ -1533,6 +1533,10 @@ a.action-btn {
   padding: 0 0 12px;
 }
 
+.certainty-details:not([open]) > .certainty-details__body {
+  display: none;
+}
+
 #rr-how-calculated .info-details__body {
   border-top: 0;
   padding-inline: 0;
@@ -2410,6 +2414,10 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.info-details:not([open]) > .info-details__body {
+  display: none;
 }
 
 .formula-list {

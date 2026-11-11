@@ -87,6 +87,9 @@ describe('placeRevealedResult', () => {
     );
     expect(show.indexOf('options.onRecalculate?.()')).toBeLessThan(show.indexOf('paint(true)'));
     expect(wizardSource).toContain('panel.inert = true');
+    const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../styles/main.css'), 'utf8');
+    expect(css).toContain('.certainty-details:not([open]) > .certainty-details__body');
+    expect(css).toContain('.info-details:not([open]) > .info-details__body');
     const tools = ['revenue-risk', 'routine-calc', 'priority-diag', 'readiness-check'];
     for (const tool of tools) {
       const source = readFileSync(
