@@ -480,7 +480,7 @@ export function renderAuditFinish(
   const csvBtn = document.createElement('button');
   csvBtn.type = 'button';
   csvBtn.className = 'tertiary__link';
-  csvBtn.textContent = 'Таблица .CSV';
+  csvBtn.textContent = 'Таблица.CSV';
 
   const pdfBtn = document.createElement('button');
   pdfBtn.type = 'button';

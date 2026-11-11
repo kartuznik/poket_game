@@ -37,7 +37,7 @@ describe('real tear-off stub and Night Vault stamp', () => {
     const finishView = readFileSync(resolve(root, 'src/tools/audit-finish/view.ts'), 'utf8');
     expect(finishView).toContain('createTearOffTicket(');
     expect(finishView).toContain("htmlBtn.textContent = 'Скачать HTML'");
-    expect(finishView).toContain("csvBtn.textContent = 'Таблица .CSV'");
+    expect(finishView).toContain("csvBtn.textContent = 'Таблица.CSV'");
     expect(finishView).toContain("pdfBtn.textContent = 'Печать PDF'");
 
     const css = readFileSync(resolve(root, 'src/styles/main.css'), 'utf8');

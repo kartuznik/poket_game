@@ -270,7 +270,13 @@ function mountApp(root: HTMLElement): void {
     const observer = new MutationObserver(() => {
       runTypography();
     });
-    observer.observe(shell, { childList: true, subtree: true, characterData: true });
+    observer.observe(shell, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['aria-label', 'aria-description', 'placeholder', 'title', 'alt'],
+    });
   }
 
   function syncPreviewAndScore(): void {

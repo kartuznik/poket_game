@@ -107,7 +107,7 @@ export function renderFinalReportTool(
   csvBtn.type = 'button';
   csvBtn.className = 'action-btn action-btn--secondary';
   const csvLabel = document.createElement('span');
-  csvLabel.textContent = 'Таблица .CSV';
+  csvLabel.textContent = 'Таблица.CSV';
   csvBtn.append(csvLabel);
   csvBtn.disabled = !summary.hasData;
   actions.append(copyBtn, csvBtn);
