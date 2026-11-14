@@ -13,7 +13,7 @@
 | **Уровень** | Level 1 — линейные шаги, без агента, без LLM и без бэкенда |
 | **Статус** | active — опубликовано на GitHub Pages |
 | **Ценность** | Порядок потерь по времени и выручке и текст, который можно отправить автору |
-| **Актуализация README** | 2026-11-03 · [история коммитов](https://github.com/kartuznik/poket_game/commits/main) |
+| **Актуализация README** | 2026-11-14 · [история коммитов](https://github.com/kartuznik/poket_game/commits/main) |
 
 Живой сайт: **https://kartuznik.github.io/poket_game/**
 
