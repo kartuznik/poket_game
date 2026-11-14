@@ -17,7 +17,7 @@
 
 Живой сайт: **https://kartuznik.github.io/poket_game/**
 
-Операционного runbook в репозитории нет. Публикация описана в [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+Операционные команды, деплой, мониторинг, хранение данных и rollback описаны в [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
 
 ---
 
@@ -292,7 +292,7 @@ flowchart LR
 
 ### GitHub Pages
 
-Пуш в `main` запускает [workflow](.github/workflows/deploy.yml): `npm ci`, проверка типов, тесты, `npm run build`, публикация `dist`. Ручной запуск — `workflow_dispatch`. Адрес: https://kartuznik.github.io/poket_game/
+Пуш в `main` запускает [workflow](.github/workflows/deploy.yml): `npm ci`, проверка типов, тесты, `npm run build`, публикация `dist`. Ручной запуск — `workflow_dispatch`. Адрес: https://kartuznik.github.io/poket_game/. Пошаговые команды и rollback — в [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
 
 Docker Compose у проекта нет: серверного процесса нет, собирать контейнер не из чего.
 
@@ -313,7 +313,7 @@ npm run preview
 
 ## Мониторинг
 
-Prometheus, Grafana, команды `/health` и фонового опроса нет. Единственный сигнал публикации — зелёный прогон GitHub Actions.
+Prometheus, Grafana, команды `/health` и фонового опроса нет. Единственный сигнал публикации — зелёный прогон GitHub Actions. Проверки и действия при сбое описаны в [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
 
 Серверных данных нет, поэтому серверный backup не нужен. Копия визита живёт в браузере человека. Сохранить цифры можно отчётом в буфер или файлом CSV. «Начать заново» стирает досье только в этом браузере.
 
